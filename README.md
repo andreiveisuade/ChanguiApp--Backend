@@ -129,4 +129,13 @@ curl "http://localhost:3000/api/products/barcode/7790040116909?lat=-34.6037&lng=
 
 ---
 
+## 📝 Notas para el Equipo
+
+- **Documentación limpia**: Solo archivos necesarios para el TP. Sin explicaciones residuales.
+- **Commits profesionales**: Sin menciones a IA, co-authored o herramientas de asistencia.
+- **Estructura prolija**: Código, docs y Jira siempre en sincronía.
+- **Requisitos**: Verificar [/docs/CHECKLIST_REQUISITOS.md](./docs/CHECKLIST_REQUISITOS.md)
+
+---
+
 UADE — Desarrollo de Aplicaciones I — 2026

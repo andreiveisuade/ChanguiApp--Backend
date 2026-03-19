@@ -33,6 +33,8 @@ UADE FAIN — Desarrollo de Aplicaciones I | Marzo 2026
 | CHNG-04 | Setup | Como equipo, necesitamos el Documento de Alcance (Scope) completado y entregado a la cátedra. | 1 | 🔴 Alta | SM |
 | CHNG-05 | UX/UI | Como UX/UI Lead, necesito realizar 2-3 entrevistas a usuarios reales para validar el problema y definir las personas del proyecto. | 3 | 🔴 Alta | UX/UI Lead |
 | CHNG-06 | UX/UI | Como UX/UI Lead, necesito crear el mapa de navegación y el design system básico (tipografía, colores, componentes) en Figma. | 3 | 🔴 Alta | UX/UI Lead |
+| CHNG-34 | Frontend | Como equipo, necesitamos investigar y documentar qué API Level mínimo soportará la aplicación Android (ej: API 24+). | 1 | 🔴 Alta | — |
+| CHNG-35 | UX/UI | Como equipo, necesitamos documentar 2-3 personas y sus customer journeys a partir de las entrevistas a usuarios. | 2 | 🔴 Alta | — |
 
 ---
 
@@ -49,6 +51,7 @@ UADE FAIN — Desarrollo de Aplicaciones I | Marzo 2026
 | CHNG-09 | Backend | Como desarrollador, necesito implementar el endpoint de autenticación en Firebase Auth (Google Sign-In y email/contraseña) en el backend. | 3 | 🔴 Alta | Backend Lead |
 | CHNG-10 | Backend | Como desarrollador, necesito implementar el CRUD completo de Carrito/Sesión de compra (crear, leer, ver historial, cerrar, eliminar). | 5 | 🔴 Alta | Backend Lead |
 | CHNG-11 | Backend | Como desarrollador, necesito implementar el CRUD de ItemCarrito (agregar producto al carrito, leer items, actualizar cantidad, eliminar item). | 5 | 🔴 Alta | Backend Lead |
+| CHNG-36 | UX/UI | Como equipo, necesitamos documentar cómo el prototipo Figma cumple con al menos 10 heurísticas de Nielsen con evidencias/screenshots. | 2 | 🔴 Alta | — |
 
 ---
 
@@ -66,6 +69,7 @@ UADE FAIN — Desarrollo de Aplicaciones I | Marzo 2026
 | CHNG-15 | QA/Docs | Como equipo, necesitamos el DER (Diagrama Entidad-Relación) de la base de datos diseñado y documentado. | 2 | 🔴 Alta | Tech Lead |
 | CHNG-16 | QA/Docs | Como equipo, necesitamos el diagrama de arquitectura de alto nivel con descripción de tecnologías elegidas. | 2 | 🔴 Alta | Tech Lead |
 | CHNG-17 | QA/Docs | Como equipo, necesitamos el plan de pruebas inicial con casos de prueba para los flujos principales del MVP. | 3 | 🔴 Alta | QA/Docs |
+| CHNG-37 | QA/Docs | Como equipo, necesitamos crear diagramas de secuencia para flujos críticos (autenticación/login y Scan & Go + pago). | 2 | 🔴 Alta | — |
 
 ---
 
@@ -115,6 +119,8 @@ UADE FAIN — Desarrollo de Aplicaciones I | Marzo 2026
 | CHNG-31 | QA/Docs | Como equipo, necesitamos completar la documentación técnica y de usuario final, incluyendo métricas de pruebas. | 3 | 🔴 Alta | SM |
 | CHNG-32 | QA/Docs | Como equipo, necesitamos preparar la demo en vivo y el benchmark frente a la app oficial de Precios Claros para la defensa oral. | 3 | 🔴 Alta | SM |
 | CHNG-33 | Backend | Como equipo, necesitamos pre-cargar 10-15 productos en el backend de producción antes de la demo final para garantizar disponibilidad. | 1 | 🔴 Alta | Backend Lead |
+| CHNG-38 | QA/Docs | Como equipo, necesitamos crear RC final, definir versionado semántico y elaborar changelog.md con todas las features, bugs fixes y breaking changes. | 2 | 🔴 Alta | — |
+| CHNG-39 | QA/Docs | Como equipo, necesitamos preparar estructura del pitch para defensa oral (problema, usuarios, métricas, decisiones, aprendizajes) con script de 20 minutos. | 1 | 🔴 Alta | — |
 
 ---
 
@@ -122,13 +128,13 @@ UADE FAIN — Desarrollo de Aplicaciones I | Marzo 2026
 
 | Sprint | Período | Objetivo | Pts |
 |--------|---------|----------|-----|
-| **1** | 19/03 → 02/04 | Fundaciones (repo, Jira, backend, scope, UX inicial) | 14 |
-| **2** | 03/04 → 23/04 | Prototipo Figma + Backend Auth y Carrito | 20 |
-| **3** | 24/04 → 08/05 | Integración Precios Claros + Entrega 1 | 23 |
+| **1** | 19/03 → 02/04 | Fundaciones (repo, Jira, backend, scope, UX inicial) | 17 |
+| **2** | 03/04 → 23/04 | Prototipo Figma + Backend Auth y Carrito | 24 |
+| **3** | 24/04 → 08/05 | Integración Precios Claros + Entrega 1 | 25 |
 | **4** | 09/05 → 22/05 | Frontend: Auth, Carrito, Escáner | 18 |
 | **5** | 23/05 → 05/06 | Frontend: Features Completas + Pruebas | 17 |
-| **6** | 06/06 → 18/06 | Pulido, APK, Documentación, Defensa | 15 |
-| **TOTAL** | 19/03 → 18/06 | **33 historias, 6 épicas** | **107** |
+| **6** | 06/06 → 18/06 | Pulido, APK, Documentación, Defensa | 19 |
+| **TOTAL** | 19/03 → 18/06 | **39 historias, 5 épicas** | **120** |
 
 ---
 
