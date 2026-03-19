@@ -5,24 +5,38 @@
 
 ---
 
-## Estrategia de Ramas (GitFlow)
+## Estrategia de Ramas
 
 ```
-main          ← producción / entregables finales (nunca se toca directamente)
-  └── develop ← integración continua (base de todos los features)
-        ├── feature/nombre-feature   ← trabajo de cada dev
-        ├── fix/nombre-fix           ← correcciones de bugs
-        └── chore/nombre-tarea       ← configuración, docs, infraestructura
+main (release)    ← entregables finales, versiones estables (nunca se toca directamente)
+  └── test        ← rama de QA, se testea acá antes de subir a main
+        └── dev   ← integración continua, base de todos los features
+              ├── feature/nombre-feature   ← trabajo de cada dev
+              ├── fix/nombre-fix           ← correcciones de bugs
+              └── chore/nombre-tarea       ← configuración, docs, infraestructura
 ```
+
+### Flujo de promoción de código
+
+```
+feature/xxx  ──PR──►  dev  ──PR──►  test  ──PR──►  main (release)
+                       │              │               │
+                   integración     pruebas QA      producción
+                   continua        y validación    / entrega
+```
+
+1. **dev** — Acá se integra todo. Las feature branches se mergean acá.
+2. **test** — Cuando dev está estable, se hace PR a test para pruebas de QA. Acá se valida que todo funcione junto antes de la entrega.
+3. **main (release)** — Solo recibe merges desde test. Representa la versión entregable. Cada merge a main se tagea.
 
 ### Convención de nombres de ramas
 
 | Prefijo | Cuándo usarlo | Ejemplo |
 |---------|--------------|---------|
-| `feature/` | Nueva funcionalidad | `feature/escaneo-barcode` |
-| `fix/` | Corrección de bug | `fix/precio-nulo-api` |
-| `chore/` | Configuración, docs, deps | `chore/setup-firebase` |
-| `release/` | Preparar entrega | `release/entrega-1` |
+| `feature/` | Nueva funcionalidad | `feature/DEV-21-escaneo-barcode` |
+| `fix/` | Corrección de bug | `fix/DEV-35-precio-nulo-api` |
+| `chore/` | Configuración, docs, deps | `chore/DEV-03-setup-supabase` |
+| `hotfix/` | Fix crítico directo en test | `hotfix/crash-checkout` |
 
 ---
 
@@ -31,12 +45,12 @@ main          ← producción / entregables finales (nunca se toca directamente)
 ### 1. Antes de empezar a trabajar
 
 ```bash
-# Siempre partís desde develop actualizado
-git checkout develop
-git pull origin develop
+# Siempre partís desde dev actualizado
+git checkout dev
+git pull origin dev
 
 # Creás tu rama
-git checkout -b feature/nombre-de-tu-feature
+git checkout -b feature/DEV-XX-nombre-de-tu-feature
 ```
 
 ### 2. Mientras trabajás
@@ -49,17 +63,17 @@ git checkout -b feature/nombre-de-tu-feature
 ### 3. Cuando terminás
 
 ```bash
-# Traés los últimos cambios de develop antes de subir
-git checkout develop
-git pull origin develop
-git checkout feature/tu-feature
-git rebase develop   # resolvés conflictos acá, no en el PR
+# Traés los últimos cambios de dev antes de subir
+git checkout dev
+git pull origin dev
+git checkout feature/DEV-XX-tu-feature
+git rebase dev   # resolvés conflictos acá, no en el PR
 
 # Subís tu rama
-git push origin feature/tu-feature
+git push origin feature/DEV-XX-tu-feature
 ```
 
-### 4. Abrís el Pull Request en GitHub
+### 4. Abrís el Pull Request en GitHub → hacia `dev`
 
 ---
 
@@ -67,12 +81,17 @@ git push origin feature/tu-feature
 
 ### Reglas obligatorias (no negociables)
 
-1. **Todo cambio entra por PR** — nadie hace push directo a `develop` ni a `main`, sin excepciones.
+1. **Todo cambio entra por PR** — nadie hace push directo a `dev`, `test` ni `main`, sin excepciones.
 2. **El autor no puede hacer merge de su propio PR** — siempre lo aprueba otro integrante.
-3. **Mínimo 1 aprobación** para hacer merge a `develop`.
-4. **Mínimo 2 aprobaciones** para hacer merge a `main` (Scrum Master + 1 integrante).
-5. **El Scrum Master es quien ejecuta el merge a `main`** en los releases de cada entrega.
-6. **No hacer merge si hay comentarios sin resolver** — se resuelven o se marcan como "won't fix" con justificación.
+3. **No hacer merge si hay comentarios sin resolver** — se resuelven o se marcan como "won't fix" con justificación.
+
+### Aprobaciones requeridas por rama
+
+| Rama destino | Aprobaciones | Quién puede mergear |
+|-------------|-------------|---------------------|
+| `dev` | Mínimo **1 aprobación** | Cualquier integrante (que no sea el autor) |
+| `test` | Mínimo **1 aprobación** + SM informado | SM o Tech Lead |
+| `main` | Mínimo **2 aprobaciones** (SM obligatorio) | Solo el SM |
 
 ### Qué tiene que tener un PR para ser válido
 
@@ -84,7 +103,7 @@ git push origin feature/tu-feature
 Descripción breve de los cambios.
 
 ## Issue relacionado
-Closes #<número de issue en Jira/GitHub>
+Closes DEV-<número>
 
 ## Cómo probarlo
 1. Paso 1
@@ -112,14 +131,14 @@ Closes #<número de issue en Jira/GitHub>
 
 Cuando te asignan como reviewer, revisá:
 
-- ✅ ¿El código hace lo que dice el título y la descripción del PR?
-- ✅ ¿Hay algo que pueda romper funcionalidad existente?
-- ✅ ¿El código es legible? (no perfecto, pero entendible por otro integrante)
-- ✅ ¿Se siguen los patrones de arquitectura del proyecto (MVVM + Repository)?
-- ✅ ¿Los nombres de variables/funciones tienen sentido?
-- ✅ ¿Hay manejo de errores donde puede fallar (ej: llamadas a la API)?
+- ¿El código hace lo que dice el título y la descripción del PR?
+- ¿Hay algo que pueda romper funcionalidad existente?
+- ¿El código es legible? (no perfecto, pero entendible por otro integrante)
+- ¿Se siguen los patrones de arquitectura del proyecto (MVVM + Repository)?
+- ¿Los nombres de variables/funciones tienen sentido?
+- ¿Hay manejo de errores donde puede fallar (ej: llamadas a la API)?
 
-No es un code review de producción profesional. El objetivo es que el equipo aprenda y que el código que entra a develop funcione.
+No es un code review de producción profesional. El objetivo es que el equipo aprenda y que el código que entra a dev funcione.
 
 ---
 
@@ -128,16 +147,21 @@ No es un code review de producción profesional. El objetivo es que el equipo ap
 En **Settings → Branches** del repositorio:
 
 **Rama `main`:**
-- ✅ Require a pull request before merging
-- ✅ Required approvals: 2
-- ✅ Dismiss stale reviews
-- ✅ Require status checks to pass
-- ✅ Include administrators
+- Require a pull request before merging
+- Required approvals: 2
+- Dismiss stale reviews
+- Require status checks to pass
+- Include administrators
 
-**Rama `develop`:**
-- ✅ Require a pull request before merging
-- ✅ Required approvals: 1
-- ✅ Dismiss stale reviews
+**Rama `test`:**
+- Require a pull request before merging
+- Required approvals: 1
+- Dismiss stale reviews
+
+**Rama `dev`:**
+- Require a pull request before merging
+- Required approvals: 1
+- Dismiss stale reviews
 
 ---
 
@@ -145,17 +169,18 @@ En **Settings → Branches** del repositorio:
 
 | Evento | Acción en Git |
 |--------|--------------|
-| Fin de sprint | Merge de `develop` a `main` con tag: `sprint-N` |
-| Entrega 1 | Rama `release/entrega-1`, merge a `main`, tag `v1.0-entrega1` |
-| Entrega 2 | Rama `release/entrega-2`, merge a `main`, tag `v1.0-final` |
+| Fin de sprint | PR de `dev` → `test`, validar, luego PR de `test` → `main` con tag `sprint-N` |
+| Entrega 1 | PR `dev` → `test` → `main`, tag `v1.0-entrega1` |
+| Entrega 2 | PR `dev` → `test` → `main`, tag `v2.0-final` |
+| Hotfix en test | Crear `hotfix/xxx` desde `test`, mergear a `test` y bajar a `dev` |
 
 ---
 
 ## Conexión con Jira
 
 - Cada rama debe corresponder a un issue de Jira
-- Nomenclatura sugerida: `feature/CHNG-42-escaneo-barcode` (donde `CHNG-42` es el ID del issue)
-- Mencioná el ID del issue en el título o descripción del PR para que Jira lo linkee automáticamente
+- Nomenclatura: `feature/DEV-21-escaneo-barcode` (donde `DEV-21` es el ID del issue en Jira)
+- Mencioná el ID del issue (ej: `DEV-21`) en el título o descripción del PR para que Jira lo linkee automáticamente
 
 ---
 
