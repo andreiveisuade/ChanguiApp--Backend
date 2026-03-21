@@ -1,28 +1,31 @@
-# DOCUMENTO DE ALCANCE DEL PROYECTO - V.2
+# DOCUMENTO DE ALCANCE DEL PROYECTO — V.3
 
 ---
 
-## 1. Información General del Proyecto
+## 1. Informacion General del Proyecto
 
 | Campo | Detalle |
 |-------|---------|
-| **Nombre del proyecto** | ChanguiApp — Carrito de Compras Inteligente |
-| **Cliente / Área solicitante** | Cátedra Desarrollo de Aplicaciones I — UADE FAIN |
-| **Responsable del proyecto** | Scrum Master: Andrei Veis |
-| **Equipo del proyecto** | Ezequiel Lupis · Ignacio Melinc · Ignacio Rodriguez · Andrei Veis ·  Maximo Vendramini  |
+| **Nombre del proyecto** | ChanguiApp |
+| **Materia** | Desarrollo de Aplicaciones I — UADE FAIN |
+| **Equipo del proyecto** | Ezequiel Lupis · Ignacio Melinc · Ignacio Rodriguez · Andrei Veis · Maximo Vendramini |
 | **Fecha de inicio** | 19 de Marzo de 2026 |
-| **Fecha estimada de finalización** | 18 de Junio de 2026 (Entrega 2 / Segundo Parcial) |
-| **Versión del documento** | 2.0 — Revisión con stack actualizado |
+| **Fecha estimada de finalizacion** | 18 de Junio de 2026 (Entrega 2 / Segundo Parcial) |
+| **Version del documento** | 3.0 — Revision post-reestructuracion de backlog y CRUDs (20/03/2026) |
 
 ---
 
-## 2. Descripción del Proyecto
+## 2. Descripcion del Proyecto
 
-ChanguiApp es una aplicación móvil que permite a consumidores argentinos realizar toda su compra de supermercado desde el celular: seleccionar el supermercado donde se encuentran, escanear productos con la cámara, armar el carrito en tiempo real, y pagar directamente desde la app mediante Mercado Pago.
+ChanguiApp es una aplicacion movil orientada a consumidores argentinos que busca transformar la experiencia de compra en supermercados. La aplicacion permite al usuario seleccionar el supermercado en el que se encuentra, escanear productos mediante la camara del dispositivo, armar un carrito de compras en tiempo real con acumulacion automatica del total, y efectuar el pago directamente desde la app a traves de Mercado Pago.
 
-El proyecto abarca el diseño UX/UI, el desarrollo de la aplicación móvil en **React Native**, y la construcción de un backend propio en **Node.js + Express** con persistencia en **Supabase** (PostgreSQL + Auth), documentado mediante Swagger y deployado en **Render**.
+Adicionalmente, la aplicacion ofrece la posibilidad de crear listas de compras previas desde el hogar. Al llegar al supermercado, el usuario puede ir escaneando los productos de su lista, que se van tachando automaticamente a medida que se agregan al carrito. De esta manera, el supermercado funciona unicamente como gondola y el proceso de caja se realiza integramente desde el dispositivo movil.
 
-**Nota sobre la demo:** En un escenario real, la app se conectaría a los servidores internos de cada supermercado para obtener precios y stock. Para el TP, se utiliza la API pública de Precios Claros (SEPA, gobierno argentino) como fuente de datos simulada. La lista de supermercados disponibles se obtiene de esta misma API. Esto permite demostrar el flujo completo con precios reales sin necesidad de convenios con cadenas de supermercados.
+El proyecto comprende el diseno UX/UI, el desarrollo de la aplicacion movil en **React Native**, y la construccion de un backend propio en **Node.js + Express** con persistencia en **Supabase** (PostgreSQL + Auth), documentado mediante Swagger y desplegado en **Render**.
+
+**Principio de diseno:** la interfaz de ChanguiApp se disena bajo la premisa de que el flujo principal (escanear, agregar al carrito, pagar) debe ser tan simple que cualquier persona pueda operarlo sin instrucciones previas. El contexto de uso es un supermercado con iluminacion intensa, donde el usuario tiene las manos ocupadas y necesita interacciones rapidas y claras. Por este motivo, la app utiliza exclusivamente un tema claro con alto contraste, tipografia legible y una estructura de navegacion minima. La complejidad funcional (listas, historial, perfil) se ubica en secciones secundarias para no interferir con el flujo core.
+
+**Nota sobre el entorno de demostracion:** en un escenario productivo, la aplicacion se conectaria a los sistemas internos de cada cadena de supermercados para obtener precios y disponibilidad de stock. Para los fines de este trabajo practico, se utiliza la API publica de Precios Claros (SEPA, Secretaria de Comercio, Gobierno Argentino) como fuente de datos simulada. El catalogo de productos se sincroniza masivamente desde dicha API hacia Supabase, permitiendo consultas locales rapidas en cada escaneo sin depender de la disponibilidad de la API externa en tiempo real. La lista de supermercados disponibles tambien se obtiene de esta fuente.
 
 ---
 
@@ -30,120 +33,142 @@ El proyecto abarca el diseño UX/UI, el desarrollo de la aplicación móvil en *
 
 ### Objetivo General
 
-Desarrollar una aplicación móvil funcional que resuelva la fricción del proceso de compra en supermercados argentinos (filas en caja, desconocimiento del total), aplicando buenas prácticas de arquitectura, diseño centrado en el usuario, pruebas e integración continua.
+Desarrollar una aplicacion movil funcional que simplifique el proceso de compra en supermercados argentinos, eliminando la friccion de las filas en caja y el desconocimiento del total acumulado, aplicando buenas practicas de arquitectura de software, diseno centrado en el usuario, pruebas e integracion continua.
 
-### Objetivos Específicos
+### Objetivos Especificos
 
-- Implementar un flujo completo de Scan & Go: seleccionar supermercado → escanear productos → carrito → pagar con Mercado Pago.
-- Integrar Mercado Pago como pasarela de pagos real (modo sandbox/test para el TP).
-- Utilizar la API de Precios Claros (SEPA) como fuente de datos simulada para obtener precios reales de productos.
-- Diseñar e implementar una arquitectura MVVM + Repository tanto en el frontend (React Native) como en el backend (Node.js + Express + capa de repositorios).
-- Proveer autenticación segura mediante **Supabase Auth** (Google Sign-In y email/contraseña).
-- Cubrir los 3 CRUDs obligatorios del TP: **Items de Carrito**, **Productos (lectura por barcode + caché)** y **Compras/Historial**.
-- Persistir datos en **Supabase** (PostgreSQL) con caché de productos consultados.
-- Alcanzar un cold start inferior a 2,5 segundos y un manejo robusto de errores de conectividad.
-- Entregar prototipo navegable de alta fidelidad en Figma con Material Design 3 y heurísticas de Nielsen evidenciadas.
-- Documentar todos los endpoints del backend con Swagger (Entrega 1) y presentar una defensa técnica con demo en vivo (Entrega 2).
+- Implementar un flujo completo de Scan & Go: seleccionar supermercado, escanear productos, gestionar el carrito y pagar mediante Mercado Pago.
+- Permitir la creacion y gestion de listas de compras previas, con tachado automatico de items al escanearlos en el supermercado.
+- Integrar Mercado Pago como pasarela de pagos en modo sandbox/test para el trabajo practico.
+- Sincronizar masivamente el catalogo de productos desde la API de Precios Claros hacia Supabase, permitiendo consultas locales rapidas por codigo de barras.
+- Disenar e implementar una arquitectura MVVM + Repository tanto en el frontend (React Native) como en el backend (Node.js + Express + capa de repositorios).
+- Proveer autenticacion segura mediante **Supabase Auth** (Google Sign-In y email/contrasena).
+- Cubrir los 3 CRUDs obligatorios del trabajo practico: **Items de Carrito**, **Usuarios / Perfil** y **Listas de Compras**.
+- Persistir datos en **Supabase** (PostgreSQL) con sincronizacion masiva del catalogo de productos.
+- Cumplir con un cold start inferior a 2,5 segundos (requisito no funcional de la catedra).
+- Entregar un prototipo navegable de alta fidelidad en Figma, aplicando Material Design 3 y heuristicas de Nielsen evidenciadas mediante checklist.
+- Documentar todos los endpoints del backend con Swagger (Entrega 1) y presentar una defensa tecnica con demo en vivo (Entrega 2).
 
 ---
 
-## 4. Stack Tecnológico
+## 4. Stack Tecnologico
 
-| Capa | Tecnología |
+| Capa | Tecnologia |
 |------|------------|
 | **Frontend (Mobile)** | React Native |
-| **Patrón de arquitectura** | MVVM + Repository |
+| **Patron de arquitectura** | MVVM + Repository |
 | **Backend** | Node.js + Express (deploy en Render) |
 | **Base de datos** | Supabase (PostgreSQL hosted) |
-| **Autenticación** | Supabase Auth (Google Sign-In + email/contraseña) |
+| **Autenticacion** | Supabase Auth (Google Sign-In + email/contrasena) |
 | **Pasarela de pagos** | Mercado Pago SDK (modo sandbox/test) |
-| **API de precios (demo)** | Precios Claros / SEPA (gobierno argentino) |
-| **Documentación API** | Swagger |
+| **API de precios (demo)** | Precios Claros / SEPA (Gobierno Argentino) |
+| **Documentacion API** | Swagger |
 | **Control de versiones** | Git + GitHub (GitFlow) |
-| **Gestión del proyecto** | Jira (Scrum) |
+| **Testing backend** | Jest + Supertest |
+| **Testing frontend** | React Testing Library + Jest |
+| **Gestion del proyecto** | Jira (Scrum) |
 
 ---
 
 ## 5. Endpoints del Backend
 
-### Autenticación y Usuarios
+### Autenticacion y Usuarios
 
-| Método | Endpoint | Descripción |
+| Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
 | POST | `/api/auth/register` | Registro de usuario (crear cuenta via Supabase Auth) |
-| POST | `/api/auth/login` | Login / Autenticación |
-| GET | `/api/users/profile` | Obtener perfil del usuario |
-| PUT | `/api/users/profile` | Actualizar datos de perfil |
+| POST | `/api/auth/login` | Inicio de sesion |
+| GET | `/api/users/profile` | Obtener perfil del usuario autenticado |
+| PUT | `/api/users/profile` | Actualizar datos del perfil |
+| DELETE | `/api/users/profile` | Eliminar cuenta del usuario |
 
 ### Productos
 
-| Método | Endpoint | Descripción |
+| Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
-| GET | `/api/products/barcode/:code` | Consultar producto por código de barras (API Precios Claros + caché en Supabase) |
+| GET | `/api/products/barcode/:code` | Consultar producto por codigo de barras (busqueda local en catalogo sincronizado) |
 
 ### Supermercados
 
-| Método | Endpoint | Descripción |
+| Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
-| GET | `/api/stores` | Listar supermercados disponibles (hardcodeados de API Precios Claros) |
+| GET | `/api/stores` | Listar supermercados disponibles |
 
 ### Carrito
 
-| Método | Endpoint | Descripción |
+| Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
-| GET | `/api/cart` | Ver contenido del carrito activo (subtotales y lista de items) |
-| POST | `/api/cart/items` | Agregar producto al carrito |
-| PUT | `/api/cart/items/:id` | Actualizar cantidad de un producto |
+| GET | `/api/cart` | Ver contenido del carrito activo (items y subtotales) |
+| POST | `/api/cart/items` | Agregar producto al carrito (si proviene de una lista, se marca automaticamente como comprado) |
+| PUT | `/api/cart/items/:id` | Actualizar cantidad de un producto en el carrito |
 | DELETE | `/api/cart/items/:id` | Quitar un producto del carrito |
-| DELETE | `/api/cart` | Vaciar/cancelar el carrito completo |
+| DELETE | `/api/cart` | Vaciar o cancelar el carrito completo |
+
+### Listas de Compras
+
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| POST | `/api/lists` | Crear una nueva lista de compras |
+| GET | `/api/lists` | Obtener todas las listas del usuario |
+| GET | `/api/lists/:id` | Ver detalle de una lista con sus items |
+| PUT | `/api/lists/:id` | Actualizar nombre o datos de la lista |
+| DELETE | `/api/lists/:id` | Eliminar una lista de compras |
+| POST | `/api/lists/:id/items` | Agregar un item a la lista |
+| PUT | `/api/lists/:listId/items/:itemId` | Actualizar un item de la lista (nombre, cantidad, estado) |
+| DELETE | `/api/lists/:listId/items/:itemId` | Quitar un item de la lista |
 
 ### Pagos
 
-| Método | Endpoint | Descripción |
+| Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
 | POST | `/api/checkout` | Iniciar pago: genera preferencia de Mercado Pago y devuelve datos para checkout in-app |
 | POST | `/api/checkout/webhook` | Webhook de Mercado Pago para confirmar estado del pago |
 
 ### Historial de Compras
 
-| Método | Endpoint | Descripción |
+| Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
 | GET | `/api/purchases` | Listar historial de compras del usuario |
-| GET | `/api/purchases/:id` | Ver detalle de una compra pasada |
+| GET | `/api/purchases/:id` | Ver detalle de una compra especifica |
 
 ### Sistema
 
-| Método | Endpoint | Descripción |
+| Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
-| GET | `/health` | Healthcheck |
+| GET | `/health` | Healthcheck del servidor |
 
 ---
 
 ## 6. CRUDs del Proyecto
 
+La consigna requiere al menos tres CRUDs completos referentes al dominio principal de la aplicacion. Un CRUD completo implica que las cuatro operaciones (Create, Read, Update, Delete) esten disponibles para el usuario a traves de la interfaz.
+
 ### CRUD 1: Items de Carrito
-| Operación | Endpoint | Descripción |
-|-----------|----------|-------------|
-| **Create** | `POST /api/cart/items` | Agregar producto escaneado al carrito |
-| **Read** | `GET /api/cart` | Ver carrito activo con lista de items y subtotales |
-| **Update** | `PUT /api/cart/items/:id` | Actualizar cantidad de un item |
-| **Delete** | `DELETE /api/cart/items/:id` | Eliminar item del carrito |
 
-### CRUD 2: Productos (lectura por barcode + caché)
-| Operación | Endpoint | Descripción |
+| Operacion | Endpoint | Descripcion |
 |-----------|----------|-------------|
-| **Create** | (automático) | Al consultar un barcode, el producto se cachea en Supabase |
-| **Read** | `GET /api/products/barcode/:code` | Consultar producto por barcode (busca en caché, si no está consulta Precios Claros) |
-| **Update** | (automático) | Si el precio cambió en Precios Claros, se actualiza el caché |
-| **Delete** | (automático) | Productos cacheados expiran después de un período configurable |
+| **Create** | `POST /api/cart/items` | El usuario agrega un producto escaneado al carrito |
+| **Read** | `GET /api/cart` | El usuario visualiza el carrito activo con la lista de items y subtotales |
+| **Update** | `PUT /api/cart/items/:id` | El usuario modifica la cantidad de un item en el carrito |
+| **Delete** | `DELETE /api/cart/items/:id` | El usuario elimina un item del carrito |
 
-### CRUD 3: Compras / Historial
-| Operación | Endpoint | Descripción |
+### CRUD 2: Usuarios / Perfil
+
+| Operacion | Endpoint | Descripcion |
 |-----------|----------|-------------|
-| **Create** | `POST /api/checkout` | Se crea el registro de compra al iniciar el pago |
-| **Read** | `GET /api/purchases` y `GET /api/purchases/:id` | Listar historial y ver detalle de una compra |
-| **Update** | (via webhook) | El estado de la compra se actualiza cuando Mercado Pago confirma el pago |
-| **Delete** | — | Las compras no se eliminan (son registros históricos) |
+| **Create** | `POST /api/auth/register` | El usuario crea su cuenta mediante registro |
+| **Read** | `GET /api/users/profile` | El usuario consulta los datos de su perfil |
+| **Update** | `PUT /api/users/profile` | El usuario modifica sus datos personales (nombre, email, foto) |
+| **Delete** | `DELETE /api/users/profile` | El usuario elimina su cuenta de forma permanente |
+
+### CRUD 3: Listas de Compras
+
+| Operacion | Endpoint | Descripcion |
+|-----------|----------|-------------|
+| **Create** | `POST /api/lists` | El usuario crea una lista de compras desde su hogar con los productos que necesita |
+| **Read** | `GET /api/lists` y `GET /api/lists/:id` | El usuario consulta sus listas y el detalle de items de cada una |
+| **Update** | `PUT /api/lists/:id` y `PUT /api/lists/:listId/items/:itemId` | El usuario modifica el nombre de la lista o actualiza items. Al escanear un producto en el supermercado, el item correspondiente se marca automaticamente como comprado |
+| **Delete** | `DELETE /api/lists/:id` y `DELETE /api/lists/:listId/items/:itemId` | El usuario elimina una lista completa o quita items individuales |
 
 ---
 
@@ -151,129 +176,148 @@ Desarrollar una aplicación móvil funcional que resuelva la fricción del proce
 
 ### Funcionalidades incluidas en el MVP
 
-- Registro y login de usuarios (email/contraseña y Google Sign-In via Supabase Auth)
-- Flujo de onboarding inicial en la primera apertura de la app
-- Selección del supermercado donde se encuentra el usuario (lista hardcodeada desde Precios Claros)
-- Escaneo de código de barras con la cámara del dispositivo
-- Consulta de precios via API de Precios Claros (simulando servidores del supermercado)
-- Carrito de compras persistente (se mantiene activo aunque el usuario cierre la app; solo se cierra al pagar o cancelar manualmente)
-- Total acumulado en tiempo real mientras se agregan productos
-- Pago in-app mediante Mercado Pago (modo sandbox/test, checkout integrado dentro de la app)
-- Historial de compras anteriores con detalle por sesión
-- Caché de productos consultados en Supabase (reducción de latencia y resiliencia ante fallas de la API)
-- Backend propio en Node.js + Express con documentación Swagger, deployado en Render
-- Persistencia y autenticación en Supabase (PostgreSQL + Auth)
-- Observabilidad con analytics en capa gratuita (backend y app)
+- Registro e inicio de sesion de usuarios (email/contrasena y Google Sign-In via Supabase Auth)
+- Gestion del perfil de usuario (consulta, edicion y eliminacion de cuenta)
+- Flujo de onboarding inicial en la primera apertura de la aplicacion
+- Seleccion del supermercado donde se encuentra el usuario
+- Escaneo de codigo de barras con la camara del dispositivo (sensor requerido por la consigna)
+- Sincronizacion masiva del catalogo de precios desde la API de Precios Claros hacia Supabase, con consultas locales en cada escaneo
+- Carrito de compras persistente: se mantiene activo aunque el usuario cierre la aplicacion, y solo se cierra al pagar o cancelar manualmente
+- Total acumulado en tiempo real a medida que se agregan productos
+- Creacion y gestion de listas de compras previas, con tachado automatico de items al escanearlos en el supermercado
+- Pago in-app mediante Mercado Pago (modo sandbox/test, checkout integrado dentro de la aplicacion)
+- Historial de compras anteriores con detalle por sesion, presentado como listado con cards view (requisito funcional obligatorio de la consigna)
+- Backend propio en Node.js + Express con documentacion Swagger, desplegado en Render
+- Persistencia y autenticacion en Supabase (PostgreSQL + Auth)
+- Observabilidad mediante analytics en capa gratuita (backend y aplicacion movil)
+- Buenas practicas de accesibilidad segun lo indicado por la consigna
+- Tamanos de fuente escalables, permitiendo al usuario configurar el tamano segun su preferencia
+- Internacionalizacion (i18n) con soporte para espanol e ingles, con posibilidad de extension a otros idiomas. Los textos de la interfaz se gestionan mediante archivos de traduccion centralizados, permitiendo cambiar el idioma desde la configuracion de la app
 
-### Entregables técnicos obligatorios
+### Entregables tecnicos obligatorios
 
-- **Entrega 1:** Figma, flujo de pantallas, repositorio inicializado con GitFlow, tablero Jira con acceso docente, DER, plan de pruebas, diagrama de arquitectura, Swagger con todos los endpoints funcionando
-- **Entrega 2:** APK funcional, documentación de pruebas y métricas, documentación técnica y de usuario, defensa oral con demo en vivo (20 min + 5 min Q&A)
+- **Entrega 1:** Prototipo Figma navegable, design system basico, flujo de pantallas, repositorio inicializado con GitFlow, tablero Jira con acceso docente, DER, diagrama de secuencia, diagrama de arquitectura, plan de pruebas, Swagger con todos los endpoints funcionando
+- **Entrega 2:** APK funcional, documentacion de pruebas y metricas, documentacion tecnica y de usuario, defensa oral con demo en vivo (20 min + 5 min Q&A), benchmark frente a aplicacion similar
 
 ---
 
 ## 8. Fuera de Alcance (Out of Scope)
 
-- Versión iOS de la aplicación
-- Conexión con servidores reales de supermercados (se simula con Precios Claros)
-- Comparador de precios entre sucursales / supermercados
-- Listas de compras inteligentes y optimizador de supermercados
-- Consulta de stock y ubicación física (pasillo, góndola, sector)
-- Carga manual de productos no encontrados en la API (se evaluará post-MVP)
-- Gestión de métodos de pago propia (se delega a Mercado Pago)
-- Comprobante QR de salida (el pago confirmado sirve como comprobante)
-- Carrito colaborativo o sincronización entre múltiples dispositivos
+- Version iOS de la aplicacion
+- Conexion con servidores reales de cadenas de supermercados (se simula con Precios Claros)
+- Comparador de precios entre sucursales o supermercados
+- Consulta de stock y ubicacion fisica dentro del supermercado (pasillo, gondola, sector)
+- Carga manual de productos no encontrados en el catalogo sincronizado
+- Gestion de metodos de pago propia (se delega integramente a Mercado Pago)
+- Comprobante QR de salida (el pago confirmado funciona como comprobante)
+- Carrito colaborativo o sincronizacion entre multiples dispositivos
 - Modo offline con cola de tareas
-- Presupuesto inteligente con alertas de límite de gasto
-- Integración con Open Food Facts para datos nutricionales
-- Publicación en Google Play Store
-- Soporte para versiones de Android anteriores al API Level mínimo definido por el equipo
-- Internacionalización (soporte multilenguaje)
+- Presupuesto inteligente con alertas de limite de gasto
+- Integracion con Open Food Facts u otras APIs de datos nutricionales
+- Publicacion en Google Play Store
+- Soporte para versiones de Android anteriores al API Level minimo definido por el equipo
+- Tema oscuro (dark mode). La aplicacion esta disenada para ser utilizada dentro de supermercados, es decir, ambientes con iluminacion artificial intensa. Un tema claro ofrece mejor legibilidad y contraste en estas condiciones. Ademas, la interfaz prioriza la simplicidad y claridad visual para que cualquier usuario, independientemente de su experiencia tecnologica, pueda operar la app sin friccion. Incorporar un selector de tema agregaria complejidad a la interfaz sin beneficio real para el contexto de uso
+- Internacionalizacion mas alla de espanol e ingles (otros idiomas quedan fuera del alcance inicial)
 
 ---
 
 ## 9. Entregables del Proyecto
 
-| Entregable | Descripción | Fecha estimada |
+| Entregable | Descripcion | Fecha estimada |
 |------------|-------------|----------------|
-| Documento de Alcance | Scope Statement v2.0 | 19/03/2026 |
-| Prototipo Figma | Wireframes de alta fidelidad, design system, mapa de navegación, personas y journeys | ~30/04/2026 |
-| Repositorio GitHub | Repos Frontend + Backend inicializados con GitFlow, CONTRIBUTING.md | 19/03/2026 |
+| Documento de Alcance | Scope Statement v3.0 | 20/03/2026 |
+| Design system basico | Tipografia, paleta de colores, componentes reutilizables (manual de marca) | ~30/04/2026 |
+| Investigacion de usuarios | 2-3 entrevistas/encuestas, personas y customer journeys documentados | ~30/04/2026 |
+| Prototipo Figma | Wireframes de alta fidelidad, mapa de navegacion, prototipo navegable | ~30/04/2026 |
+| Checklist de heuristicas de Nielsen | Documento evidenciando el cumplimiento de las 10 heuristicas | ~30/04/2026 |
+| Repositorio GitHub | Repos Frontend + Backend inicializados con GitFlow y CONTRIBUTING.md | 19/03/2026 |
 | Tablero Jira | Proyecto Scrum con backlog, sprints y acceso docente habilitado | 19/03/2026 |
-| DER | Diagrama Entidad-Relación (Usuario, Carrito, ItemCarrito, Producto, Compra) | ~30/04/2026 |
-| Plan de pruebas | Documento con casos de prueba unitarias y de integración | ~30/04/2026 |
-| Diagrama de arquitectura | Diagrama de alto nivel con descripción de tecnologías | ~30/04/2026 |
+| DER | Diagrama Entidad-Relacion (Usuario, Carrito, ItemCarrito, Producto, Compra, Lista, ItemLista) | ~30/04/2026 |
+| Diagrama de arquitectura | Diagrama de alto nivel con descripcion de tecnologias y capas | ~30/04/2026 |
+| Diagrama de secuencia | Diagramas de secuencia para los flujos principales de la aplicacion | ~30/04/2026 |
+| Plan de pruebas | Documento con casos de prueba unitarias y de integracion | ~30/04/2026 |
 | Backend + Swagger (Entrega 1) | Todos los endpoints REST funcionando y documentados, deploy en Render + Supabase | ~30/04/2026 |
-| APK + App completa (Entrega 2) | Aplicación React Native funcional con todas las features del MVP | ~18/06/2026 |
-| Documentación final | Docs técnica y de usuario, métricas, pruebas ejecutadas, Release Candidate | ~18/06/2026 |
-| Defensa oral | Demo en vivo 20 min + Q&A 5 min, benchmark vs app similar | ~18/06/2026 |
+| APK + App completa (Entrega 2) | Aplicacion React Native funcional con todas las funcionalidades del MVP | ~18/06/2026 |
+| Documentacion final | Documentacion tecnica y de usuario, metricas, pruebas ejecutadas, Release Candidate | ~18/06/2026 |
+| Defensa oral | Demo en vivo (20 min) + Q&A (5 min), benchmark frente a aplicacion similar | ~18/06/2026 |
+
 
 ---
 
-## 10. Sprints del Proyecto
-
-El backlog detallado con todas las historias de usuario, story points, prioridades y asignaciones está disponible en:
-
-📋 **[BACKLOG.md](./docs/BACKLOG.md)**
-
-**Resumen:**
-- **Total: 107 story points en 6 sprints | 33 historias**
-- **Épicas:** Setup · UX/UI · Backend · Frontend · QA/Docs
-- **Período:** 19/03/2026 → 18/06/2026
-- **Entregas:** Entrega 1 (Sprint 1-3, ~30/04) · Entrega 2 (Sprint 4-6, ~18/06)
-
----
 
 ## 11. Supuestos
 
-- La API de Precios Claros (SEPA) permanece operativa durante el desarrollo del proyecto.
-- Mercado Pago SDK en modo sandbox permite testear el flujo completo sin cobros reales. Se usan tarjetas de prueba provistas por Mercado Pago.
-- Los cuatro integrantes del equipo cuentan con disponibilidad para sprints quincenales.
-- El equipo tiene acceso a dispositivos Android físicos o emuladores para pruebas.
+- La API de Precios Claros (SEPA) permanece operativa para la sincronizacion inicial del catalogo.
+- Mercado Pago SDK en modo sandbox permite ejecutar el flujo completo de pago sin cobros reales, utilizando tarjetas de prueba provistas por la plataforma.
+- Los cinco integrantes del equipo cuentan con disponibilidad para sprints quincenales.
+- El equipo dispone de dispositivos Android fisicos o emuladores para la ejecucion de pruebas.
 - Supabase en capa gratuita (Auth + PostgreSQL) ofrece disponibilidad suficiente para las demos y entregas.
-- Render en capa gratuita es suficiente para hostear el backend durante el proyecto.
+- Render en capa gratuita es suficiente para alojar el backend durante el periodo del proyecto.
 
 ---
 
 ## 12. Restricciones
 
-- Tecnología frontend: React Native (según decisión del equipo).
-- El proyecto debe cumplir con el cronograma: Entrega 1 ~30/04/2026 y Entrega 2 ~18/06/2026.
+- Tecnologia frontend: React Native (segun decision del equipo).
+- El proyecto debe cumplir con el cronograma establecido: Entrega 1 ~30/04/2026 y Entrega 2 ~18/06/2026.
 - Presupuesto cero: todos los servicios deben operar en capa gratuita (Supabase, Render, Mercado Pago sandbox).
 - El backend debe estar documentado con Swagger para la Entrega 1.
-- La app debe implementar el patrón MVVM + Repository.
-- La API de Precios Claros puede cambiar su estructura sin previo aviso — se mitiga con caché en Supabase.
-- Cold start de la app debe ser inferior a 2,5 segundos.
-- Mercado Pago se usa exclusivamente en modo sandbox/test — no se procesan cobros reales.
-- El carrito es persistente: se mantiene activo entre sesiones de la app, solo se cierra al pagar o cancelar manualmente.
+- La aplicacion debe implementar el patron MVVM + Repository.
+- La API de Precios Claros puede modificar su estructura sin previo aviso; se mitiga mediante la sincronizacion masiva hacia Supabase.
+- El cold start de la aplicacion debe ser inferior a 2,5 segundos (requisito no funcional de la catedra).
+- Mercado Pago se utiliza exclusivamente en modo sandbox/test; no se procesan cobros reales.
+- El carrito es persistente: se mantiene activo entre sesiones de la aplicacion y solo se cierra al pagar o cancelar manualmente.
+- Se debe definir y justificar el API Level minimo de Android de acuerdo con el publico objetivo de la aplicacion (requisito de la catedra).
+- Cobertura minima del 85% en pruebas unitarias para los flujos criticos del backend (services y controllers). Las pruebas se ejecutan con Jest y los reportes de cobertura se incluyen en la documentacion final.
 
 ---
 
-## 13. Criterios de Aceptación
+## 13. Stakeholders
+
+| Rol | Nombre | Responsabilidad |
+|-----|--------|-----------------|
+| Docente / Evaluadora | Monasterio, Maria Julia | Evaluacion del proyecto, acceso al tablero Jira, revision de entregas y defensa oral |
+| Scrum Master | Andrei Veis | Gestion del equipo, mantenimiento del tablero Jira, coordinacion de sprints y entregas |
+| Product Owner | Ignacio Melinc | Priorizacion del backlog, definicion de historias de usuario y criterios de aceptacion |
+| Tech Lead / Backend Lead | (rotativo) | Arquitectura tecnica, backend Node.js + Express, integracion con APIs externas |
+| UX/UI Lead | (rotativo) | Diseno en Figma, aplicacion de Material Design 3, heuristicas de Nielsen, investigacion con usuarios |
+| QA/Docs | (rotativo) | Pruebas, documentacion tecnica y de usuario, metricas de calidad |
+| Usuario final (representado) | Consumidores argentinos | Personas que realizan compras en supermercados y desean controlar su gasto en tiempo real |
+
+---
+
+## 14. Criterios de Aceptacion
 
 ### Entrega 1 (Sprint 1-3, ~30/04/2026)
 
-- El prototipo Figma es navegable y cubre los 4 flujos core (Auth, Escáner, Carrito, Pago/Historial).
-- El repositorio GitHub está inicializado con GitFlow y CONTRIBUTING.md.
+- El prototipo Figma es navegable y cubre los flujos principales: autenticacion, escaner, carrito, listas de compras, pago e historial.
+- El design system basico esta definido (tipografia, colores, componentes).
+- Se presentan al menos 2 personas y sus customer journeys documentados.
+- El checklist de heuristicas de Nielsen esta completo y evidenciado.
+- El repositorio GitHub esta inicializado con GitFlow y CONTRIBUTING.md.
 - El tablero Jira tiene el backlog completo con sprints configurados y acceso docente.
-- El DER representa correctamente las entidades: Usuario, Carrito, ItemCarrito, Producto, Compra.
-- Todos los endpoints del backend responden correctamente y están documentados en Swagger.
-- La integración con la API de Precios Claros devuelve precios reales a partir de un barcode válido.
-- La integración con Mercado Pago en sandbox procesa un pago de prueba exitosamente.
-- El backend está deployado en Render y conectado a Supabase.
+- El DER representa correctamente las entidades: Usuario, Carrito, ItemCarrito, Producto, Compra, Lista, ItemLista.
+- Se presentan diagramas de secuencia para los flujos principales.
+- Todos los endpoints del backend responden correctamente y estan documentados en Swagger.
+- La sincronizacion del catalogo desde Precios Claros hacia Supabase funciona correctamente.
+- La integracion con Mercado Pago en sandbox procesa un pago de prueba de forma exitosa.
+- El backend esta desplegado en Render y conectado a Supabase.
 
 ### Entrega 2 (Sprint 4-6, ~18/06/2026)
 
-- La aplicación React Native está completamente funcional cubriendo los 3 CRUDs (Items de Carrito, Productos/Barcode, Compras/Historial).
-- La autenticación con Supabase Auth funciona correctamente (Google Sign-In y email/contraseña).
-- El escaneo de barcode recupera el precio real del producto en menos de 3 segundos.
-- El botón "Pagar" abre el checkout de Mercado Pago in-app y procesa el pago en sandbox.
-- El carrito se mantiene activo si el usuario cierra la app, y se cierra solo al pagar o cancelar.
+- La aplicacion React Native esta completamente funcional, cubriendo los 3 CRUDs: Items de Carrito, Usuarios/Perfil y Listas de Compras.
+- La autenticacion con Supabase Auth funciona correctamente (Google Sign-In y email/contrasena).
+- El escaneo de codigo de barras recupera el precio del producto desde el catalogo local en menos de 3 segundos.
+- El usuario puede crear listas de compras y los items se tachan automaticamente al escanearlos.
+- El boton "Pagar" abre el checkout de Mercado Pago in-app y procesa el pago en sandbox.
+- El carrito se mantiene activo si el usuario cierra la aplicacion, y se cierra unicamente al pagar o cancelar.
 - El cold start es inferior a 2,5 segundos.
-- La app maneja correctamente errores de conectividad con mensajes adecuados.
-- Se entrega APK firmado e instalable en dispositivo Android físico.
-- La defensa oral incluye demo en vivo y benchmark frente a al menos una app similar.
+- La aplicacion maneja correctamente errores de conectividad con mensajes adecuados al usuario.
+- Se entrega APK firmado e instalable en dispositivo Android fisico.
+- El historial de compras se presenta como listado con cards view (requisito funcional obligatorio).
+- La aplicacion cumple buenas practicas de accesibilidad segun lo indicado por la consigna.
+- La defensa oral incluye demo en vivo y benchmark frente a al menos una aplicacion similar del mercado.
 
 ---
 
-*Documento elaborado por el equipo — Marzo 2026 | UADE Desarrollo de Aplicaciones I*
+*Documento elaborado por el equipo de desarrollo — Marzo 2026 | UADE Desarrollo de Aplicaciones I*
