@@ -125,6 +125,44 @@ git push origin feature/DEV-XX-tu-feature
 
 ### 4. Abrís el Pull Request en GitHub → hacia `dev`
 
+Después de pushear tu branch, entrás a GitHub y creás el PR:
+
+1. **Entrá al repositorio en GitHub** (ej: github.com/andreiveisuade/ChanguiApp--Backend)
+2. GitHub te va a mostrar un banner amarillo que dice *"feature/DEV-XX-... had recent pushes — Compare & pull request"*. Hacé click en ese botón.
+   - Si no aparece el banner: andá a la pestaña **Pull requests** → **New pull request**
+3. **Verificá las ramas:**
+   - `base: dev` ← acá van tus cambios (rama destino)
+   - `compare: feature/DEV-XX-tu-feature` ← tu rama (rama origen)
+   - Si dice `base: main`, cambialo a `dev`. Nunca apuntes a main directamente.
+4. **Completá el título:** `[FEATURE] DEV-XX: Descripción breve`
+5. **Completá la descripción** usando el template (ver abajo)
+6. **En la barra lateral derecha:**
+   - **Reviewers:** asigná a un compañero para que revise tu código
+   - **Assignees:** ponete a vos mismo
+   - **Labels:** opcional (feature, fix, chore, etc.)
+7. Hacé click en **Create pull request**
+8. Esperá a que tu reviewer lo apruebe. Si te piden cambios, hacelos en tu misma branch, commiteá y pusheá — el PR se actualiza solo.
+
+### 5. Cuando te piden review a vos
+
+Alguien del equipo abrió un PR y te asignó como reviewer. Esto es lo que hacés:
+
+1. **Entrá al PR** desde la pestaña "Pull requests" o desde la notificación de GitHub
+2. **Leé la descripción** para entender qué hace el PR
+3. **Andá a la pestaña "Files changed"** — ahí ves todo el código que se modificó
+4. **Revisá el código:**
+   - ¿Hace lo que dice la descripción?
+   - ¿Hay algo que pueda romper lo que ya funciona?
+   - ¿Es legible? ¿Se entiende?
+   - ¿Sigue la arquitectura del proyecto (controllers → services → repositories)?
+5. **Si querés comentar algo:** hacé click en el `+` que aparece al lado de una línea de código y escribí tu comentario
+6. **Cuando terminaste de revisar,** hacé click en **"Review changes"** (botón verde arriba a la derecha):
+   - **Approve:** todo bien, se puede mergear
+   - **Request changes:** hay cosas que corregir antes de mergear
+   - **Comment:** dejás comentarios sin aprobar ni rechazar
+7. **Si aprobaste:** ahora el autor (o vos si no sos el autor) puede hacer click en **"Merge pull request"** → **"Confirm merge"**
+8. **Después del merge:** GitHub te pregunta si querés borrar la branch. Dale que sí — ya no se necesita.
+
 ---
 
 ## Política de Pull Requests
