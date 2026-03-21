@@ -175,8 +175,8 @@ Roles tecnicos (Tech Lead, UX/UI Lead, QA) son rotativos por sprint.
 ## Links
 
 - Frontend: [ChanguiApp--Frontend](https://github.com/andreiveisuade/ChanguiApp--Frontend)
-- Jira: [ChanguiApp Board](https://andreiveis360.atlassian.net)
-- Figma: (link del archivo de Figma del equipo)
+- Jira: [ChanguiApp Board](https://andreiveis360.atlassian.net/jira/software/projects/DEV/boards/1)
+- Figma: Pendiente de creacion (Sprint 1 — DEV-15 / DEV-118)
 
 ---
 
