@@ -5,6 +5,46 @@
 
 ---
 
+## Cheatsheet — Lo mínimo que tenés que saber
+
+```bash
+# 1. Abrí tu issue en Jira → anotá el DEV-XXX → movelo a "In Progress"
+
+# 2. Creá tu branch desde dev
+git checkout dev && git pull origin dev
+git checkout -b feature/DEV-XXX-descripcion-corta    # funcionalidad nueva
+git checkout -b fix/DEV-XXX-descripcion-corta        # bug fix
+git checkout -b chore/DEV-XXX-descripcion-corta      # config, docs, deps
+
+# 3. Trabajá y commiteá
+git add archivo1 archivo2
+git commit -m "feat(cart): agregar endpoint POST /api/cart/items"
+#              ^^^^  ^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#              tipo  scope  descripción en imperativo, minúscula
+# Tipos: feat | fix | docs | test | refactor | chore | style
+
+# 4. Antes de subir, rebaseá contra dev
+git checkout dev && git pull origin dev
+git checkout feature/DEV-XXX-descripcion-corta
+git rebase dev    # resolvé conflictos acá, no en el PR
+
+# 5. Subí y abrí PR
+git push origin feature/DEV-XXX-descripcion-corta
+# → GitHub → New Pull Request → base: dev
+# → Título: [FEATURE] DEV-XXX: Descripción breve
+# → Descripción: "Closes DEV-XXX" + qué hace + cómo probarlo
+
+# 6. Esperá review (alguien tiene que aprobar, vos no podés mergear tu propio PR)
+
+# 7. Cuando se mergea → mové el issue a "Done" en Jira
+```
+
+**Regla de oro:** nunca pusheás directo a `dev`, `test` ni `main`. Todo entra por PR.
+
+El resto del documento tiene los detalles. Si tenés dudas, leé la sección que necesitás.
+
+---
+
 ## Estrategia de Ramas
 
 ```
@@ -56,9 +96,19 @@ git checkout -b feature/DEV-XX-nombre-de-tu-feature
 ### 2. Mientras trabajás
 
 - Hacé commits frecuentes y descriptivos
-- Formato de commit: `tipo: descripción breve`
-  - Ejemplos: `feat: agregar escáner de barcode`, `fix: manejar producto no encontrado`, `docs: actualizar README`
+- Formato de commit: `tipo(scope): descripción breve`
 - Un commit por cambio lógico, no "arreglé todo" al final
+- Si el commit cierra un issue, agregá `DEV-XX` en el mensaje
+
+**Ejemplo completo:**
+```
+feat(cart): agregar endpoint POST /api/cart/items
+
+Implementa la lógica para agregar productos al carrito activo.
+Si el producto está en una lista de compras, se marca como comprado.
+
+DEV-20
+```
 
 ### 3. Cuando terminás
 
@@ -95,7 +145,7 @@ git push origin feature/DEV-XX-tu-feature
 
 ### Qué tiene que tener un PR para ser válido
 
-**Título:** `[TIPO] Descripción breve` → ejemplo: `[FEATURE] Escaneo de barcode con cámara`
+**Título:** `[TIPO] DEV-XXX: Descripción breve` → ejemplo: `[FEATURE] DEV-30: Escaneo de barcode con cámara`
 
 **Descripción (template):**
 ```
@@ -176,12 +226,85 @@ En **Settings → Branches** del repositorio:
 
 ---
 
-## Conexión con Jira
+## Convenciones de nomenclatura
 
-- Cada rama debe corresponder a un issue de Jira
-- Nomenclatura: `feature/DEV-21-escaneo-barcode` (donde `DEV-21` es el ID del issue en Jira)
-- Mencioná el ID del issue (ej: `DEV-21`) en el título o descripción del PR para que Jira lo linkee automáticamente
+### Prefijos de ramas
+
+| Prefijo | Cuándo | Ejemplo |
+|---------|--------|---------|
+| `feature/` | Nueva funcionalidad o endpoint | `feature/DEV-20-crud-cart-items` |
+| `fix/` | Corrección de un bug | `fix/DEV-35-precio-nulo-api` |
+| `chore/` | Config, docs, deps, infra | `chore/DEV-109-setup-jest` |
+| `test/` | Agregar o mejorar tests | `test/DEV-34-cobertura-services` |
+| `hotfix/` | Fix crítico directo en test/main | `hotfix/crash-checkout` |
+
+**Formato obligatorio:** `prefijo/DEV-XXX-descripcion-corta`
+
+- `DEV-XXX` es el ID del issue en Jira (lo ven en el board o en la URL del issue)
+- La descripción va en minúsculas, separada por guiones, sin acentos
+- Los issues en Jira tienen un código `CHNG-XX` en el título — eso es un código interno del backlog. Para Git siempre usamos `DEV-XXX` que es la key de Jira
+
+### Tipos de commit (Conventional Commits)
+
+| Tipo | Cuándo usarlo | Ejemplo |
+|------|--------------|---------|
+| `feat` | Nueva funcionalidad | `feat(auth): implementar registro con Supabase Auth` |
+| `fix` | Corrección de bug | `fix(cart): manejar carrito vacío al intentar pagar` |
+| `docs` | Documentación | `docs(swagger): agregar endpoint GET /api/stores` |
+| `test` | Agregar o modificar tests | `test(cart): agregar tests del service de carrito` |
+| `refactor` | Refactoreo sin cambio funcional | `refactor(products): extraer lógica de sync a service` |
+| `chore` | Config, deps, CI/CD | `chore: actualizar dependencias de express` |
+| `style` | Formato, espacios, punto y coma | `style: correr linter en controllers/` |
+
+**Formato:** `tipo(scope): descripción en imperativo`
+
+- El `scope` es opcional pero recomendado (ej: `auth`, `cart`, `lists`, `products`, `checkout`)
+- La descripción empieza en minúscula, sin punto final
+- Primera línea máximo 72 caracteres
+- Si necesitás más detalle, dejá una línea en blanco y escribí el cuerpo
+
+### Títulos de PR
+
+**Formato:** `[TIPO] DEV-XXX: Descripción breve`
+
+| Tipo | Ejemplo |
+|------|---------|
+| `[FEATURE]` | `[FEATURE] DEV-20: CRUD de items de carrito` |
+| `[FIX]` | `[FIX] DEV-35: Manejar errores de conectividad` |
+| `[CHORE]` | `[CHORE] DEV-109: Configurar Jest + primer test` |
+| `[TEST]` | `[TEST] DEV-34: Tests unitarios de cart service` |
+| `[DOCS]` | `[DOCS] DEV-23: Documentar endpoints en Swagger` |
 
 ---
 
-*Documento mantenido por el Scrum Master. Última actualización: Marzo 2026.*
+## Conexión con Jira — Paso a paso
+
+### El flujo completo: de Jira a GitHub y vuelta
+
+```
+1. Abrís tu issue en Jira          → Ves DEV-XXX con la descripción de qué hacer
+2. Movés el issue a "In Progress"  → El equipo sabe que estás trabajando en esto
+3. Creás la branch en Git          → feature/DEV-XXX-descripcion
+4. Trabajás, commiteás             → feat(scope): descripción | DEV-XXX
+5. Abrís PR en GitHub → dev        → [FEATURE] DEV-XXX: Descripción | "Closes DEV-XXX"
+6. Alguien revisa y aprueba        → Se mergea a dev
+7. Movés el issue a "Done" en Jira → Listo
+```
+
+### Reglas de conexión
+
+- **Cada rama = un issue de Jira.** No hay ramas sin issue (excepto hotfixes de emergencia).
+- **La key de Jira va en el nombre de la rama:** `feature/DEV-20-crud-cart-items`
+- **La key de Jira va en el PR:** escribí `Closes DEV-20` en la descripción del PR. GitHub lo linkea automáticamente si Jira está conectado.
+- **La key de Jira va en los commits:** mencioná `DEV-XX` al final del mensaje para trazabilidad.
+- **Actualizá el estado en Jira** cuando empezás (In Progress) y cuando se mergea (Done). No dejes issues en "To Do" si ya estás trabajando en ellas.
+
+### ¿Qué es CHNG-XX vs DEV-XX?
+
+- **`CHNG-XX`** es un código interno que aparece en el **título** de cada issue en Jira (ej: "CHNG-12: Sync catálogo Precios Claros"). Es para identificar la historia en el backlog.
+- **`DEV-XXX`** es la **key automática** que Jira asigna a cada issue (ej: DEV-21). Es la que usamos en Git para branches, commits y PRs.
+- En Git siempre usamos **DEV-XXX**, nunca CHNG-XX.
+
+---
+
+*Documento mantenido por el Scrum Master. Última actualización: 21 Marzo 2026.*
