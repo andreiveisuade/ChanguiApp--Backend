@@ -1,4 +1,4 @@
-# DOCUMENTO DE ALCANCE DEL PROYECTO — V.3
+# DOCUMENTO DE ALCANCE DEL PROYECTO
 
 ---
 
@@ -9,9 +9,10 @@
 | **Nombre del proyecto** | ChanguiApp |
 | **Materia** | Desarrollo de Aplicaciones I — UADE FAIN |
 | **Equipo del proyecto** | Ezequiel Lupis · Ignacio Melinc · Ignacio Rodriguez · Andrei Veis · Maximo Vendramini |
-| **Fecha de inicio** | 19 de Marzo de 2026 |
 | **Fecha estimada de finalizacion** | 18 de Junio de 2026 (Entrega 2 / Segundo Parcial) |
-| **Version del documento** | 3.0 — Revision post-reestructuracion de backlog y CRUDs (20/03/2026) |
+| **Repositorio Frontend** | [github.com/andreiveisuade/ChanguiApp--Frontend](https://github.com/andreiveisuade/ChanguiApp--Frontend) |
+| **Repositorio Backend** | [github.com/andreiveisuade/ChanguiApp--Backend](https://github.com/andreiveisuade/ChanguiApp--Backend) |
+| **Tablero Jira** | [andreiveis360.atlassian.net/jira/software/projects/DEV/boards/1](https://andreiveis360.atlassian.net/jira/software/projects/DEV/boards/1) |
 
 ---
 
@@ -21,7 +22,7 @@ ChanguiApp es una aplicacion movil orientada a consumidores argentinos que busca
 
 Adicionalmente, la aplicacion ofrece la posibilidad de crear listas de compras previas desde el hogar. Al llegar al supermercado, el usuario puede ir escaneando los productos de su lista, que se van tachando automaticamente a medida que se agregan al carrito. De esta manera, el supermercado funciona unicamente como gondola y el proceso de caja se realiza integramente desde el dispositivo movil.
 
-El proyecto comprende el diseno UX/UI, el desarrollo de la aplicacion movil en **React Native**, y la construccion de un backend propio en **Node.js + Express** con persistencia en **Supabase** (PostgreSQL + Auth), documentado mediante Swagger y desplegado en **Render**.
+El proyecto comprende el diseno UX/UI, el desarrollo de la aplicacion movil multiplataforma (Android e iOS) en **React Native**, y la construccion de un backend propio en **Node.js + Express** con persistencia en **Supabase** (PostgreSQL + Auth), documentado mediante Swagger y desplegado en **Render**.
 
 **Principio de diseno:** la interfaz de ChanguiApp se disena bajo la premisa de que el flujo principal (escanear, agregar al carrito, pagar) debe ser tan simple que cualquier persona pueda operarlo sin instrucciones previas. El contexto de uso es un supermercado con iluminacion intensa, donde el usuario tiene las manos ocupadas y necesita interacciones rapidas y claras. Por este motivo, la app utiliza exclusivamente un tema claro con alto contraste, tipografia legible y una estructura de navegacion minima. La complejidad funcional (listas, historial, perfil) se ubica en secciones secundarias para no interferir con el flujo core.
 
@@ -55,7 +56,7 @@ Desarrollar una aplicacion movil funcional que simplifique el proceso de compra 
 
 | Capa | Tecnologia |
 |------|------------|
-| **Frontend (Mobile)** | React Native |
+| **Frontend (Mobile)** | React Native (Android + iOS) |
 | **Patron de arquitectura** | MVVM + Repository |
 | **Backend** | Node.js + Express (deploy en Render) |
 | **Base de datos** | Supabase (PostgreSQL hosted) |
@@ -193,6 +194,9 @@ La consigna requiere al menos tres CRUDs completos referentes al dominio princip
 - Buenas practicas de accesibilidad segun lo indicado por la consigna
 - Tamanos de fuente escalables, permitiendo al usuario configurar el tamano segun su preferencia
 - Internacionalizacion (i18n) con soporte para espanol e ingles, con posibilidad de extension a otros idiomas. Los textos de la interfaz se gestionan mediante archivos de traduccion centralizados, permitiendo cambiar el idioma desde la configuracion de la app
+- Soporte multiplataforma: la aplicacion se compila y distribuye tanto para Android (APK) como para iOS (IPA)
+- Persistencia local en el dispositivo mediante AsyncStorage o MMKV, incluyendo: listas de compras (creacion y edicion offline con sincronizacion al recuperar conectividad), token de sesion de Supabase Auth, y preferencias del usuario (idioma seleccionado y tamano de fuente)
+- Modo offline parcial: el usuario puede crear y editar listas de compras sin conexion a internet. Las listas se almacenan localmente y se sincronizan con el backend al recuperar conectividad. El flujo de compra (escaneo, carrito, pago) requiere conexion activa
 
 ### Entregables tecnicos obligatorios
 
@@ -203,7 +207,7 @@ La consigna requiere al menos tres CRUDs completos referentes al dominio princip
 
 ## 8. Fuera de Alcance (Out of Scope)
 
-- Version iOS de la aplicacion
+- Version web de la aplicacion
 - Conexion con servidores reales de cadenas de supermercados (se simula con Precios Claros)
 - Comparador de precios entre sucursales o supermercados
 - Consulta de stock y ubicacion fisica dentro del supermercado (pasillo, gondola, sector)
@@ -211,7 +215,7 @@ La consigna requiere al menos tres CRUDs completos referentes al dominio princip
 - Gestion de metodos de pago propia (se delega integramente a Mercado Pago)
 - Comprobante QR de salida (el pago confirmado funciona como comprobante)
 - Carrito colaborativo o sincronizacion entre multiples dispositivos
-- Modo offline con cola de tareas
+- Modo offline completo (el flujo de compra — escaneo, carrito, pago — requiere conexion activa. Solo las listas de compras funcionan offline)
 - Presupuesto inteligente con alertas de limite de gasto
 - Integracion con Open Food Facts u otras APIs de datos nutricionales
 - Publicacion en Google Play Store
@@ -223,23 +227,25 @@ La consigna requiere al menos tres CRUDs completos referentes al dominio princip
 
 ## 9. Entregables del Proyecto
 
-| Entregable | Descripcion | Fecha estimada |
-|------------|-------------|----------------|
-| Documento de Alcance | Scope Statement v3.0 | 20/03/2026 |
-| Design system basico | Tipografia, paleta de colores, componentes reutilizables (manual de marca) | ~30/04/2026 |
-| Investigacion de usuarios | 2-3 entrevistas/encuestas, personas y customer journeys documentados | ~30/04/2026 |
-| Prototipo Figma | Wireframes de alta fidelidad, mapa de navegacion, prototipo navegable | ~30/04/2026 |
-| Checklist de heuristicas de Nielsen | Documento evidenciando el cumplimiento de las 10 heuristicas | ~30/04/2026 |
-| Repositorio GitHub | Repos Frontend + Backend inicializados con GitFlow y CONTRIBUTING.md | 19/03/2026 |
-| Tablero Jira | Proyecto Scrum con backlog, sprints y acceso docente habilitado | 19/03/2026 |
-| DER | Diagrama Entidad-Relacion (Usuario, Carrito, ItemCarrito, Producto, Compra, Lista, ItemLista) | ~30/04/2026 |
-| Diagrama de arquitectura | Diagrama de alto nivel con descripcion de tecnologias y capas | ~30/04/2026 |
-| Diagrama de secuencia | Diagramas de secuencia para los flujos principales de la aplicacion | ~30/04/2026 |
-| Plan de pruebas | Documento con casos de prueba unitarias y de integracion | ~30/04/2026 |
-| Backend + Swagger (Entrega 1) | Todos los endpoints REST funcionando y documentados, deploy en Render + Supabase | ~30/04/2026 |
-| APK + App completa (Entrega 2) | Aplicacion React Native funcional con todas las funcionalidades del MVP | ~18/06/2026 |
-| Documentacion final | Documentacion tecnica y de usuario, metricas, pruebas ejecutadas, Release Candidate | ~18/06/2026 |
-| Defensa oral | Demo en vivo (20 min) + Q&A (5 min), benchmark frente a aplicacion similar | ~18/06/2026 |
+| Entregable | Descripcion |
+|------------|-------------|
+| Documento de Alcance | Scope Statement v4.0 |
+| Design system basico | Tipografia, paleta de colores, componentes reutilizables (manual de marca) |
+| Investigacion de usuarios | 2-3 entrevistas/encuestas, personas y customer journeys documentados |
+| Prototipo Figma | Wireframes de alta fidelidad, mapa de navegacion, prototipo navegable |
+| Checklist de heuristicas de Nielsen | Documento evidenciando el cumplimiento de las 10 heuristicas |
+| Repositorio GitHub | Repos Frontend + Backend inicializados con GitFlow y CONTRIBUTING.md |
+| Tablero Jira | Proyecto Scrum con backlog, sprints y acceso docente habilitado |
+| DER | Diagrama Entidad-Relacion (Usuario, Carrito, ItemCarrito, Producto, Compra, Lista, ItemLista) |
+| Diagrama de arquitectura | Diagrama de alto nivel con descripcion de tecnologias y capas |
+| Diagrama de secuencia | Diagramas de secuencia para los flujos principales de la aplicacion |
+| Plan de pruebas | Documento con casos de prueba unitarias y de integracion |
+| Backend + Swagger (Entrega 1) | Todos los endpoints REST funcionando y documentados, deploy en Render + Supabase |
+| APK/IPA + App completa (Entrega 2) | Aplicacion React Native funcional para Android e iOS con todas las funcionalidades del MVP |
+| Manual de usuario | Documentacion orientada al usuario final con capturas de pantalla e instrucciones de uso |
+| Metricas de calidad | Cobertura de tests, cold start medido, tiempos de respuesta de API, tamano de builds |
+| Documentacion final | Documentacion tecnica, metricas, pruebas ejecutadas, Release Candidate |
+| Defensa oral | Demo en vivo (20 min) + Q&A (5 min), benchmark frente a aplicacion similar |
 
 
 ---
@@ -250,7 +256,7 @@ La consigna requiere al menos tres CRUDs completos referentes al dominio princip
 - La API de Precios Claros (SEPA) permanece operativa para la sincronizacion inicial del catalogo.
 - Mercado Pago SDK en modo sandbox permite ejecutar el flujo completo de pago sin cobros reales, utilizando tarjetas de prueba provistas por la plataforma.
 - Los cinco integrantes del equipo cuentan con disponibilidad para sprints quincenales.
-- El equipo dispone de dispositivos Android fisicos o emuladores para la ejecucion de pruebas.
+- El equipo dispone de dispositivos Android y/o iOS (fisicos o emuladores/simuladores) para la ejecucion de pruebas.
 - Supabase en capa gratuita (Auth + PostgreSQL) ofrece disponibilidad suficiente para las demos y entregas.
 - Render en capa gratuita es suficiente para alojar el backend durante el periodo del proyecto.
 
@@ -267,7 +273,8 @@ La consigna requiere al menos tres CRUDs completos referentes al dominio princip
 - El cold start de la aplicacion debe ser inferior a 2,5 segundos (requisito no funcional de la catedra).
 - Mercado Pago se utiliza exclusivamente en modo sandbox/test; no se procesan cobros reales.
 - El carrito es persistente: se mantiene activo entre sesiones de la aplicacion y solo se cierra al pagar o cancelar manualmente.
-- Se debe definir y justificar el API Level minimo de Android de acuerdo con el publico objetivo de la aplicacion (requisito de la catedra).
+- Se debe definir y justificar el API Level minimo de Android y la version minima de iOS soportada, de acuerdo con el publico objetivo de la aplicacion (requisito de la catedra).
+- La consigna menciona vistas en XML, View Binding o Jetpack Compose como opciones arquitectonicas. Estas tecnologias corresponden al desarrollo Android nativo (Java/Kotlin). Al utilizar React Native, las vistas se implementan con componentes JSX, que cumplen el mismo rol arquitectonico dentro del patron MVVM.
 - Cobertura minima del 85% en pruebas unitarias para los flujos criticos del backend (services y controllers). Las pruebas se ejecutan con Jest y los reportes de cobertura se incluyen en la documentacion final.
 
 ---
@@ -313,11 +320,12 @@ La consigna requiere al menos tres CRUDs completos referentes al dominio princip
 - El carrito se mantiene activo si el usuario cierra la aplicacion, y se cierra unicamente al pagar o cancelar.
 - El cold start es inferior a 2,5 segundos.
 - La aplicacion maneja correctamente errores de conectividad con mensajes adecuados al usuario.
-- Se entrega APK firmado e instalable en dispositivo Android fisico.
+- Se entrega APK firmado e instalable en dispositivo Android fisico, e IPA para iOS.
 - El historial de compras se presenta como listado con cards view (requisito funcional obligatorio).
 - La aplicacion cumple buenas practicas de accesibilidad segun lo indicado por la consigna.
+- La aplicacion funciona correctamente tanto en Android como en iOS.
+- Las listas de compras se pueden crear y editar sin conexion a internet, y se sincronizan con el backend al recuperar conectividad.
+- El token de sesion, preferencias de idioma y tamano de fuente se persisten localmente en el dispositivo.
 - La defensa oral incluye demo en vivo y benchmark frente a al menos una aplicacion similar del mercado.
 
----
 
-*Documento elaborado por el equipo de desarrollo — Marzo 2026 | UADE Desarrollo de Aplicaciones I*

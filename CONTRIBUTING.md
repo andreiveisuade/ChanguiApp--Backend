@@ -177,9 +177,9 @@ Alguien del equipo abrió un PR y te asignó como reviewer. Esto es lo que hacé
 
 | Rama destino | Aprobaciones | Quién puede mergear |
 |-------------|-------------|---------------------|
-| `dev` | Mínimo **1 aprobación** | Cualquier integrante (que no sea el autor) |
-| `test` | Mínimo **1 aprobación** + SM informado | SM o Tech Lead |
-| `main` | Mínimo **2 aprobaciones** (SM obligatorio) | Solo el SM |
+| `dev` | Mínimo **1 aprobación** (SM) | SM (Andrei) |
+| `test` | Mínimo **1 aprobación** (SM) | SM (Andrei) |
+| `main` | Mínimo **1 aprobación** (SM) | SM (Andrei) |
 
 ### Qué tiene que tener un PR para ser válido
 
@@ -236,7 +236,7 @@ En **Settings → Branches** del repositorio:
 
 **Rama `main`:**
 - Require a pull request before merging
-- Required approvals: 2
+- Required approvals: 1
 - Dismiss stale reviews
 - Require status checks to pass
 - Include administrators
