@@ -24,3 +24,9 @@ Thumbs.db
 # Build
 dist/
 build/
+
+# Coverage
+coverage/
+
+# Claude Code
+CLAUDE.md
