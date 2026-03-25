@@ -28,6 +28,17 @@ curl http://localhost:3000/health
 
 El servidor estara disponible en `http://localhost:3000`
 
+## Deploy
+
+**Produccion:** https://changuiapp-backend.onrender.com
+
+```bash
+curl https://changuiapp-backend.onrender.com/health
+# {"status":"ok"}
+```
+
+Auto-deploy desde `main` via Render (capa gratuita). El primer request puede tardar ~30s si el servicio esta dormido.
+
 ---
 
 ## Stack
