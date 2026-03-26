@@ -16,27 +16,32 @@ git checkout -b feature/DEV-XXX-descripcion-corta    # funcionalidad nueva
 git checkout -b fix/DEV-XXX-descripcion-corta        # bug fix
 git checkout -b chore/DEV-XXX-descripcion-corta      # config, docs, deps
 
-# 3. Trabajá y commiteá
+# 3. Escribí el test PRIMERO (TDD)
+# → Ver docs/TESTING.md para patrones y ejemplos
+npm run test:watch                # dejá corriendo en otra terminal
+# Escribí el test → falla (rojo) → implementá el código → pasa (verde)
+
+# 4. Commiteá
 git add archivo1 archivo2
 git commit -m "feat(cart): agregar endpoint POST /api/cart/items"
 #              ^^^^  ^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #              tipo  scope  descripción en imperativo, minúscula
 # Tipos: feat | fix | docs | test | refactor | chore | style
 
-# 4. Antes de subir, rebaseá contra dev
+# 5. Antes de subir, rebaseá contra dev
 git checkout dev && git pull origin dev
 git checkout feature/DEV-XXX-descripcion-corta
 git rebase dev    # resolvé conflictos acá, no en el PR
 
-# 5. Subí y abrí PR
+# 6. Subí y abrí PR
 git push origin feature/DEV-XXX-descripcion-corta
 # → GitHub → New Pull Request → base: dev
 # → Título: [FEATURE] DEV-XXX: Descripción breve
 # → Descripción: "Closes DEV-XXX" + qué hace + cómo probarlo
 
-# 6. Esperá review (alguien tiene que aprobar, vos no podés mergear tu propio PR)
+# 7. Esperá review (alguien tiene que aprobar, vos no podés mergear tu propio PR)
 
-# 7. Cuando se mergea → mové el issue a "Done" en Jira
+# 8. Cuando se mergea → mové el issue a "Done" en Jira
 ```
 
 **Regla de oro:** nunca pusheás directo a `dev`, `test` ni `main`. Todo entra por PR.
@@ -95,6 +100,9 @@ git checkout -b feature/DEV-XX-nombre-de-tu-feature
 
 ### 2. Mientras trabajás
 
+- **Si es un endpoint o service nuevo: escribí el test primero** (ver `docs/TESTING.md`)
+- Corré `npm run test:watch` en otra terminal para feedback inmediato
+- El test falla → implementás → el test pasa. Ese es el ciclo.
 - Hacé commits frecuentes y descriptivos
 - Formato de commit: `tipo(scope): descripción breve`
 - Un commit por cambio lógico, no "arreglé todo" al final
@@ -203,6 +211,9 @@ Closes DEV-<número>
 - [ ] Probé en emulador / dispositivo físico
 - [ ] No hay console.log / prints de debug innecesarios
 - [ ] Actualicé la documentación si corresponde
+- [ ] Tests pasan (`npm test`)
+- [ ] Incluí tests para el código nuevo (ver `docs/TESTING.md`)
+- [ ] Coverage del código nuevo al 100% (`npm run test:coverage`)
 ```
 
 ### Tiempos de revisión
@@ -225,6 +236,9 @@ Cuando te asignan como reviewer, revisá:
 - ¿Se siguen los patrones de arquitectura del proyecto (MVVM + Repository)?
 - ¿Los nombres de variables/funciones tienen sentido?
 - ¿Hay manejo de errores donde puede fallar (ej: llamadas a la API)?
+- ¿Hay tests que cubran el código nuevo? (unit para services, integration para endpoints)
+- ¿Los tests son válidos? (no solo `expect(true).toBe(true)`)
+- ¿Se usan los helpers compartidos? (`mockSupabase`, `testData`)
 
 No es un code review de producción profesional. El objetivo es que el equipo aprenda y que el código que entra a dev funcione.
 
