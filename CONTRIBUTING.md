@@ -15,6 +15,7 @@ git checkout dev && git pull origin dev
 git checkout -b feature/DEV-XXX-descripcion-corta    # funcionalidad nueva
 git checkout -b fix/DEV-XXX-descripcion-corta        # bug fix
 git checkout -b chore/DEV-XXX-descripcion-corta      # config, docs, deps
+git checkout -b test/DEV-XXX-descripcion-corta       # tests (TDD)
 
 # 3. Escribí el test PRIMERO (TDD)
 # → Ver docs/TESTING.md para patrones y ejemplos
@@ -81,6 +82,7 @@ feature/xxx  ──PR──►  dev  ──PR──►  test  ──PR──► 
 | `feature/` | Nueva funcionalidad | `feature/DEV-21-escaneo-barcode` |
 | `fix/` | Corrección de bug | `fix/DEV-35-precio-nulo-api` |
 | `chore/` | Configuración, docs, deps | `chore/DEV-03-setup-supabase` |
+| `test/` | Agregar o mejorar tests | `test/DEV-136-tests-auth` |
 | `hotfix/` | Fix crítico directo en test | `hotfix/crash-checkout` |
 
 ---
