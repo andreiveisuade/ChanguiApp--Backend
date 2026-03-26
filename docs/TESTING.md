@@ -37,7 +37,7 @@ __tests__/
 
 ```
 1. Agarrás tu issue DEV-XXX en Jira → "In Progress"
-2. Creás tu branch: feature/DEV-XXX-descripcion
+2. Creás tu branch: test/DEV-XXX-descripcion (si es solo tests) o feature/DEV-XXX (si incluye implementación)
 3. Abrí una terminal con `npm run test:watch`
 4. Creá el archivo de test en __tests__/ (copiá el patrón de abajo)
 5. Escribí el test → va a fallar (rojo) — esto es esperado
