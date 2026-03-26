@@ -10,7 +10,10 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest __tests__/unit",
+    "test:integration": "jest __tests__/integration"
   },
   "repository": {
     "type": "git",
