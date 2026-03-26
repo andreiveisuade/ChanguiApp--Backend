@@ -11,6 +11,11 @@ const mockSupabase = {
   limit: jest.fn().mockReturnThis(),
   single: jest.fn().mockResolvedValue({ data: null, error: null }),
   maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+  auth: {
+    signUp: jest.fn().mockResolvedValue({ data: { user: null, session: null }, error: null }),
+    signInWithPassword: jest.fn().mockResolvedValue({ data: { user: null, session: null }, error: null }),
+    getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+  },
 };
 
 // Reset todos los mocks entre tests
@@ -23,6 +28,10 @@ beforeEach(() => {
         fn.mockReturnThis();
       }
     }
+  });
+  // Reset auth mocks
+  Object.values(mockSupabase.auth).forEach((fn) => {
+    if (typeof fn.mockClear === 'function') fn.mockClear();
   });
 });
 
