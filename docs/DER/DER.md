@@ -35,6 +35,18 @@ purchases    1 ──── N   purchase_items
 
 ---
 
+## Alcance del MVP
+
+> **ChanguiApp v1 es un MVP que opera con un único supermercado.**
+> El diagrama, sin embargo, está diseñado con visión de futuro: la entidad `stores` existe desde el inicio para que la arquitectura soporte, sin cambios de esquema, la incorporación de múltiples cadenas en versiones posteriores.
+
+En el MVP:
+- Hay un único `store` activo en la base de datos.
+- El usuario no selecciona supermercado; el carrito y las compras se asocian automáticamente a ese store.
+- La FK `store_id` en `carts` y `purchases` ya está presente para que la expansión multi-supermercado sea transparente a futuro.
+
+---
+
 ## Decisiones de diseño
 
 - **`users` no replica datos de Supabase Auth** — solo extiende el perfil. La autenticación la gestiona Auth internamente.
