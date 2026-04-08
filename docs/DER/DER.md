@@ -10,7 +10,7 @@
 |---|---|
 | `users` | Extiende el perfil de Supabase Auth con datos adicionales del usuario |
 | `stores` | Supermercados disponibles, sincronizados desde la API de Precios Claros |
-| `products` | Catálogo de productos sincronizado masivamente desde Precios Claros |
+| `products` | Catálogo de productos con precio, sincronizado masivamente desde Precios Claros |
 | `carts` | Carrito activo del usuario en un supermercado |
 | `cart_items` | Productos dentro de un carrito con cantidad y precio al momento del escaneo |
 | `lists` | Listas de compras creadas por el usuario |
@@ -54,3 +54,4 @@ En el MVP:
 - **`unit_price` se guarda en `cart_items` y `purchase_items`** — el precio queda fijo al momento del evento, independiente de cambios futuros en el catálogo.
 - **`list_items` no tiene FK a `products`** — el usuario puede agregar items manualmente sin barcode. El vínculo se resuelve al escanear en el supermercado.
 - **`purchase_items` guarda `product_name` y `barcode` como texto** — snapshot inmutable del estado del producto al momento de la compra.
+- **`products.price` refleja el precio actual sincronizado** — se actualiza diariamente vía cron desde Precios Claros. `cart_items.unit_price` congela el precio al momento del escaneo.
