@@ -5,49 +5,49 @@
 
 ---
 
-## Cheatsheet — Lo mínimo que tenés que saber
+## Cheatsheet — Lo mínimo necesario
 
 ```bash
-# 1. Abrí tu issue en Jira → anotá el DEV-XXX → movelo a "In Progress"
+# 1. Abrir el issue en Jira → anotar el DEV-XXX → moverlo a "In Progress"
 
-# 2. Creá tu branch desde dev
+# 2. Crear branch desde dev
 git checkout dev && git pull origin dev
 git checkout -b feature/DEV-XXX-descripcion-corta    # funcionalidad nueva
 git checkout -b fix/DEV-XXX-descripcion-corta        # bug fix
 git checkout -b chore/DEV-XXX-descripcion-corta      # config, docs, deps
 git checkout -b test/DEV-XXX-descripcion-corta       # tests (TDD)
 
-# 3. Escribí el test PRIMERO (TDD)
+# 3. Escribir el test PRIMERO (TDD)
 # → Ver docs/TESTING.md para patrones y ejemplos
-npm run test:watch                # dejá corriendo en otra terminal
-# Escribí el test → falla (rojo) → implementá el código → pasa (verde)
+npm run test:watch                # dejar corriendo en otra terminal
+# Escribir el test → falla (rojo) → implementar el código → pasa (verde)
 
-# 4. Commiteá
+# 4. Commitear
 git add archivo1 archivo2
 git commit -m "feat(cart): agregar endpoint POST /api/cart/items"
 #              ^^^^  ^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #              tipo  scope  descripción en imperativo, minúscula
 # Tipos: feat | fix | docs | test | refactor | chore | style
 
-# 5. Antes de subir, rebaseá contra dev
+# 5. Antes de subir, rebasear contra dev
 git checkout dev && git pull origin dev
 git checkout feature/DEV-XXX-descripcion-corta
-git rebase dev    # resolvé conflictos acá, no en el PR
+git rebase dev    # resolver conflictos acá, no en el PR
 
-# 6. Subí y abrí PR
+# 6. Subir y abrir PR
 git push origin feature/DEV-XXX-descripcion-corta
 # → GitHub → New Pull Request → base: dev
 # → Título: [FEATURE] DEV-XXX: Descripción breve
 # → Descripción: "Closes DEV-XXX" + qué hace + cómo probarlo
 
-# 7. Esperá review (alguien tiene que aprobar, vos no podés mergear tu propio PR)
+# 7. Esperar review (se necesita aprobación, el autor no puede mergear su propio PR)
 
-# 8. Cuando se mergea → mové el issue a "Done" en Jira
+# 8. Cuando se mergea → mover el issue a "Done" en Jira
 ```
 
-**Regla de oro:** nunca pusheás directo a `dev`, `test` ni `main`. Todo entra por PR.
+**Regla de oro:** nunca se pushea directo a `dev`, `test` ni `main`. Todo entra por PR.
 
-El resto del documento tiene los detalles. Si tenés dudas, leé la sección que necesitás.
+El resto del documento tiene los detalles. Ante dudas, consultar la sección correspondiente.
 
 ---
 
@@ -72,7 +72,7 @@ feature/xxx  ──PR──►  dev  ──PR──►  test  ──PR──► 
 ```
 
 1. **dev** — Acá se integra todo. Las feature branches se mergean acá.
-2. **test** — Cuando dev está estable, se hace PR a test para pruebas de QA. Acá se valida que todo funcione junto antes de la entrega.
+2. **test** — Cuando dev está estable, se hace PR a test para pruebas de QA. Se valida que todo funcione junto antes de la entrega.
 3. **main (release)** — Solo recibe merges desde test. Representa la versión entregable. Cada merge a main se tagea.
 
 ### Convención de nombres de ramas
@@ -92,23 +92,23 @@ feature/xxx  ──PR──►  dev  ──PR──►  test  ──PR──► 
 ### 1. Antes de empezar a trabajar
 
 ```bash
-# Siempre partís desde dev actualizado
+# Siempre partir desde dev actualizado
 git checkout dev
 git pull origin dev
 
-# Creás tu rama
-git checkout -b feature/DEV-XX-nombre-de-tu-feature
+# Crear la rama
+git checkout -b feature/DEV-XX-nombre-del-feature
 ```
 
-### 2. Mientras trabajás
+### 2. Durante el desarrollo
 
-- **Si es un endpoint o service nuevo: escribí el test primero** (ver `docs/TESTING.md`)
-- Corré `npm run test:watch` en otra terminal para feedback inmediato
-- El test falla → implementás → el test pasa. Ese es el ciclo.
-- Hacé commits frecuentes y descriptivos
+- **Si es un endpoint o service nuevo: escribir el test primero** (ver `docs/TESTING.md`)
+- Correr `npm run test:watch` en otra terminal para feedback inmediato
+- El test falla → se implementa → el test pasa. Ese es el ciclo.
+- Hacer commits frecuentes y descriptivos
 - Formato de commit: `tipo(scope): descripción breve`
 - Un commit por cambio lógico, no "arreglé todo" al final
-- Si el commit cierra un issue, agregá `DEV-XX` en el mensaje
+- Si el commit cierra un issue, agregar `DEV-XX` en el mensaje
 
 **Ejemplo completo:**
 ```
@@ -120,58 +120,58 @@ Si el producto está en una lista de compras, se marca como comprado.
 DEV-20
 ```
 
-### 3. Cuando terminás
+### 3. Al terminar
 
 ```bash
-# Traés los últimos cambios de dev antes de subir
+# Traer los últimos cambios de dev antes de subir
 git checkout dev
 git pull origin dev
-git checkout feature/DEV-XX-tu-feature
-git rebase dev   # resolvés conflictos acá, no en el PR
+git checkout feature/DEV-XX-el-feature
+git rebase dev   # resolver conflictos acá, no en el PR
 
-# Subís tu rama
-git push origin feature/DEV-XX-tu-feature
+# Subir la rama
+git push origin feature/DEV-XX-el-feature
 ```
 
-### 4. Abrís el Pull Request en GitHub → hacia `dev`
+### 4. Abrir el Pull Request en GitHub → hacia `dev`
 
-Después de pushear tu branch, entrás a GitHub y creás el PR:
+Después de pushear la branch, ir a GitHub y crear el PR:
 
-1. **Entrá al repositorio en GitHub** (ej: github.com/andreiveisuade/ChanguiApp--Backend)
-2. GitHub te va a mostrar un banner amarillo que dice *"feature/DEV-XX-... had recent pushes — Compare & pull request"*. Hacé click en ese botón.
-   - Si no aparece el banner: andá a la pestaña **Pull requests** → **New pull request**
-3. **Verificá las ramas:**
-   - `base: dev` ← acá van tus cambios (rama destino)
-   - `compare: feature/DEV-XX-tu-feature` ← tu rama (rama origen)
-   - Si dice `base: main`, cambialo a `dev`. Nunca apuntes a main directamente.
-4. **Completá el título:** `[FEATURE] DEV-XX: Descripción breve`
-5. **Completá la descripción** usando el template (ver abajo)
+1. **Entrar al repositorio en GitHub** (ej: github.com/andreiveisuade/ChanguiApp--Backend)
+2. GitHub muestra un banner amarillo que dice *"feature/DEV-XX-... had recent pushes — Compare & pull request"*. Hacer click en ese botón.
+   - Si no aparece el banner: ir a la pestaña **Pull requests** → **New pull request**
+3. **Verificar las ramas:**
+   - `base: dev` ← acá van los cambios (rama destino)
+   - `compare: feature/DEV-XX-el-feature` ← la rama origen
+   - Si dice `base: main`, cambiarlo a `dev`. Nunca apuntar a main directamente.
+4. **Completar el título:** `[FEATURE] DEV-XX: Descripción breve`
+5. **Completar la descripción** usando el template (ver abajo)
 6. **En la barra lateral derecha:**
-   - **Reviewers:** asigná a un compañero para que revise tu código
-   - **Assignees:** ponete a vos mismo
+   - **Reviewers:** asignar a un compañero para que revise el código
+   - **Assignees:** asignarse uno mismo
    - **Labels:** opcional (feature, fix, chore, etc.)
-7. Hacé click en **Create pull request**
-8. Esperá a que tu reviewer lo apruebe. Si te piden cambios, hacelos en tu misma branch, commiteá y pusheá — el PR se actualiza solo.
+7. Hacer click en **Create pull request**
+8. Esperar a que el reviewer lo apruebe. Si se piden cambios, hacerlos en la misma branch, commitear y pushear — el PR se actualiza solo.
 
-### 5. Cuando te piden review a vos
+### 5. Al recibir un review asignado
 
-Alguien del equipo abrió un PR y te asignó como reviewer. Esto es lo que hacés:
+Cuando se asigna un PR para review, el proceso es:
 
-1. **Entrá al PR** desde la pestaña "Pull requests" o desde la notificación de GitHub
-2. **Leé la descripción** para entender qué hace el PR
-3. **Andá a la pestaña "Files changed"** — ahí ves todo el código que se modificó
-4. **Revisá el código:**
+1. **Entrar al PR** desde la pestaña "Pull requests" o desde la notificación de GitHub
+2. **Leer la descripción** para entender qué hace el PR
+3. **Ir a la pestaña "Files changed"** — ahí se ve todo el código modificado
+4. **Revisar el código:**
    - ¿Hace lo que dice la descripción?
    - ¿Hay algo que pueda romper lo que ya funciona?
    - ¿Es legible? ¿Se entiende?
    - ¿Sigue la arquitectura del proyecto (controllers → services → repositories)?
-5. **Si querés comentar algo:** hacé click en el `+` que aparece al lado de una línea de código y escribí tu comentario
-6. **Cuando terminaste de revisar,** hacé click en **"Review changes"** (botón verde arriba a la derecha):
+5. **Para dejar un comentario:** hacer click en el `+` que aparece al lado de una línea de código y escribir el comentario
+6. **Al terminar la revisión,** hacer click en **"Review changes"** (botón verde arriba a la derecha):
    - **Approve:** todo bien, se puede mergear
    - **Request changes:** hay cosas que corregir antes de mergear
-   - **Comment:** dejás comentarios sin aprobar ni rechazar
-7. **Si aprobaste:** ahora el autor (o vos si no sos el autor) puede hacer click en **"Merge pull request"** → **"Confirm merge"**
-8. **Después del merge:** GitHub te pregunta si querés borrar la branch. Dale que sí — ya no se necesita.
+   - **Comment:** se dejan comentarios sin aprobar ni rechazar
+7. **Si se aprobó:** ahora se puede hacer click en **"Merge pull request"** → **"Confirm merge"** (el autor no puede mergear su propio PR)
+8. **Después del merge:** GitHub pregunta si se quiere borrar la branch. Confirmar — ya no se necesita.
 
 ---
 
@@ -210,11 +210,11 @@ Closes DEV-<número>
 
 ## Checklist
 - [ ] El código compila sin errores
-- [ ] Probé en emulador / dispositivo físico
+- [ ] Probado en emulador / dispositivo físico
 - [ ] No hay console.log / prints de debug innecesarios
-- [ ] Actualicé la documentación si corresponde
+- [ ] Documentación actualizada si corresponde
 - [ ] Tests pasan (`npm test`)
-- [ ] Incluí tests para el código nuevo (ver `docs/TESTING.md`)
+- [ ] Tests incluidos para el código nuevo (ver `docs/TESTING.md`)
 - [ ] Coverage del código nuevo al 100% (`npm run test:coverage`)
 ```
 
@@ -230,7 +230,7 @@ Closes DEV-<número>
 
 ## Responsabilidades del reviewer
 
-Cuando te asignan como reviewer, revisá:
+Al revisar un PR, verificar:
 
 - ¿El código hace lo que dice el título y la descripción del PR?
 - ¿Hay algo que pueda romper funcionalidad existente?
@@ -294,9 +294,9 @@ En **Settings → Branches** del repositorio:
 
 **Formato obligatorio:** `prefijo/DEV-XXX-descripcion-corta`
 
-- `DEV-XXX` es el ID del issue en Jira (lo ven en el board o en la URL del issue)
+- `DEV-XXX` es el ID del issue en Jira (visible en el board o en la URL del issue)
 - La descripción va en minúsculas, separada por guiones, sin acentos
-- Los issues en Jira tienen un código `CHNG-XX` en el título — eso es un código interno del backlog. Para Git siempre usamos `DEV-XXX` que es la key de Jira
+- Los issues en Jira tienen un código `CHNG-XX` en el título — es un código interno del backlog. Para Git siempre se usa `DEV-XXX` que es la key de Jira
 
 ### Tipos de commit (Conventional Commits)
 
@@ -315,7 +315,7 @@ En **Settings → Branches** del repositorio:
 - El `scope` es opcional pero recomendado (ej: `auth`, `cart`, `lists`, `products`, `checkout`)
 - La descripción empieza en minúscula, sin punto final
 - Primera línea máximo 72 caracteres
-- Si necesitás más detalle, dejá una línea en blanco y escribí el cuerpo
+- Si se necesita más detalle, dejar una línea en blanco y escribir el cuerpo
 
 ### Títulos de PR
 
@@ -336,28 +336,28 @@ En **Settings → Branches** del repositorio:
 ### El flujo completo: de Jira a GitHub y vuelta
 
 ```
-1. Abrís tu issue en Jira          → Ves DEV-XXX con la descripción de qué hacer
-2. Movés el issue a "In Progress"  → El equipo sabe que estás trabajando en esto
-3. Creás la branch en Git          → feature/DEV-XXX-descripcion
-4. Trabajás, commiteás             → feat(scope): descripción | DEV-XXX
-5. Abrís PR en GitHub → dev        → [FEATURE] DEV-XXX: Descripción | "Closes DEV-XXX"
-6. Alguien revisa y aprueba        → Se mergea a dev
-7. Movés el issue a "Done" en Jira → Listo
+1. Abrir el issue en Jira             → Se ve DEV-XXX con la descripción de qué hacer
+2. Mover el issue a "In Progress"     → El equipo sabe que se está trabajando en esto
+3. Crear la branch en Git             → feature/DEV-XXX-descripcion
+4. Trabajar, commitear                → feat(scope): descripción | DEV-XXX
+5. Abrir PR en GitHub → dev           → [FEATURE] DEV-XXX: Descripción | "Closes DEV-XXX"
+6. Alguien revisa y aprueba           → Se mergea a dev
+7. Mover el issue a "Done" en Jira    → Listo
 ```
 
 ### Reglas de conexión
 
 - **Cada rama = un issue de Jira.** No hay ramas sin issue (excepto hotfixes de emergencia).
 - **La key de Jira va en el nombre de la rama:** `feature/DEV-20-crud-cart-items`
-- **La key de Jira va en el PR:** escribí `Closes DEV-20` en la descripción del PR. GitHub lo linkea automáticamente si Jira está conectado.
-- **La key de Jira va en los commits:** mencioná `DEV-XX` al final del mensaje para trazabilidad.
-- **Actualizá el estado en Jira** cuando empezás (In Progress) y cuando se mergea (Done). No dejes issues en "To Do" si ya estás trabajando en ellas.
+- **La key de Jira va en el PR:** escribir `Closes DEV-20` en la descripción del PR. GitHub lo linkea automáticamente si Jira está conectado.
+- **La key de Jira va en los commits:** mencionar `DEV-XX` al final del mensaje para trazabilidad.
+- **Actualizar el estado en Jira** cuando se empieza (In Progress) y cuando se mergea (Done). No dejar issues en "To Do" si ya se está trabajando en ellas.
 
 ### ¿Qué es CHNG-XX vs DEV-XX?
 
 - **`CHNG-XX`** es un código interno que aparece en el **título** de cada issue en Jira (ej: "CHNG-12: Sync catálogo Precios Claros"). Es para identificar la historia en el backlog.
-- **`DEV-XXX`** es la **key automática** que Jira asigna a cada issue (ej: DEV-21). Es la que usamos en Git para branches, commits y PRs.
-- En Git siempre usamos **DEV-XXX**, nunca CHNG-XX.
+- **`DEV-XXX`** es la **key automática** que Jira asigna a cada issue (ej: DEV-21). Es la que se usa en Git para branches, commits y PRs.
+- En Git siempre se usa **DEV-XXX**, nunca CHNG-XX.
 
 ---
 
