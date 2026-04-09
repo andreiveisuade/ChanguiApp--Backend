@@ -1,0 +1,67 @@
+{
+<<<<<<< HEAD
+  "name": "backend-changuiapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+=======
+  "name": "changuiapp--backend",
+  "version": "1.0.0",
+  "description": "API REST en Node.js + Express para ChanguiApp — Carrito de Compras Inteligente. Integra la API de Precios Claros (SEPA) del gobierno argentino para obtener precios reales de productos de supermercado, con autenticacion via Supabase Auth y persistencia en PostgreSQL.",
+  "main": "src/index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andreiveisuade/ChanguiApp--Backend.git"
+>>>>>>> 7e5b116947917b1b58c7d45b6ea340402bf9a9f3
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+<<<<<<< HEAD
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.2",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.0",
+    "axios": "^1.15.0",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1",
+    "mercadopago": "^2.12.0"
+=======
+  "bugs": {
+    "url": "https://github.com/andreiveisuade/ChanguiApp--Backend/issues"
+  },
+  "homepage": "https://github.com/andreiveisuade/ChanguiApp--Backend#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.100.0",
+    "axios": "^1.13.6",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
+>>>>>>> 7e5b116947917b1b58c7d45b6ea340402bf9a9f3
+  }
+}

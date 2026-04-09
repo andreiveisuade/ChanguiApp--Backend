@@ -1,0 +1,39 @@
+<<<<<<< HEAD
+node_modules
+dist
+.env
+*.log
+=======
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+
+# Coverage
+coverage/
+
+# Claude Code
+CLAUDE.md
+>>>>>>> 7e5b116947917b1b58c7d45b6ea340402bf9a9f3
