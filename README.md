@@ -45,7 +45,30 @@ src/
 
 ## Endpoints
 
-`GET /health` · `POST /api/auth/register` · `POST /api/auth/login` · `GET/PUT/DELETE /api/users/profile` · `GET /api/products/barcode/:code` · `GET /api/stores` · `GET/POST/PUT/DELETE /api/cart/items` · `CRUD /api/lists` · `POST /api/checkout` · `GET /api/purchases`
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | `/health` | Healthcheck |
+| POST | `/api/auth/register` | Registro con email o Google |
+| POST | `/api/auth/login` | Inicio de sesion |
+| GET | `/api/users/profile` | Obtener perfil del usuario |
+| PUT | `/api/users/profile` | Editar perfil |
+| DELETE | `/api/users/profile` | Eliminar cuenta |
+| GET | `/api/products/barcode/:code` | Buscar producto por codigo de barras |
+| GET | `/api/stores` | Listar supermercados cercanos |
+| GET | `/api/cart` | Ver carrito |
+| POST | `/api/cart/items` | Agregar producto al carrito |
+| PUT | `/api/cart/items/:id` | Modificar cantidad |
+| DELETE | `/api/cart/items/:id` | Eliminar producto del carrito |
+| GET | `/api/lists` | Listar listas de compras |
+| POST | `/api/lists` | Crear lista |
+| PUT | `/api/lists/:id` | Editar lista |
+| DELETE | `/api/lists/:id` | Eliminar lista |
+| POST | `/api/lists/:id/items` | Agregar item a lista |
+| DELETE | `/api/lists/:id/items/:itemId` | Eliminar item de lista |
+| POST | `/api/checkout` | Crear preferencia de pago (Mercado Pago) |
+| POST | `/api/checkout/webhook` | Webhook de notificacion de pago |
+| GET | `/api/purchases` | Historial de compras |
+| GET | `/api/purchases/:id` | Detalle de una compra |
 
 Detalle completo en [docs/Scope_ChanguiApp.md](./docs/Scope_ChanguiApp.md#5-endpoints-del-backend).
 
