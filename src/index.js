@@ -10,6 +10,7 @@ app.use(express.json());
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Montar rutas
+app.use('/api/stores', require('./routes/stores'));
 // app.use('/api/auth', require('./routes/auth'));
 // app.use('/api/cart', require('./routes/cart'));
 
