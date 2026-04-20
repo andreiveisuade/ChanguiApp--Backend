@@ -1,6 +1,8 @@
 # Testing Playbook — ChanguiApp Backend
 
-Test runner: **Jest** + **Supertest**. Tests en `__tests__/`. Coverage objetivo: **100%**.
+Test runner: **Jest** + **Supertest** + **ts-jest**. Tests en `__tests__/` con extensión `.ts`. Coverage objetivo: **100%**.
+
+> **Nota de migración:** el backend está migrando a TypeScript (DEV-160). Los ejemplos de código abajo están en JavaScript hasta que se mergee el refactor. Post-migración, los archivos son `.ts`, las importaciones son `import { ... } from '...'` (en vez de `require`), y los mocks usan los tipos de `ts-jest`.
 
 ---
 
@@ -20,11 +22,11 @@ npm run test:integration  # solo tests de integración
 
 ```
 __tests__/
-  setup.js                     # env vars para tests (corre antes de todo)
+  setup.ts                     # env vars para tests (corre antes de todo)
   helpers/
-    mockSupabase.js             # mock del cliente Supabase, reutilizable
-    testData.js                 # fixtures: usuarios, productos, carritos, listas
-  health.test.js                # test del endpoint /health
+    mockSupabase.ts             # mock del cliente Supabase, reutilizable
+    testData.ts                 # fixtures: usuarios, productos, carritos, listas
+  health.test.ts                # test del endpoint /health
   unit/
     services/                   # tests unitarios de services (mockeando repositories)
     repositories/               # tests unitarios de repositories (mockeando supabase)

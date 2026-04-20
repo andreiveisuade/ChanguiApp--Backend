@@ -5,6 +5,20 @@
 
 ---
 
+## Lenguaje del backend: TypeScript
+
+El backend está **migrando a TypeScript** (ver issue `DEV-160`). A partir de esa migración:
+
+- Todo archivo nuevo en `src/` y `__tests__/` se crea en `.ts`.
+- No se agrega código nuevo en `.js` — si tu rama toca un archivo `.js` que todavía no se migró, aprovechá el PR para convertirlo a `.ts` también (lo coordinamos si son muchos archivos).
+- El bundler/runner es `tsx` para desarrollo (hot reload) y `tsc` para compilar a `dist/` antes de producción.
+- `tsconfig.json` usa `strict: true`. Nada de `any` implícito.
+- Tests corren con `ts-jest` configurado en `jest.config.ts`.
+
+Hasta que el PR de DEV-160 esté mergeado, conviven archivos `.js` y `.ts`. No es un problema mientras ninguna feature nueva entre en `.js`.
+
+---
+
 ## Cheatsheet — Lo mínimo necesario
 
 ```bash
@@ -28,6 +42,7 @@ git commit -m "feat(cart): agregar endpoint POST /api/cart/items"
 #              ^^^^  ^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #              tipo  scope  descripción en imperativo, minúscula
 # Tipos: feat | fix | docs | test | refactor | chore | style
+# Archivos nuevos: .ts (TypeScript). No agregar código en .js.
 
 # 5. Antes de subir, rebasear contra dev
 git checkout dev && git pull origin dev
@@ -209,13 +224,14 @@ Closes DEV-<número>
 3. Resultado esperado
 
 ## Checklist
-- [ ] El código compila sin errores
+- [ ] El código compila sin errores (`npm run build` — TypeScript)
 - [ ] Probado en emulador / dispositivo físico
 - [ ] No hay console.log / prints de debug innecesarios
 - [ ] Documentación actualizada si corresponde
 - [ ] Tests pasan (`npm test`)
 - [ ] Tests incluidos para el código nuevo (ver `docs/TESTING.md`)
 - [ ] Coverage del código nuevo al 100% (`npm run test:coverage`)
+- [ ] Archivos nuevos están en TypeScript (`.ts`, no `.js`)
 ```
 
 ### Tiempos de revisión
@@ -361,4 +377,4 @@ En **Settings → Branches** del repositorio:
 
 ---
 
-*Documento mantenido por el Scrum Master. Última actualización: 21 Marzo 2026.*
+*Documento mantenido por el Scrum Master. Última actualización: 20 Abril 2026 — anuncio de migración a TypeScript (DEV-160).*

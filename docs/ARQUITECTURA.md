@@ -2,7 +2,9 @@
 
 ## 1. Vision general del sistema
 
-ChanguiApp se compone de una app mobile en React Native, un backend REST en Node.js + Express desplegado en Render y Supabase como plataforma de datos, autenticacion y persistencia. El backend actua como punto central de integracion entre la app, la base PostgreSQL y los servicios externos.
+ChanguiApp se compone de una app mobile en React Native (TypeScript), un backend REST en Node.js + Express con **TypeScript** desplegado en Render y Supabase como plataforma de datos, autenticacion y persistencia. El backend actua como punto central de integracion entre la app, la base PostgreSQL y los servicios externos.
+
+> **Lenguaje del backend:** el backend migro de JavaScript a TypeScript en DEV-160. `tsconfig.json` usa `strict: true` y los tests corren con `ts-jest`. Todo archivo nuevo en `src/` y `__tests__/` se escribe en `.ts`.
 
 ```text
 ┌──────────┐    HTTPS     ┌──────────────┐    SQL     ┌──────────┐
@@ -22,7 +24,7 @@ ChanguiApp se compone de una app mobile en React Native, un backend REST en Node
 
 Precios Claros se consume via cron job de sincronizacion masiva hacia Supabase; no se llama en runtime al momento del escaneo de productos.
 
-En el estado actual del backend, `src/index.js` concentra el bootstrap de Express y expone un `health check`, mientras que `src/config/supabase.js` centraliza la creacion del cliente de Supabase. La separacion completa por capas ya esta prevista en la estructura de carpetas de `src/`.
+En el backend, `src/index.ts` concentra el bootstrap de Express (monta rutas, sirve Swagger UI en `/api/docs`, registra error handler global), mientras que `src/config/supabase.ts` centraliza la creacion del cliente de Supabase tipado. La separacion por capas esta materializada en la estructura de carpetas de `src/`.
 
 ## 2. Arquitectura del backend — Controller → Service → Repository
 
@@ -52,12 +54,13 @@ El backend sigue una arquitectura por capas donde Express recibe requests, los c
 
 ### Responsabilidad de carpetas del backend
 
-- `src/routes/`: define endpoints de Express y delega cada request al controller correspondiente. En el estado actual la carpeta existe como placeholder con `.gitkeep`; el montaje futuro ya esta insinuado en `src/index.js` con rutas comentadas como `/api/auth` y `/api/cart`.
+- `src/routes/`: define endpoints de Express y delega cada request al controller correspondiente.
 - `src/controllers/`: adapta el request HTTP al caso de uso. Extrae params, body y headers, valida la entrada, llama al service y arma la respuesta HTTP.
 - `src/services/`: concentra la logica de negocio de la aplicacion. Decide reglas, validaciones funcionales y orquestacion entre repositorios o integraciones.
 - `src/repositories/`: encapsula el acceso a datos. Es la unica capa que debe ejecutar lecturas y escrituras sobre Supabase/Postgres.
 - `src/middleware/`: contiene preocupaciones transversales de Express, por ejemplo autenticacion, autorizacion, manejo de errores, logging o validaciones reutilizables.
-- `src/config/`: agrupa configuracion tecnica compartida. Hoy contiene `src/config/supabase.js`, que crea y exporta el cliente de Supabase usando variables de entorno.
+- `src/config/`: agrupa configuracion tecnica compartida (`supabase.ts`, `mercadopago.ts`) creando y exportando los clientes usando variables de entorno.
+- `src/types/`: tipos compartidos entre capas (entidades de dominio, DTOs, respuestas de API).
 
 ### Regla de dependencia
 
@@ -67,7 +70,7 @@ Esto mantiene desacoplada la logica de negocio del transporte HTTP y evita que l
 
 ## 3. Arquitectura del frontend — MVVM + Repository
 
-El frontend mobile se organiza con MVVM para separar la UI de la logica de presentacion y de las llamadas al backend. Aunque este repositorio corresponde al backend, esta es la estructura objetivo esperada para el cliente React Native.
+El frontend mobile se organiza con MVVM para separar la UI de la logica de presentacion y de las llamadas al backend. Aunque este repositorio corresponde al backend, esta es la estructura objetivo esperada para el cliente React Native (TypeScript).
 
 ```text
 ┌─────────────────────────────────────────┐
@@ -135,20 +138,21 @@ La estructura actual del backend en este repositorio es la siguiente:
 
 ```text
 src/
-├── config/           # Cliente de Supabase y variables de entorno
-├── controllers/      # Validación de input y respuestas HTTP
-├── middleware/       # Autenticación JWT y manejo de errores
-├── repositories/     # Queries a Supabase
-├── routes/           # Definición de endpoints Express
-├── services/         # Lógica de negocio
+├── config/           # Clientes tipados: supabase, mercadopago
+├── controllers/      # Validación de input y respuestas HTTP (.ts)
+├── middleware/       # Autenticación JWT y manejo de errores (.ts)
+├── repositories/     # Queries a Supabase (.ts)
+├── routes/           # Definición de endpoints Express (.ts)
+├── services/         # Lógica de negocio (.ts)
+├── types/            # Tipos compartidos (entidades, DTOs)
 ├── utils/            # Helpers genéricos
-└── index.js          # Bootstrap de Express
+└── index.ts          # Bootstrap de Express + Swagger UI
 ```
 
 Observaciones sobre el estado actual:
 
-- `src/index.js` inicializa Express, registra `cors`, `express.json()` y expone el endpoint `/health`.
-- Las rutas de negocio todavia no estan montadas en runtime; hoy aparecen comentadas como referencia en `src/index.js`.
+- `src/index.ts` inicializa Express, registra `cors`, `express.json()`, monta las rutas del MVP, sirve Swagger UI en `/api/docs` y registra el error handler global.
+- La compilación de TypeScript se hace con `npm run build` (`tsc`) y la ejecución en dev con `npm run dev` (`tsx watch`).
 
 ### Frontend — estructura objetivo
 
