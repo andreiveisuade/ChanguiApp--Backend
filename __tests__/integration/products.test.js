@@ -11,7 +11,7 @@ const authHeader = { Authorization: 'Bearer test-token' };
 jest.mock('../../src/middleware/auth', () => (req, res, next) => {
   const token = req.headers.authorization;
   if (!token) return res.status(401).json({ error: 'Token requerido' });
-  req.user = { id: validUser.id, email: validUser.email };
+  req.user = { id: 'user-uuid-1', email: 'test@test.com' };
   next();
 });
 
