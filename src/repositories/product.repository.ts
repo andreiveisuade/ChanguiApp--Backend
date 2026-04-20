@@ -1,6 +1,7 @@
-const supabase = require('../config/supabase');
+import supabase from '../config/supabase';
+import type { Product } from '../types/domain';
 
-async function findByBarcode(barcode) {
+export async function findByBarcode(barcode: string): Promise<Product | null> {
   const { data, error } = await supabase
     .from('products')
     .select('id, barcode, name, brand, price, image_url')
@@ -12,7 +13,5 @@ async function findByBarcode(barcode) {
     throw error;
   }
 
-  return data;
+  return data as Product;
 }
-
-module.exports = { findByBarcode };
