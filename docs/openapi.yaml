@@ -1,0 +1,328 @@
+openapi: 3.0.3
+info:
+  title: ChanguiApp API
+  description: |
+    Backend REST de ChanguiApp — app de Scan & Go para supermercados argentinos.
+
+    Flujo principal: autenticación → escaneo de barcode → carrito → checkout Mercado Pago → historial.
+  version: 0.1.0
+  contact:
+    name: Equipo ChanguiApp
+    url: https://github.com/andreiveisuade/ChanguiApp--Backend
+servers:
+  - url: http://localhost:3000
+    description: Dev local
+  - url: https://changuiapp-backend.onrender.com
+    description: Producción (Render)
+
+tags:
+  - name: health
+  - name: auth
+  - name: users
+  - name: products
+  - name: cart
+  - name: checkout
+  - name: purchases
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT de Supabase Auth
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        full_name: { type: string }
+        avatar_url: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    UserUpdate:
+      type: object
+      properties:
+        full_name: { type: string }
+        avatar_url: { type: string }
+
+    Product:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        barcode: { type: string, example: "7790895000782" }
+        name: { type: string }
+        brand: { type: string, nullable: true }
+        price: { type: number, format: float }
+        image_url: { type: string, nullable: true }
+
+    CartItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        cart_id: { type: string, format: uuid }
+        product_id: { type: string, format: uuid }
+        quantity: { type: integer }
+        unit_price: { type: number }
+
+    Cart:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        store_id: { type: string, format: uuid, nullable: true }
+        status:
+          type: string
+          enum: [active, checked_out, closed]
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CartItem' }
+
+    CheckoutResponse:
+      type: object
+      properties:
+        preference_id: { type: string }
+        init_point: { type: string, format: uri }
+
+    Purchase:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        total: { type: number }
+        payment_id: { type: string }
+        payment_status:
+          type: string
+          enum: [pending, completed, failed]
+        created_at: { type: string, format: date-time }
+        store_id: { type: string, format: uuid, nullable: true }
+
+    PurchaseItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        purchase_id: { type: string, format: uuid }
+        product_name: { type: string }
+        barcode: { type: string }
+        quantity: { type: integer }
+        unit_price: { type: number }
+
+    PurchaseDetail:
+      allOf:
+        - $ref: '#/components/schemas/Purchase'
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/PurchaseItem' }
+
+  responses:
+    Unauthorized:
+      description: Token faltante o inválido
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: Recurso no encontrado
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    BadRequest:
+      description: Request inválido
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Healthcheck
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { status: { type: string, example: ok } }
+
+  /api/auth/register:
+    post:
+      tags: [auth]
+      summary: Registrar un usuario nuevo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, full_name]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                full_name: { type: string }
+      responses:
+        '201': { description: Usuario creado }
+        '409': { description: El email ya está registrado }
+
+  /api/auth/login:
+    post:
+      tags: [auth]
+      summary: Iniciar sesión
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200': { description: OK }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/users/profile:
+    get:
+      tags: [users]
+      security: [{ bearerAuth: [] }]
+      summary: Obtener perfil
+      responses:
+        '200':
+          description: OK
+          content: { application/json: { schema: { $ref: '#/components/schemas/User' } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [users]
+      security: [{ bearerAuth: [] }]
+      summary: Actualizar perfil
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdate' }
+      responses:
+        '200':
+          description: Perfil actualizado
+          content: { application/json: { schema: { $ref: '#/components/schemas/User' } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [users]
+      security: [{ bearerAuth: [] }]
+      summary: Eliminar cuenta
+      responses:
+        '200': { description: Cuenta eliminada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/products/barcode/{code}:
+    get:
+      tags: [products]
+      security: [{ bearerAuth: [] }]
+      summary: Buscar producto por barcode
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content: { application/json: { schema: { $ref: '#/components/schemas/Product' } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/cart:
+    get:
+      tags: [cart]
+      security: [{ bearerAuth: [] }]
+      summary: Obtener carrito activo
+      responses:
+        '200': { description: OK }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/cart/items:
+    post:
+      tags: [cart]
+      security: [{ bearerAuth: [] }]
+      summary: Agregar item al carrito
+      responses:
+        '201': { description: Item agregado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/cart/items/{id}:
+    put:
+      tags: [cart]
+      security: [{ bearerAuth: [] }]
+      summary: Modificar cantidad
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: OK }
+    delete:
+      tags: [cart]
+      security: [{ bearerAuth: [] }]
+      summary: Eliminar item
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Item eliminado }
+
+  /api/checkout:
+    post:
+      tags: [checkout]
+      security: [{ bearerAuth: [] }]
+      summary: Crear preferencia de pago
+      responses:
+        '200':
+          description: Preferencia creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckoutResponse' }
+        '400': { description: No hay carrito activo o está vacío }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/checkout/webhook:
+    post:
+      tags: [checkout]
+      summary: Webhook de Mercado Pago (público)
+      responses:
+        '200': { description: Notificación procesada }
+
+  /api/purchases:
+    get:
+      tags: [purchases]
+      security: [{ bearerAuth: [] }]
+      summary: Historial de compras
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, completed, failed]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Purchase' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/purchases/{id}:
+    get:
+      tags: [purchases]
+      security: [{ bearerAuth: [] }]
+      summary: Detalle de compra
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PurchaseDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
