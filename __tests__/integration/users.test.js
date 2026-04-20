@@ -3,13 +3,20 @@ const app = require('../../src/index');
 
 jest.mock('../../src/config/supabase', () => require('../helpers/mockSupabase'));
 
+jest.mock('../../src/middleware/auth', () => (req, res, next) => {
+  const token = req.headers.authorization;
+  if (!token) return res.status(401).json({ error: 'Token requerido' });
+  req.user = { id: 'user-uuid-1', email: 'test@test.com' };
+  next();
+});
+
 const mockSupabase = require('../helpers/mockSupabase');
 const { validUser } = require('../helpers/testData');
 
 const userProfile = {
   id: validUser.id,
   email: validUser.email,
-  name: 'Test User',
+  full_name: 'Test User',
 };
 
 describe('GET /api/users/profile', () => {
@@ -37,7 +44,7 @@ describe('GET /api/users/profile', () => {
 
 describe('PUT /api/users/profile', () => {
   it('con datos válidos devuelve 200 con perfil actualizado', async () => {
-    const updated = { ...userProfile, name: 'Nuevo Nombre' };
+    const updated = { ...userProfile, full_name: 'Nuevo Nombre' };
     mockSupabase.single.mockResolvedValue({
       data: updated,
       error: null,
@@ -46,16 +53,16 @@ describe('PUT /api/users/profile', () => {
     const res = await request(app)
       .put('/api/users/profile')
       .set('Authorization', 'Bearer test-token')
-      .send({ name: 'Nuevo Nombre' });
+      .send({ full_name: 'Nuevo Nombre' });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.name).toBe('Nuevo Nombre');
+    expect(res.body.full_name).toBe('Nuevo Nombre');
   });
 
   it('sin token devuelve 401', async () => {
     const res = await request(app)
       .put('/api/users/profile')
-      .send({ name: 'Nuevo Nombre' });
+      .send({ full_name: 'Nuevo Nombre' });
 
     expect(res.statusCode).toBe(401);
   });

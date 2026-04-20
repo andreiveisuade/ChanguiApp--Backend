@@ -13,6 +13,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 // app.use('/api/auth', require('./routes/auth'));
 // app.use('/api/cart', require('./routes/cart'));
 app.use('/api/products', require('./routes/product.routes'));
+app.use('/api/users', require('./routes/user.routes'));
 
 // Error handler global
 // eslint-disable-next-line no-unused-vars
