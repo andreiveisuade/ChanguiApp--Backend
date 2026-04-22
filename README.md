@@ -132,4 +132,33 @@ npm run test:coverage    # reporte de cobertura
 - [Frontend](https://github.com/andreiveisuade/ChanguiApp--Frontend)
 - [Jira](https://andreiveis360.atlassian.net/jira/software/projects/DEV/boards/1)
 
+## Seguridad
+
+### Protecciones implementadas
+
+| Medida | Libreria | Descripcion |
+|--------|----------|-------------|
+| Headers HTTP seguros | `helmet` | Agrega headers de seguridad en todas las respuestas |
+| CORS restringido | `cors` | Solo acepta requests de origins autorizados |
+| Rate limiting global | `express-rate-limit` | Max 100 requests por IP cada 15 minutos |
+| Rate limiting auth | `express-rate-limit` | Max 10 intentos en `/api/auth` cada 15 minutos |
+| Validacion de inputs | `express-validator` | Valida y sanitiza inputs en endpoints que reciben datos |
+| Autenticacion | `middleware/auth.ts` | Valida token Supabase en todos los endpoints protegidos |
+| Manejo de errores | `index.ts` | No expone stack traces ni informacion interna |
+
+### Variables de entorno requeridas
+
+```env
+SUPABASE_URL=              # URL del proyecto Supabase
+SUPABASE_ANON_KEY=         # Clave publica Supabase (valida JWTs)
+SUPABASE_SERVICE_ROLE_KEY= # Clave privada Supabase (solo operaciones admin)
+MP_ACCESS_TOKEN=           # Access token Mercado Pago
+PRECIOS_CLAROS_URL=        # URL base API Precios Claros (SEPA)
+ALLOWED_ORIGINS=           # Origins permitidos para CORS (separados por coma)
+PORT=3000                  # Puerto del servidor (default 3000)
+```
+
+> El archivo `.env` nunca se commitea al repositorio. Esta en `.gitignore`.
+> Usar `.env.example` como referencia para configurar el entorno local.
+
 UADE — Desarrollo de Aplicaciones I — 2026
