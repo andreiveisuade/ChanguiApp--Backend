@@ -72,6 +72,16 @@ export interface CheckoutResponse {
   init_point: string;
 }
 
+export interface Store {
+  id: string;
+  name: string;
+  chain: string | null;
+  address: string | null;
+  lat: number;
+  lng: number;
+  distanceKm?: number;
+}
+
 export class ApiError extends Error {
   status: number;
 
