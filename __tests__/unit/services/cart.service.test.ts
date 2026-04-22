@@ -1,103 +1,177 @@
-const cartService = require('../../../src/services/cart.service');
-const cartRepository = require('../../../src/repositories/cart.repository');
+import * as cartRepository from '../../../src/repositories/cart.repository';
+import * as cartService from '../../../src/services/cart.service';
+import { validCart, validCartItem, validProduct, validUser } from '../../helpers/testData';
 
 jest.mock('../../../src/repositories/cart.repository');
 
-const { validCart, validCartItem, validProduct, validUser } = require('../../helpers/testData');
+const mockRepo = jest.mocked(cartRepository);
 
 describe('CartService', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('getCart', () => {
-    it('devuelve el carrito activo del usuario con items y totales', async () => {
+    it('devuelve cart, items y total del carrito activo', async () => {
       const cartWithItems = {
         ...validCart,
         items: [{ ...validCartItem, unit_price: validProduct.price }],
       };
-      cartRepository.findActiveByUserId.mockResolvedValue(cartWithItems);
+      mockRepo.findActiveCartByUserId.mockResolvedValue(cartWithItems as any);
 
       const result = await cartService.getCart(validUser.id);
 
-      expect(cartRepository.findActiveByUserId).toHaveBeenCalledWith(validUser.id);
-      expect(result).toEqual(cartWithItems);
+      expect(mockRepo.findActiveCartByUserId).toHaveBeenCalledWith(validUser.id);
+      expect(result.cart).toEqual(cartWithItems);
+      expect(result.items).toHaveLength(1);
+      expect(result.total).toBe(validProduct.price * validCartItem.quantity);
     });
 
-    it('lanza error si no hay carrito activo', async () => {
-      cartRepository.findActiveByUserId.mockResolvedValue(null);
+    it('devuelve cart null, items vacío y total 0 si no hay carrito', async () => {
+      mockRepo.findActiveCartByUserId.mockResolvedValue(null);
 
-      await expect(cartService.getCart('user-inexistente'))
-        .rejects.toThrow('No hay carrito activo');
+      const result = await cartService.getCart(validUser.id);
+
+      expect(result.cart).toBeNull();
+      expect(result.items).toHaveLength(0);
+      expect(result.total).toBe(0);
     });
   });
 
   describe('addItem', () => {
-    it('agrega producto al carrito activo y devuelve item creado', async () => {
-      cartRepository.findActiveByUserId.mockResolvedValue(validCart);
-      const newItem = { ...validCartItem, id: 'new-item-uuid' };
-      cartRepository.addItem.mockResolvedValue(newItem);
+    it('agrega producto al carrito activo', async () => {
+      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+      mockRepo.addOrUpdateItem.mockResolvedValue(validCartItem as any);
 
-      const result = await cartService.addItem(validUser.id, validProduct.id, 2);
+      const result = await cartService.addItem(
+        validUser.id,
+        validCart.store_id,
+        validProduct.id,
+        2,
+        validProduct.price
+      );
 
-      expect(cartRepository.findActiveByUserId).toHaveBeenCalledWith(validUser.id);
-      expect(cartRepository.addItem).toHaveBeenCalledWith(validCart.id, validProduct.id, 2);
-      expect(result).toEqual(newItem);
+      expect(mockRepo.addOrUpdateItem).toHaveBeenCalledWith(
+        validCart.id,
+        validProduct.id,
+        2,
+        validProduct.price
+      );
+      expect(result).toEqual(validCartItem);
     });
 
-    it('si no hay carrito activo, crea uno nuevo y agrega el item', async () => {
-      cartRepository.findActiveByUserId.mockResolvedValue(null);
+    it('crea carrito si no existe y agrega el item', async () => {
+      mockRepo.findActiveCartByUserId.mockResolvedValue(null);
       const newCart = { ...validCart, id: 'new-cart-uuid' };
-      cartRepository.create.mockResolvedValue(newCart);
-      const newItem = { ...validCartItem, cart_id: newCart.id };
-      cartRepository.addItem.mockResolvedValue(newItem);
+      mockRepo.createCart.mockResolvedValue(newCart as any);
+      mockRepo.addOrUpdateItem.mockResolvedValue(validCartItem as any);
 
-      const result = await cartService.addItem(validUser.id, validProduct.id, 2);
+      await cartService.addItem(validUser.id, validCart.store_id, validProduct.id, 2, validProduct.price);
 
-      expect(cartRepository.create).toHaveBeenCalledWith(validUser.id);
-      expect(cartRepository.addItem).toHaveBeenCalledWith(newCart.id, validProduct.id, 2);
-      expect(result).toEqual(newItem);
+      expect(mockRepo.createCart).toHaveBeenCalledWith(validUser.id, validCart.store_id);
+      expect(mockRepo.addOrUpdateItem).toHaveBeenCalledWith(
+        newCart.id,
+        validProduct.id,
+        2,
+        validProduct.price
+      );
+    });
+
+    it('lanza ApiError 400 si no hay carrito y falta storeId', async () => {
+      mockRepo.findActiveCartByUserId.mockResolvedValue(null);
+
+      await expect(
+        cartService.addItem(validUser.id, undefined, validProduct.id, 2, validProduct.price)
+      ).rejects.toMatchObject({ status: 400 });
     });
   });
 
   describe('updateItem', () => {
-    it('actualiza cantidad y recalcula subtotal', async () => {
-      const updatedItem = { ...validCartItem, quantity: 5 };
-      cartRepository.updateItemQuantity.mockResolvedValue(updatedItem);
+    it('actualiza la cantidad del item', async () => {
+      const updated = { ...validCartItem, quantity: 5 };
+      mockRepo.findItemById.mockResolvedValue(validCartItem as any);
+      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+      mockRepo.updateItemQuantity.mockResolvedValue(updated as any);
 
-      const result = await cartService.updateItem(validCartItem.id, 5);
+      const result = await cartService.updateItem(validUser.id, validCartItem.id, 5);
 
-      expect(cartRepository.updateItemQuantity).toHaveBeenCalledWith(validCartItem.id, 5);
-      expect(result).toEqual(updatedItem);
+      expect(mockRepo.updateItemQuantity).toHaveBeenCalledWith(validCartItem.id, 5);
+      expect(result).toEqual(updated);
     });
 
-    it('lanza error si el item no existe', async () => {
-      cartRepository.updateItemQuantity.mockResolvedValue(null);
+    it('elimina el item si quantity <= 0', async () => {
+      mockRepo.findItemById.mockResolvedValue(validCartItem as any);
+      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+      mockRepo.removeItem.mockResolvedValue(validCartItem as any);
 
-      await expect(cartService.updateItem('item-inexistente', 3))
-        .rejects.toThrow('Item no encontrado');
+      const result = await cartService.updateItem(validUser.id, validCartItem.id, 0);
+
+      expect(mockRepo.removeItem).toHaveBeenCalledWith(validCartItem.id);
+      expect(result).toBeNull();
+    });
+
+    it('lanza ApiError 404 si el item no existe', async () => {
+      mockRepo.findItemById.mockResolvedValue(null);
+
+      await expect(cartService.updateItem(validUser.id, 'inexistente', 3)).rejects.toMatchObject({
+        status: 404,
+      });
+    });
+
+    it('lanza ApiError 403 si el item no pertenece al carrito del usuario', async () => {
+      mockRepo.findItemById.mockResolvedValue({ ...validCartItem, cart_id: 'otro-cart' } as any);
+      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+
+      await expect(
+        cartService.updateItem(validUser.id, validCartItem.id, 3)
+      ).rejects.toMatchObject({ status: 403 });
     });
   });
 
   describe('removeItem', () => {
     it('elimina item del carrito', async () => {
-      cartRepository.deleteItem.mockResolvedValue(true);
+      mockRepo.findItemById.mockResolvedValue(validCartItem as any);
+      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+      mockRepo.removeItem.mockResolvedValue(validCartItem as any);
 
-      const result = await cartService.removeItem(validCartItem.id);
+      const result = await cartService.removeItem(validUser.id, validCartItem.id);
 
-      expect(cartRepository.deleteItem).toHaveBeenCalledWith(validCartItem.id);
-      expect(result).toBe(true);
+      expect(mockRepo.removeItem).toHaveBeenCalledWith(validCartItem.id);
+      expect(result).toEqual(validCartItem);
+    });
+
+    it('lanza ApiError 404 si el item no existe', async () => {
+      mockRepo.findItemById.mockResolvedValue(null);
+
+      await expect(cartService.removeItem(validUser.id, 'inexistente')).rejects.toMatchObject({
+        status: 404,
+      });
+    });
+
+    it('lanza ApiError 403 si el item no pertenece al carrito del usuario', async () => {
+      mockRepo.findItemById.mockResolvedValue({ ...validCartItem, cart_id: 'otro-cart' } as any);
+      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+
+      await expect(
+        cartService.removeItem(validUser.id, validCartItem.id)
+      ).rejects.toMatchObject({ status: 403 });
     });
   });
 
-  describe('clearCart', () => {
-    it('vacia el carrito completo y cambia status a cancelled', async () => {
-      cartRepository.findActiveByUserId.mockResolvedValue(validCart);
-      cartRepository.clearCart.mockResolvedValue({ ...validCart, status: 'cancelled' });
+  describe('cancelCart', () => {
+    it('cancela el carrito activo del usuario', async () => {
+      const cancelled = { ...validCart, status: 'cancelled' };
+      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+      mockRepo.cancelCart.mockResolvedValue(cancelled as any);
 
-      const result = await cartService.clearCart(validUser.id);
+      const result = await cartService.cancelCart(validUser.id);
 
-      expect(cartRepository.findActiveByUserId).toHaveBeenCalledWith(validUser.id);
-      expect(cartRepository.clearCart).toHaveBeenCalledWith(validCart.id);
-      expect(result.status).toBe('cancelled');
+      expect(mockRepo.cancelCart).toHaveBeenCalledWith(validCart.id);
+      expect(result).toEqual(cancelled);
+    });
+
+    it('lanza ApiError 404 si no hay carrito activo', async () => {
+      mockRepo.findActiveCartByUserId.mockResolvedValue(null);
+
+      await expect(cartService.cancelCart(validUser.id)).rejects.toMatchObject({ status: 404 });
     });
   });
 });

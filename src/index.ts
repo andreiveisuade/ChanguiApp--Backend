@@ -9,7 +9,7 @@ import path from 'node:path';
 import YAML from 'yaml';
 import swaggerUi from 'swagger-ui-express';
 import 'dotenv/config';
-
+import cartRoutes from './routes/cart.routes';
 import productRoutes from './routes/product.routes';
 import userRoutes from './routes/user.routes';
 import purchaseRoutes from './routes/purchase.routes';
@@ -35,7 +35,8 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/purchases', purchaseRoutes);
-app.use('/api/checkout', checkoutRoutes);
+app.use('/api/checkout', checkoutRoutes); // o el nombre que ya tenga el archivo
+app.use('/api/cart', cartRoutes);
 
 // Error handler global
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
