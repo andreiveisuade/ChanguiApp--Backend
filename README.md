@@ -92,6 +92,19 @@ Post-migracion a TS, la extension de todos los archivos en `src/` y `__tests__/`
 
 Spec completa interactiva en http://localhost:3000/api/docs (tras `npm run dev`).
 
+## Usuario Admin y Clientes de Supabase
+
+El backend maneja dos clientes de Supabase con permisos diferenciados:
+
+| Cliente | Key | Uso |
+|---------|-----|-----|
+| `supabase` | `SUPABASE_ANON_KEY` | Validar JWTs de usuarios. Respeta RLS. Uso general en repositories. |
+| `supabaseAdmin` | `SUPABASE_SERVICE_ROLE_KEY` | Operaciones administrativas (sync de catálogo, seeds, migraciones). Bypassa RLS. |
+
+**Regla:** importar `supabaseAdmin` solo en repositories de operaciones admin. Nunca en endpoints de usuario.
+
+Existe un usuario admin registrado en Supabase Authentication (`admin@changuiapp.com`) para gestión manual desde el dashboard.
+
 ## Scripts
 
 ```bash
