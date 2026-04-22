@@ -35,7 +35,7 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/purchases', purchaseRoutes);
-app.use('/api/checkout', checkoutRoutes); // o el nombre que ya tenga el archivo
+app.use('/api/checkout', checkoutRoutes);
 app.use('/api/cart', cartRoutes);
 
 // Error handler global
