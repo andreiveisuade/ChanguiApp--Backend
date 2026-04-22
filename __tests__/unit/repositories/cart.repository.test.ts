@@ -1,17 +1,17 @@
 jest.mock('../../../src/config/supabase', () => require('../../helpers/mockSupabase'));
 
-const mockSupabase = require('../../helpers/mockSupabase');
-const cartRepository = require('../../../src/repositories/cart.repository');
-const { validCart, validCartItem, validProduct } = require('../../helpers/testData');
+import mockSupabase from '../../helpers/mockSupabase';
+import * as cartRepository from '../../../src/repositories/cart.repository';
+import { validCart, validCartItem, validProduct } from '../../helpers/testData';
 
 describe('CartRepository', () => {
   afterEach(() => jest.clearAllMocks());
 
-  describe('findActiveByUserId', () => {
-    it('busca carrito con status=active para el usuario', async () => {
-      mockSupabase.single.mockResolvedValue({ data: validCart, error: null });
+  describe('findActiveCartByUserId', () => {
+    it('devuelve carrito activo con items para el usuario', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: validCart, error: null });
 
-      const result = await cartRepository.findActiveByUserId(validCart.user_id);
+      const result = await cartRepository.findActiveCartByUserId(validCart.user_id);
 
       expect(mockSupabase.from).toHaveBeenCalledWith('carts');
       expect(mockSupabase.select).toHaveBeenCalled();
@@ -19,25 +19,74 @@ describe('CartRepository', () => {
       expect(mockSupabase.eq).toHaveBeenCalledWith('status', 'active');
       expect(result).toEqual(validCart);
     });
+
+    it('retorna null si no hay carrito activo', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
+
+      const result = await cartRepository.findActiveCartByUserId('no-user');
+
+      expect(result).toBeNull();
+    });
   });
 
-  describe('addItem', () => {
-    it('inserta en cart_items con cart_id, product_id, quantity', async () => {
+  describe('createCart', () => {
+    it('crea un carrito nuevo con status active', async () => {
+      mockSupabase.single.mockResolvedValue({ data: validCart, error: null });
+
+      const result = await cartRepository.createCart(validCart.user_id, validCart.store_id);
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('carts');
+      expect(mockSupabase.insert).toHaveBeenCalledWith({
+        user_id: validCart.user_id,
+        store_id: validCart.store_id,
+        status: 'active',
+      });
+      expect(result).toEqual(validCart);
+    });
+  });
+
+  describe('addOrUpdateItem', () => {
+    it('hace upsert de item en cart_items', async () => {
       mockSupabase.single.mockResolvedValue({ data: validCartItem, error: null });
 
-      const result = await cartRepository.addItem(
+      const result = await cartRepository.addOrUpdateItem(
         validCart.id,
         validProduct.id,
-        validCartItem.quantity
+        validCartItem.quantity,
+        validCartItem.unit_price
       );
 
       expect(mockSupabase.from).toHaveBeenCalledWith('cart_items');
-      expect(mockSupabase.insert).toHaveBeenCalledWith({
-        cart_id: validCart.id,
-        product_id: validProduct.id,
-        quantity: validCartItem.quantity,
-      });
+      expect(mockSupabase.upsert).toHaveBeenCalledWith(
+        {
+          cart_id: validCart.id,
+          product_id: validProduct.id,
+          quantity: validCartItem.quantity,
+          unit_price: validCartItem.unit_price,
+        },
+        { onConflict: 'cart_id,product_id', ignoreDuplicates: false }
+      );
       expect(result).toEqual(validCartItem);
+    });
+  });
+
+  describe('findItemById', () => {
+    it('retorna item por id', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: validCartItem, error: null });
+
+      const result = await cartRepository.findItemById(validCartItem.id);
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('cart_items');
+      expect(mockSupabase.eq).toHaveBeenCalledWith('id', validCartItem.id);
+      expect(result).toEqual(validCartItem);
+    });
+
+    it('retorna null si el item no existe', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
+
+      const result = await cartRepository.findItemById('no-item');
+
+      expect(result).toBeNull();
     });
   });
 
@@ -55,15 +104,30 @@ describe('CartRepository', () => {
     });
   });
 
-  describe('deleteItem', () => {
-    it('elimina item por id', async () => {
-      mockSupabase.eq.mockResolvedValue({ error: null });
+  describe('removeItem', () => {
+    it('elimina item y lo retorna', async () => {
+      mockSupabase.single.mockResolvedValue({ data: validCartItem, error: null });
 
-      await cartRepository.deleteItem(validCartItem.id);
+      const result = await cartRepository.removeItem(validCartItem.id);
 
       expect(mockSupabase.from).toHaveBeenCalledWith('cart_items');
       expect(mockSupabase.delete).toHaveBeenCalled();
       expect(mockSupabase.eq).toHaveBeenCalledWith('id', validCartItem.id);
+      expect(result).toEqual(validCartItem);
+    });
+  });
+
+  describe('cancelCart', () => {
+    it('cambia status del carrito a cancelled', async () => {
+      const cancelled = { ...validCart, status: 'cancelled' };
+      mockSupabase.single.mockResolvedValue({ data: cancelled, error: null });
+
+      const result = await cartRepository.cancelCart(validCart.id);
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('carts');
+      expect(mockSupabase.update).toHaveBeenCalledWith({ status: 'cancelled' });
+      expect(mockSupabase.eq).toHaveBeenCalledWith('id', validCart.id);
+      expect(result).toEqual(cancelled);
     });
   });
 });

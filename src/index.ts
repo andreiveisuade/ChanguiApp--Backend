@@ -9,7 +9,7 @@ import path from 'node:path';
 import YAML from 'yaml';
 import swaggerUi from 'swagger-ui-express';
 import 'dotenv/config';
-import cartRoutes from './routes/cartRoutes';
+import cartRoutes from './routes/cart.routes';
 import productRoutes from './routes/product.routes';
 import userRoutes from './routes/user.routes';
 import purchaseRoutes from './routes/purchase.routes';
