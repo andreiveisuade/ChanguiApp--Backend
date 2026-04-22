@@ -1,3 +1,5 @@
+export {};
+
 const storeService = require('../../../src/services/store.service');
 const storeRepository = require('../../../src/repositories/store.repository');
 

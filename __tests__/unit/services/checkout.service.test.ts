@@ -1,3 +1,5 @@
+export {};
+
 const checkoutService = require('../../../src/services/checkout.service');
 const cartRepository = require('../../../src/repositories/cart.repository');
 const purchaseRepository = require('../../../src/repositories/purchase.repository');

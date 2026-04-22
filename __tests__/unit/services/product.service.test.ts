@@ -1,3 +1,5 @@
+export {};
+
 const productService = require('../../../src/services/product.service');
 const productRepository = require('../../../src/repositories/product.repository');
 

@@ -1,3 +1,5 @@
+export {};
+
 const authService = require('../../../src/services/auth.service');
 const authRepository = require('../../../src/repositories/auth.repository');
 
