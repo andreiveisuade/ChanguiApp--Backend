@@ -1,3 +1,5 @@
+export {};
+
 const request = require('supertest');
 const app = require('../../src/index');
 
@@ -8,11 +10,13 @@ const { validStore, validUser } = require('../helpers/testData');
 
 const authHeader = { Authorization: 'Bearer test-token' };
 
-jest.mock('../../src/middleware/auth', () => (req, res, next) => {
-  const token = req.headers.authorization;
-  if (!token) return res.status(401).json({ error: 'Token requerido' });
-  req.user = { id: validUser.id, email: validUser.email };
-  next();
+jest.mock('../../src/middleware/auth', () => {
+  return (req: any, res: any, next: any) => {
+    const token = req.headers.authorization;
+    if (!token) return res.status(401).json({ error: 'Token requerido' });
+    req.user = { id: 'user-uuid-1', email: 'test@test.com' };
+    next();
+  };
 });
 
 describe('Stores Endpoints', () => {

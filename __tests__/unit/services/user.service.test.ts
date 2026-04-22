@@ -1,3 +1,5 @@
+export {};
+
 const userService = require('../../../src/services/user.service');
 const userRepository = require('../../../src/repositories/user.repository');
 

@@ -1,3 +1,5 @@
+export {};
+
 const purchaseService = require('../../../src/services/purchase.service');
 const purchaseRepository = require('../../../src/repositories/purchase.repository');
 
