@@ -24,8 +24,8 @@ const definition: swaggerJsdoc.SwaggerDefinition = {
     },
   },
   servers: [
-    { url: 'http://localhost:3000', description: 'Dev local' },
     { url: 'https://changuiapp-backend.onrender.com', description: 'Producción (Render)' },
+    { url: 'http://localhost:3000', description: 'Dev local' },
   ],
   tags: [
     { name: 'health' },
