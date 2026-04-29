@@ -70,6 +70,9 @@ describe('SyncService', () => {
 
       expect(fetchSpy).toHaveBeenCalledWith(
         'https://test.preciosclaros.gob.ar/productos?string=&limit=100&offset=0&id_sucursal=store-42',
+        expect.objectContaining({
+          headers: expect.objectContaining({ 'User-Agent': expect.any(String) }),
+        }),
       );
 
       expect(mockedRepo.upsertByBarcode).toHaveBeenCalledTimes(2);
@@ -133,6 +136,61 @@ describe('SyncService', () => {
       expect(result.updated).toBe(0);
       expect(result.errors).toBe(0);
       expect(mockedRepo.upsertByBarcode).not.toHaveBeenCalled();
+    });
+
+    it('si la API devuelve respuesta sin field productos, no procesa nada', async () => {
+      jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({}),
+      } as unknown as Response);
+
+      const result = await syncService.syncPreciosClaros();
+
+      expect(result.created).toBe(0);
+      expect(result.updated).toBe(0);
+      expect(mockedRepo.upsertByBarcode).not.toHaveBeenCalled();
+    });
+
+    it('pagina: si primera pagina trae 100, hace segunda llamada con offset=100', async () => {
+      const fullPage = Array.from({ length: 100 }, (_, i) =>
+        buildApiProduct({ id: `prod-${i}` }),
+      );
+      const secondPage = [buildApiProduct({ id: 'prod-100' })];
+
+      const fetchSpy = jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValueOnce(makeFetchResponse(fullPage))
+        .mockResolvedValueOnce(makeFetchResponse(secondPage));
+
+      mockedRepo.upsertByBarcode.mockResolvedValue({ created: true });
+
+      const result = await syncService.syncPreciosClaros();
+
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('offset=100'),
+        expect.any(Object),
+      );
+      expect(result.created).toBe(101);
+    });
+
+    it('respeta MAX_PRODUCTS=1000 y para de paginar', async () => {
+      const fullPage = Array.from({ length: 100 }, (_, i) =>
+        buildApiProduct({ id: `p-${i}` }),
+      );
+
+      const fetchSpy = jest
+        .spyOn(global, 'fetch')
+        .mockImplementation(() => Promise.resolve(makeFetchResponse(fullPage)));
+
+      mockedRepo.upsertByBarcode.mockResolvedValue({ created: true });
+
+      const result = await syncService.syncPreciosClaros();
+
+      // 1000 productos = 10 paginas exactas
+      expect(fetchSpy).toHaveBeenCalledTimes(10);
+      expect(result.created).toBe(1000);
     });
   });
 });
