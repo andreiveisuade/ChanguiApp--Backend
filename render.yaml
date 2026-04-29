@@ -1,0 +1,37 @@
+# Configuracion de Render para el deploy del backend.
+# Este archivo es la fuente de verdad para Render Blueprints. Si Render
+# no detecta cambios automaticamente, ejecutar "Manual Deploy" desde el
+# dashboard tras tocar este archivo.
+#
+# Doc: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: changuiapp-backend
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    autoDeploy: true
+
+    # Build: instala deps + compila TypeScript a dist/
+    buildCommand: npm install && npm run build
+
+    # Start: ejecuta el codigo compilado
+    startCommand: npm start
+
+    # Healthcheck para que Render reinicie si el server crashea
+    healthCheckPath: /health
+
+    # Variables de entorno NO secretas. Las secretas se setean
+    # en el dashboard de Render directamente (Environment tab).
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PRECIOS_CLAROS_URL
+        value: https://d3e6htiiul5ek9.cloudfront.net/prod
+      - key: MVP_STORE_PRECIOS_CLAROS_ID
+        value: 12-1-158
+      # SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY,
+      # MP_ACCESS_TOKEN, ADMIN_TOKEN, ALLOWED_ORIGINS se setean
+      # manualmente en el dashboard (son secretos o env-specific).
