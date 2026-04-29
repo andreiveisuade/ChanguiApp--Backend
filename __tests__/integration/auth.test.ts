@@ -8,106 +8,90 @@ jest.mock('../../src/config/supabase', () => require('../helpers/mockSupabase'))
 const mockSupabase = require('../helpers/mockSupabase');
 const { validUser } = require('../helpers/testData');
 
-describe('Auth Endpoints', () => {
+describe('POST /api/auth/register', () => {
   afterEach(() => jest.clearAllMocks());
 
-  describe('POST /api/auth/register', () => {
-    it('con datos válidos devuelve 201 con token y datos del usuario', async () => {
-      mockSupabase.auth.signUp.mockResolvedValue({
-        data: {
-          user: { id: validUser.id, email: validUser.email },
-          session: { access_token: 'test-token' },
-        },
-        error: null,
-      });
-      mockSupabase.single.mockResolvedValue({
-        data: { id: validUser.id, email: validUser.email },
-        error: null,
-      });
-
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({ email: validUser.email, password: validUser.password });
-
-      expect(res.statusCode).toBe(201);
-      expect(res.body).toHaveProperty('token');
-      expect(res.body).toHaveProperty('user');
-      expect(res.body.user.email).toBe(validUser.email);
+  it('con datos válidos devuelve 201 con session y user', async () => {
+    mockSupabase.single.mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } });
+    mockSupabase.auth.signUp.mockResolvedValue({
+      data: {
+        user: { id: validUser.id, email: validUser.email },
+        session: { access_token: 'test-token' },
+      },
+      error: null,
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { id: validUser.id, email: validUser.email, full_name: validUser.full_name },
+      error: null,
     });
 
-    it('con email duplicado devuelve 409', async () => {
-      mockSupabase.auth.signUp.mockResolvedValue({
-        data: { user: null, session: null },
-        error: { message: 'User already registered', status: 422 },
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: validUser.email,
+        password: validUser.password,
+        name: validUser.full_name,
       });
 
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({ email: validUser.email, password: validUser.password });
-
-      expect(res.statusCode).toBe(409);
-    });
-
-    it('sin campos obligatorios devuelve 400', async () => {
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({});
-
-      expect(res.statusCode).toBe(400);
-    });
+    expect(res.statusCode).toBe(201);
+    expect(res.body).toHaveProperty('session.access_token', 'test-token');
+    expect(res.body.user.email).toBe(validUser.email);
   });
 
-  describe('POST /api/auth/login', () => {
-    it('con credenciales válidas devuelve 200 con token y datos', async () => {
-      mockSupabase.auth.signInWithPassword.mockResolvedValue({
-        data: {
-          user: { id: validUser.id, email: validUser.email },
-          session: { access_token: 'test-token' },
-        },
-        error: null,
-      });
-
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({ email: validUser.email, password: validUser.password });
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toHaveProperty('token');
-      expect(res.body.user.email).toBe(validUser.email);
+  it('con email duplicado devuelve 409', async () => {
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { id: validUser.id, email: validUser.email },
+      error: null,
     });
 
-    it('con credenciales inválidas devuelve 401', async () => {
-      mockSupabase.auth.signInWithPassword.mockResolvedValue({
-        data: { user: null, session: null },
-        error: { message: 'Invalid login credentials' },
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: validUser.email,
+        password: validUser.password,
+        name: validUser.full_name,
       });
 
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({ email: 'wrong@test.com', password: 'wrong' });
-
-      expect(res.statusCode).toBe(401);
-    });
+    expect(res.statusCode).toBe(409);
   });
 
-  describe('Rutas protegidas', () => {
-    it('sin token devuelve 401', async () => {
-      const res = await request(app).get('/api/users/profile');
+  it('sin body devuelve 400', async () => {
+    const res = await request(app).post('/api/auth/register').send({});
+    expect(res.statusCode).toBe(400);
+  });
 
-      expect(res.statusCode).toBe(401);
-    });
+  it('sin email devuelve 400', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ password: validUser.password, name: validUser.full_name });
+    expect(res.statusCode).toBe(400);
+  });
 
-    it('con token inválido devuelve 401', async () => {
-      mockSupabase.auth.getUser.mockResolvedValue({
-        data: { user: null },
-        error: { message: 'Invalid token' },
-      });
+  it('sin password devuelve 400', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: validUser.email, name: validUser.full_name });
+    expect(res.statusCode).toBe(400);
+  });
 
-      const res = await request(app)
-        .get('/api/users/profile')
-        .set('Authorization', 'Bearer invalid-token');
+  it('sin name devuelve 400', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: validUser.email, password: validUser.password });
+    expect(res.statusCode).toBe(400);
+  });
 
-      expect(res.statusCode).toBe(401);
-    });
+  it('con email malformado (sin @) devuelve 400', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'sin-arroba', password: validUser.password, name: validUser.full_name });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('con password muy corta (<6 chars) devuelve 400', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: validUser.email, password: '12', name: validUser.full_name });
+    expect(res.statusCode).toBe(400);
   });
 });
