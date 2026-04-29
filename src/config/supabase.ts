@@ -21,8 +21,32 @@ export const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey);
 // se hace a nivel de aplicacion (auth middleware + filtrado por
 // user_id en cada query). RLS protege contra acceso directo a la DB
 // con anon key, no contra el backend.
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
 
 // Alias para compatibilidad con codigo existente que usa `supabase`.
 export const supabase = supabaseAdmin;
 export default supabaseAdmin;
+
+// Debug temporal: query de prueba al startup para verificar que el cliente
+// admin puede leer datos. Si tira error o devuelve [] cuando hay datos,
+// hay algo mal con la config del SDK.
+supabaseAdmin
+  .from('stores')
+  .select('id, name')
+  .limit(5)
+  .then(({ data, error }) => {
+    console.log('[supabase test query] stores:', { data, error });
+  });
+
+supabaseAdmin
+  .from('products')
+  .select('id, barcode')
+  .limit(2)
+  .then(({ data, error }) => {
+    console.log('[supabase test query] products:', { data, error });
+  });
