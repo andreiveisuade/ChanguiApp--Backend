@@ -1,8 +1,10 @@
-import { supabase } from '../config/supabase';
+import { supabaseAuth } from '../config/supabase';
 
+// Usa el cliente supabaseAuth (anon + persistSession:false) en lugar del
+// cliente admin para evitar contaminar la sesion del cliente compartido.
 export const authRepository = {
   async register(email: string, password: string) {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseAuth.auth.signUp({
       email,
       password,
     });
@@ -11,7 +13,7 @@ export const authRepository = {
   },
 
   async login(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabaseAuth.auth.signInWithPassword({
       email,
       password,
     });
