@@ -67,6 +67,36 @@ describe('UserService', () => {
     });
   });
 
+  describe('updateProfile (mas casos borde)', () => {
+    it('acepta full_name de 1 char (no rechaza por longitud aca, validar en frontend)', async () => {
+      const body = { full_name: 'A' };
+      userRepository.update.mockResolvedValue({ id: validUser.id, full_name: 'A' });
+
+      const result = await userService.updateProfile(validUser.id, body);
+
+      expect(result.full_name).toBe('A');
+    });
+
+    it('actualiza solo avatar_url si solo se manda eso', async () => {
+      const body = { avatar_url: 'https://img.com/x.jpg' };
+      const updated = { id: validUser.id, avatar_url: 'https://img.com/x.jpg' };
+      userRepository.update.mockResolvedValue(updated);
+
+      const result = await userService.updateProfile(validUser.id, body);
+
+      expect(userRepository.update).toHaveBeenCalledWith(validUser.id, body);
+      expect(result.avatar_url).toBe('https://img.com/x.jpg');
+    });
+
+    it('propaga error de DB del repository', async () => {
+      userRepository.update.mockRejectedValue(new Error('DB write failed'));
+
+      await expect(
+        userService.updateProfile(validUser.id, { full_name: 'X' }),
+      ).rejects.toThrow('DB write failed');
+    });
+  });
+
   describe('deleteProfile', () => {
     it('llama a userRepository.remove con el userId', async () => {
       userRepository.remove.mockResolvedValue(undefined);
@@ -74,6 +104,12 @@ describe('UserService', () => {
       await userService.deleteProfile(validUser.id);
 
       expect(userRepository.remove).toHaveBeenCalledWith(validUser.id);
+    });
+
+    it('propaga error de DB del repository', async () => {
+      userRepository.remove.mockRejectedValue(new Error('DB delete failed'));
+
+      await expect(userService.deleteProfile(validUser.id)).rejects.toThrow('DB delete failed');
     });
   });
 });

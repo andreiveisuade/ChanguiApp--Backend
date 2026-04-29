@@ -28,5 +28,11 @@ describe('StoreService', () => {
 
       expect(result).toEqual([]);
     });
+
+    it('propaga error de DB del repository', async () => {
+      storeRepository.findAll.mockRejectedValue(new Error('DB connection lost'));
+
+      await expect(storeService.list()).rejects.toThrow('DB connection lost');
+    });
   });
 });

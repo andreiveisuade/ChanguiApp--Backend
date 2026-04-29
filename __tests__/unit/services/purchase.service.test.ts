@@ -60,5 +60,27 @@ describe('PurchaseService', () => {
         purchaseService.getById(validUser.id, 'inexistente'),
       ).rejects.toMatchObject({ status: 404 });
     });
+
+    it('lanza ApiError 404 si purchase pertenece a otro user (filtro por user_id en repo)', async () => {
+      // El repo filtra por (id, user_id). Si el purchase es de otro user, devuelve null.
+      purchaseRepository.findByIdAndUser.mockResolvedValue(null);
+
+      await expect(
+        purchaseService.getById(validUser.id, validPurchase.id),
+      ).rejects.toMatchObject({ status: 404 });
+
+      expect(purchaseRepository.findByIdAndUser).toHaveBeenCalledWith(
+        validPurchase.id,
+        validUser.id,
+      );
+    });
+
+    it('propaga errores de DB del repository', async () => {
+      purchaseRepository.findByIdAndUser.mockRejectedValue(new Error('DB connection lost'));
+
+      await expect(
+        purchaseService.getById(validUser.id, validPurchase.id),
+      ).rejects.toThrow('DB connection lost');
+    });
   });
 });

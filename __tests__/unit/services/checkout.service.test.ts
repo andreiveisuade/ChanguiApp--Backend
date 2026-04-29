@@ -152,5 +152,85 @@ describe('CheckoutService', () => {
 
       expect(checkoutRepository.createPurchase).not.toHaveBeenCalled();
     });
+
+    it('status pending no crea purchase ni cierra carrito', async () => {
+      mercadopago.payment.findById.mockResolvedValue({
+        body: {
+          id: 'MP-PEND',
+          status: 'pending',
+          external_reference: validCart.id,
+        },
+      });
+      checkoutRepository.findCartById.mockResolvedValue({
+        ...validCart,
+        items: [validCartItem],
+      });
+
+      await checkoutService.handleWebhook({ type: 'payment', data: { id: 'MP-PEND' } });
+
+      expect(checkoutRepository.createPurchase).not.toHaveBeenCalled();
+      expect(checkoutRepository.closeCart).not.toHaveBeenCalled();
+    });
+
+    it('payment.findById devuelve sin body, no hace nada', async () => {
+      mercadopago.payment.findById.mockResolvedValue({ body: null });
+
+      await checkoutService.handleWebhook({ type: 'payment', data: { id: 'MP-X' } });
+
+      expect(checkoutRepository.findCartById).not.toHaveBeenCalled();
+    });
+
+    it('payment sin external_reference, no hace nada', async () => {
+      mercadopago.payment.findById.mockResolvedValue({
+        body: { id: 'MP-NO-REF', status: 'approved' },
+      });
+
+      await checkoutService.handleWebhook({ type: 'payment', data: { id: 'MP-NO-REF' } });
+
+      expect(checkoutRepository.findCartById).not.toHaveBeenCalled();
+    });
+
+    it('total se calcula correctamente con multiples items', async () => {
+      const items = [
+        { ...validCartItem, quantity: 2, unit_price: 100, product: validProduct },
+        { ...validCartItem, id: 'item-2', quantity: 3, unit_price: 50, product: validProduct },
+        { ...validCartItem, id: 'item-3', quantity: 1, unit_price: 150, product: validProduct },
+      ];
+      mercadopago.payment.findById.mockResolvedValue({
+        body: {
+          id: 'MP-MULTI',
+          status: 'approved',
+          external_reference: validCart.id,
+        },
+      });
+      checkoutRepository.findCartById.mockResolvedValue({ ...validCart, items });
+      checkoutRepository.createPurchase.mockResolvedValue(validPurchase);
+      checkoutRepository.insertPurchaseItems.mockResolvedValue(undefined);
+      checkoutRepository.closeCart.mockResolvedValue(undefined);
+
+      await checkoutService.handleWebhook({ type: 'payment', data: { id: 'MP-MULTI' } });
+
+      // 2*100 + 3*50 + 1*150 = 500
+      expect(checkoutRepository.createPurchase).toHaveBeenCalledWith(
+        expect.objectContaining({ total: 500 }),
+      );
+    });
+
+    it('item sin product usa "Producto" como fallback en MP items', async () => {
+      const cartWithItemSinProduct = {
+        ...validCart,
+        items: [{ ...validCartItem, product: undefined }],
+      };
+      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItemSinProduct);
+      mercadopago.preferences.create.mockResolvedValue({ body: validCheckoutPreference });
+
+      await checkoutService.createPreference(validUser.id);
+
+      expect(mercadopago.preferences.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          items: expect.arrayContaining([expect.objectContaining({ title: 'Producto' })]),
+        }),
+      );
+    });
   });
 });
