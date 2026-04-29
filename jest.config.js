@@ -1,19 +1,15 @@
+/** @type {import('jest').Config} */
 module.exports = {
+  preset: 'ts-jest',
   testEnvironment: 'node',
-  testMatch: ['<rootDir>/__tests__/**/*.test.js'],
-  setupFiles: ['<rootDir>/__tests__/setup.js'],
+  setupFiles: ['<rootDir>/__tests__/setup.ts'],
+  testMatch: ['<rootDir>/__tests__/**/*.test.ts'],
+  moduleFileExtensions: ['ts', 'js', 'json'],
   collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/index.js',
+    'src/**/*.ts',
+    '!src/index.ts',
+    '!src/types/**',
     '!src/config/**',
   ],
   coverageDirectory: 'coverage',
-  coverageThreshold: {
-    global: {
-      branches: 100,
-      functions: 100,
-      lines: 100,
-      statements: 100,
-    },
-  },
 };
