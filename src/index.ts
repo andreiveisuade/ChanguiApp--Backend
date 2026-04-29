@@ -18,6 +18,7 @@ import purchaseRoutes from './routes/purchase.routes';
 import checkoutRoutes from './routes/checkout.routes';
 import storeRoutes from './routes/store.routes';
 import adminRoutes from './routes/admin.routes';
+import authRoutes from './routes/auth.routes';
 import { ApiError } from './types/domain';
 
 const app = express();
@@ -59,6 +60,7 @@ const openapiSpec = YAML.parse(
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
 
 // Rutas del MVP
+app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/purchases', purchaseRoutes);
