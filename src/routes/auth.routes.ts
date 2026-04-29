@@ -15,16 +15,18 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [email, password, full_name]
+ *             required: [email, password, name]
  *             properties:
  *               email: { type: string, format: email }
- *               password: { type: string, format: password }
- *               full_name: { type: string }
+ *               password: { type: string, format: password, minLength: 6 }
+ *               name: { type: string, description: "Nombre completo del usuario, se guarda como full_name en la tabla users" }
  *     responses:
  *       '201':
  *         description: Usuario creado
+ *       '400':
+ *         description: Email/password/name faltantes o formato invalido
  *       '409':
- *         description: El email ya está registrado
+ *         description: El email ya esta registrado
  */
 router.post('/register', register);
 
