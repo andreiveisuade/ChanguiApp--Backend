@@ -74,7 +74,15 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // OpenAPI / Swagger UI — el spec se genera escaneando los comentarios @swagger
 // de cada route file (ver src/config/swagger.ts).
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// persistAuthorization: true guarda el Bearer token en localStorage del browser,
+// asi se mantiene entre recargas y al cambiar de pestana de Swagger.
+app.use(
+  '/api/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    swaggerOptions: { persistAuthorization: true },
+  }),
+);
 
 // Rutas del MVP
 app.use('/api/auth', authRoutes);
