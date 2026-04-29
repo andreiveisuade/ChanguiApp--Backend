@@ -3,14 +3,12 @@ import express, {
   type Request,
   type Response,
 } from 'express';
-import rateLimit from 'express-rate-limit'; 
+import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import helmet from 'helmet';
-import fs from 'node:fs';
-import path from 'node:path';
-import YAML from 'yaml';
 import swaggerUi from 'swagger-ui-express';
 import 'dotenv/config';
+import { swaggerSpec } from './config/swagger';
 import cartRoutes from './routes/cart.routes';
 import productRoutes from './routes/product.routes';
 import userRoutes from './routes/user.routes';
@@ -54,16 +52,29 @@ app.use(globalLimiter);                      // aplica a toda la API
 app.use('/api/auth', authLimiter);           // aplica SOLO a login y registro
 app.use(express.json());
 
-// Health check
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     tags: [health]
+ *     summary: Healthcheck
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: ok }
+ */
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
-// OpenAPI / Swagger UI
-const openapiSpec = YAML.parse(
-  fs.readFileSync(path.join(__dirname, '..', 'docs', 'openapi.yaml'), 'utf8')
-);
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+// OpenAPI / Swagger UI — el spec se genera escaneando los comentarios @swagger
+// de cada route file (ver src/config/swagger.ts).
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rutas del MVP
 app.use('/api/auth', authRoutes);
