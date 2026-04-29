@@ -17,6 +17,7 @@ import userRoutes from './routes/user.routes';
 import purchaseRoutes from './routes/purchase.routes';
 import checkoutRoutes from './routes/checkout.routes';
 import storeRoutes from './routes/store.routes';
+import adminRoutes from './routes/admin.routes';
 import { ApiError } from './types/domain';
 
 const app = express();
@@ -64,6 +65,7 @@ app.use('/api/purchases', purchaseRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/stores', storeRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handler global
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
