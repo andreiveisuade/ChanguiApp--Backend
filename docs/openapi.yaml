@@ -123,6 +123,17 @@ components:
               type: array
               items: { $ref: '#/components/schemas/PurchaseItem' }
 
+    Store:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: "Carrefour Express - Recoleta" }
+        chain: { type: string, nullable: true, example: "Carrefour" }
+        address: { type: string, nullable: true }
+        lat: { type: number, format: float }
+        lng: { type: number, format: float }
+        distanceKm: { type: number, format: float, nullable: true }
+
   responses:
     Unauthorized:
       description: Token faltante o inválido
@@ -325,4 +336,19 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PurchaseDetail' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/stores:
+    get:
+      tags: [stores]
+      security: [{ bearerAuth: [] }]
+      summary: Listado de sucursales/tiendas disponibles
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Store' }
         '401': { $ref: '#/components/responses/Unauthorized' }
