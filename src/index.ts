@@ -22,6 +22,12 @@ import authRoutes from './routes/auth.routes';
 import { ApiError } from './types/domain';
 
 const app = express();
+
+// Render (y la mayoria de PaaS) corren detras de un proxy reverso que setea
+// X-Forwarded-For con la IP real del cliente. Sin esto, express-rate-limit
+// agrupa todas las requests bajo la misma IP (la del proxy).
+app.set('trust proxy', 1);
+
 app.use(helmet());
 const allowedOrigins: string[] = process.env.ALLOWED_ORIGINS?.split(',') ?? [
   'http://localhost:8081',
