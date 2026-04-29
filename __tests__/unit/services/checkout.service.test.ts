@@ -1,23 +1,27 @@
 export {};
 
-const checkoutService = require('../../../src/services/checkout.service');
-const cartRepository = require('../../../src/repositories/cart.repository');
-const purchaseRepository = require('../../../src/repositories/purchase.repository');
-
-jest.mock('../../../src/repositories/cart.repository');
-jest.mock('../../../src/repositories/purchase.repository');
-jest.mock('mercadopago', () => ({
-  configure: jest.fn(),
-  preferences: {
-    create: jest.fn(),
-  },
-  payment: {
-    findById: jest.fn(),
+jest.mock('../../../src/repositories/checkout.repository');
+jest.mock('../../../src/config/mercadopago', () => ({
+  __esModule: true,
+  default: {
+    configure: jest.fn(),
+    preferences: { create: jest.fn() },
+    payment: { findById: jest.fn() },
   },
 }));
 
-const mercadopago = require('mercadopago');
-const { validUser, validCart, validCartItem, validProduct, validCheckoutPreference, validPurchase, validPurchaseItem } = require('../../helpers/testData');
+const checkoutService = require('../../../src/services/checkout.service');
+const checkoutRepository = require('../../../src/repositories/checkout.repository');
+const mercadopago = require('../../../src/config/mercadopago').default;
+
+const {
+  validUser,
+  validCart,
+  validCartItem,
+  validProduct,
+  validCheckoutPreference,
+  validPurchase,
+} = require('../../helpers/testData');
 
 describe('CheckoutService', () => {
   afterEach(() => jest.clearAllMocks());
@@ -28,58 +32,82 @@ describe('CheckoutService', () => {
         ...validCart,
         items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
       };
-      cartRepository.findActiveByUserId.mockResolvedValue(cartWithItems);
-      mercadopago.preferences.create.mockResolvedValue({
-        body: validCheckoutPreference,
-      });
+      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
+      mercadopago.preferences.create.mockResolvedValue({ body: validCheckoutPreference });
 
       const result = await checkoutService.createPreference(validUser.id);
 
-      expect(cartRepository.findActiveByUserId).toHaveBeenCalledWith(validUser.id);
-      expect(mercadopago.preferences.create).toHaveBeenCalled();
-      expect(result).toHaveProperty('preference_id');
-      expect(result).toHaveProperty('init_point');
+      expect(checkoutRepository.findActiveCartByUserId).toHaveBeenCalledWith(validUser.id);
+      expect(mercadopago.preferences.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          items: expect.arrayContaining([
+            expect.objectContaining({
+              title: validProduct.name,
+              quantity: validCartItem.quantity,
+              currency_id: 'ARS',
+            }),
+          ]),
+          external_reference: validCart.id,
+        }),
+      );
+      expect(result.preference_id).toBe(validCheckoutPreference.preference_id);
+      expect(result.init_point).toBe(validCheckoutPreference.init_point);
     });
 
-    it('lanza error si el carrito está vacío', async () => {
-      cartRepository.findActiveByUserId.mockResolvedValue({ ...validCart, items: [] });
+    it('lanza ApiError 400 si el carrito esta vacio', async () => {
+      checkoutRepository.findActiveCartByUserId.mockResolvedValue({ ...validCart, items: [] });
 
-      await expect(checkoutService.createPreference(validUser.id))
-        .rejects.toMatchObject({ status: 400 });
+      await expect(checkoutService.createPreference(validUser.id)).rejects.toMatchObject({
+        status: 400,
+      });
+
+      expect(mercadopago.preferences.create).not.toHaveBeenCalled();
     });
 
-    it('lanza error si no hay carrito activo', async () => {
-      cartRepository.findActiveByUserId.mockResolvedValue(null);
+    it('lanza ApiError 400 si no hay carrito activo', async () => {
+      checkoutRepository.findActiveCartByUserId.mockResolvedValue(null);
 
-      await expect(checkoutService.createPreference(validUser.id))
-        .rejects.toMatchObject({ status: 400 });
+      await expect(checkoutService.createPreference(validUser.id)).rejects.toMatchObject({
+        status: 400,
+      });
     });
   });
 
-  describe('processWebhook', () => {
-    it('si pago aprobado, crea purchase y cierra carrito', async () => {
+  describe('handleWebhook', () => {
+    it('si pago aprobado, crea purchase + inserta items + cierra carrito', async () => {
+      const cartWithItems = {
+        ...validCart,
+        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+      };
       mercadopago.payment.findById.mockResolvedValue({
         body: {
           id: 'MP-123456',
           status: 'approved',
           external_reference: validCart.id,
-          transaction_amount: 3000,
         },
       });
-      cartRepository.findById.mockResolvedValue({
-        ...validCart,
-        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
-      });
-      purchaseRepository.create.mockResolvedValue(validPurchase);
-      cartRepository.updateStatus.mockResolvedValue({ ...validCart, status: 'completed' });
+      checkoutRepository.findCartById.mockResolvedValue(cartWithItems);
+      checkoutRepository.createPurchase.mockResolvedValue(validPurchase);
+      checkoutRepository.insertPurchaseItems.mockResolvedValue(undefined);
+      checkoutRepository.closeCart.mockResolvedValue(undefined);
 
-      const result = await checkoutService.processWebhook({ type: 'payment', data: { id: 'MP-123456' } });
+      await checkoutService.handleWebhook({ type: 'payment', data: { id: 'MP-123456' } });
 
-      expect(purchaseRepository.create).toHaveBeenCalled();
-      expect(cartRepository.updateStatus).toHaveBeenCalledWith(validCart.id, 'completed');
+      expect(checkoutRepository.createPurchase).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: validCart.user_id,
+          payment_id: 'MP-123456',
+          payment_status: 'completed',
+        }),
+      );
+      expect(checkoutRepository.insertPurchaseItems).toHaveBeenCalledWith(
+        validPurchase.id,
+        cartWithItems.items,
+      );
+      expect(checkoutRepository.closeCart).toHaveBeenCalledWith(validCart.id);
     });
 
-    it('si pago rechazado, no cierra carrito', async () => {
+    it('si pago rechazado, no crea purchase ni cierra carrito', async () => {
       mercadopago.payment.findById.mockResolvedValue({
         body: {
           id: 'MP-789',
@@ -87,17 +115,42 @@ describe('CheckoutService', () => {
           external_reference: validCart.id,
         },
       });
+      checkoutRepository.findCartById.mockResolvedValue({
+        ...validCart,
+        items: [validCartItem],
+      });
 
-      await checkoutService.processWebhook({ type: 'payment', data: { id: 'MP-789' } });
+      await checkoutService.handleWebhook({ type: 'payment', data: { id: 'MP-789' } });
 
-      expect(purchaseRepository.create).not.toHaveBeenCalled();
-      expect(cartRepository.updateStatus).not.toHaveBeenCalled();
+      expect(checkoutRepository.createPurchase).not.toHaveBeenCalled();
+      expect(checkoutRepository.closeCart).not.toHaveBeenCalled();
     });
 
-    it('ignora notificaciones de tipos no relevantes', async () => {
-      await checkoutService.processWebhook({ type: 'plan', data: { id: '123' } });
+    it('ignora notificaciones que no son de tipo payment', async () => {
+      await checkoutService.handleWebhook({ type: 'plan', data: { id: '123' } });
 
       expect(mercadopago.payment.findById).not.toHaveBeenCalled();
+    });
+
+    it('ignora notificaciones sin data.id', async () => {
+      await checkoutService.handleWebhook({ type: 'payment', data: {} });
+
+      expect(mercadopago.payment.findById).not.toHaveBeenCalled();
+    });
+
+    it('si el carrito de external_reference no existe, no hace nada', async () => {
+      mercadopago.payment.findById.mockResolvedValue({
+        body: {
+          id: 'MP-999',
+          status: 'approved',
+          external_reference: 'cart-inexistente',
+        },
+      });
+      checkoutRepository.findCartById.mockResolvedValue(null);
+
+      await checkoutService.handleWebhook({ type: 'payment', data: { id: 'MP-999' } });
+
+      expect(checkoutRepository.createPurchase).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,9 +1,10 @@
 export {};
 
+jest.mock('../../../src/repositories/user.repository');
+
 const userService = require('../../../src/services/user.service');
 const userRepository = require('../../../src/repositories/user.repository');
 
-jest.mock('../../../src/repositories/user.repository');
 const { validUser } = require('../../helpers/testData');
 
 describe('UserService', () => {
@@ -11,7 +12,11 @@ describe('UserService', () => {
 
   describe('getProfile', () => {
     it('devuelve datos del usuario autenticado', async () => {
-      const profile = { id: validUser.id, email: validUser.email, name: 'Test User' };
+      const profile = {
+        id: validUser.id,
+        email: validUser.email,
+        full_name: validUser.full_name,
+      };
       userRepository.findById.mockResolvedValue(profile);
 
       const result = await userService.getProfile(validUser.id);
@@ -20,58 +25,55 @@ describe('UserService', () => {
       expect(result).toEqual(profile);
     });
 
-    it('lanza error si el usuario no existe', async () => {
+    it('lanza ApiError 404 si el usuario no existe', async () => {
       userRepository.findById.mockResolvedValue(null);
 
-      await expect(userService.getProfile('no-existe'))
-        .rejects.toThrow('Usuario no encontrado');
+      await expect(userService.getProfile('no-existe')).rejects.toMatchObject({
+        status: 404,
+      });
     });
   });
 
   describe('updateProfile', () => {
-    it('actualiza campos enviados y devuelve perfil actualizado', async () => {
-      const updates = { name: 'Nuevo Nombre' };
-      const updated = { id: validUser.id, email: validUser.email, ...updates };
-      userRepository.findById.mockResolvedValue({ id: validUser.id, email: validUser.email });
+    it('actualiza solo full_name y avatar_url, devuelve perfil actualizado', async () => {
+      const body = { full_name: 'Nuevo Nombre', avatar_url: 'https://img.com/a.png' };
+      const updated = { id: validUser.id, email: validUser.email, ...body };
       userRepository.update.mockResolvedValue(updated);
 
-      const result = await userService.updateProfile(validUser.id, updates);
+      const result = await userService.updateProfile(validUser.id, body);
 
-      expect(userRepository.update).toHaveBeenCalledWith(validUser.id, updates);
+      expect(userRepository.update).toHaveBeenCalledWith(validUser.id, body);
       expect(result).toEqual(updated);
     });
 
-    it('ignora campos no permitidos (id, role)', async () => {
-      const updates = { name: 'Nuevo Nombre', id: 'hack-id', role: 'admin' };
-      const sanitized = { name: 'Nuevo Nombre' };
+    it('ignora campos no permitidos (id, role, email)', async () => {
+      const body = { full_name: 'Nuevo', id: 'hack-id', role: 'admin', email: 'hack@x.com' };
+      const sanitized = { full_name: 'Nuevo' };
       const updated = { id: validUser.id, email: validUser.email, ...sanitized };
-      userRepository.findById.mockResolvedValue({ id: validUser.id, email: validUser.email });
       userRepository.update.mockResolvedValue(updated);
 
-      const result = await userService.updateProfile(validUser.id, updates);
+      const result = await userService.updateProfile(validUser.id, body);
 
       expect(userRepository.update).toHaveBeenCalledWith(validUser.id, sanitized);
       expect(result).toEqual(updated);
     });
+
+    it('lanza ApiError 400 si no hay campos validos para actualizar', async () => {
+      await expect(
+        userService.updateProfile(validUser.id, { id: 'hack', role: 'admin' }),
+      ).rejects.toMatchObject({ status: 400 });
+
+      expect(userRepository.update).not.toHaveBeenCalled();
+    });
   });
 
-  describe('deleteAccount', () => {
-    it('elimina usuario y borra datos asociados', async () => {
-      userRepository.findById.mockResolvedValue({ id: validUser.id });
-      userRepository.deleteWithData.mockResolvedValue(true);
+  describe('deleteProfile', () => {
+    it('llama a userRepository.remove con el userId', async () => {
+      userRepository.remove.mockResolvedValue(undefined);
 
-      const result = await userService.deleteAccount(validUser.id);
+      await userService.deleteProfile(validUser.id);
 
-      expect(userRepository.findById).toHaveBeenCalledWith(validUser.id);
-      expect(userRepository.deleteWithData).toHaveBeenCalledWith(validUser.id);
-      expect(result).toBe(true);
-    });
-
-    it('lanza error si el usuario no existe', async () => {
-      userRepository.findById.mockResolvedValue(null);
-
-      await expect(userService.deleteAccount('no-existe'))
-        .rejects.toThrow('Usuario no encontrado');
+      expect(userRepository.remove).toHaveBeenCalledWith(validUser.id);
     });
   });
 });

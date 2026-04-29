@@ -70,6 +70,9 @@ describe('SyncService', () => {
 
       expect(fetchSpy).toHaveBeenCalledWith(
         'https://test.preciosclaros.gob.ar/productos?string=&limit=100&offset=0&id_sucursal=store-42',
+        expect.objectContaining({
+          headers: expect.objectContaining({ 'User-Agent': expect.any(String) }),
+        }),
       );
 
       expect(mockedRepo.upsertByBarcode).toHaveBeenCalledTimes(2);

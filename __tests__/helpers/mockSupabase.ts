@@ -38,5 +38,15 @@ beforeEach(() => {
   });
 });
 
+// Soporta tanto `import supabase from '../config/supabase'` (default)
+// como `import { supabase, supabaseAdmin } from '../config/supabase'` (named).
+// El mismo cliente mock cubre ambos roles porque en tests no hay diferencia
+// entre anon/service_role.
 export default mockSupabase;
+export const supabase = mockSupabase;
+export const supabaseAdmin = mockSupabase;
+
 module.exports = mockSupabase;
+module.exports.default = mockSupabase;
+module.exports.supabase = mockSupabase;
+module.exports.supabaseAdmin = mockSupabase;
