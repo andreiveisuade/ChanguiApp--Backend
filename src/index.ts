@@ -3,7 +3,9 @@ import express, {
   type Request,
   type Response,
 } from 'express';
+import rateLimit from 'express-rate-limit'; 
 import cors from 'cors';
+import helmet from 'helmet';
 import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
@@ -18,7 +20,30 @@ import storeRoutes from './routes/store.routes';
 import { ApiError } from './types/domain';
 
 const app = express();
-app.use(cors());
+app.use(helmet());
+const allowedOrigins: string[] = process.env.ALLOWED_ORIGINS?.split(',') ?? [
+  'http://localhost:8081',
+];
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
+// Rate limiting global - para todos los endpoints
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // ventana de 15 minutos
+  max: 100,                  // máximo 100 requests por IP en esa ventana
+  message: 'Demasiadas solicitudes, intenta mas tarde.',
+});
+
+// Rate limiting estricto - solo para login y registro
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // ventana de 15 minutos
+  max: 10,                   // máximo 10 intentos por IP
+  message: 'Demasiados intentos de autenticacion, espera 15 minutos.',
+});
+
+app.use(globalLimiter);                      // aplica a toda la API
+app.use('/api/auth', authLimiter);           // aplica SOLO a login y registro
 app.use(express.json());
 
 // Health check
@@ -43,9 +68,16 @@ app.use('/api/stores', storeRoutes);
 // Error handler global
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   const status = err instanceof ApiError ? err.status : err.status || 500;
-  res.status(status).json({
-    error: err.message || 'Error interno del servidor',
-  });
+
+  // Logueamos el error en el servidor pero NUNCA lo mandamos al cliente
+  console.error(`[ERROR] ${status} - ${err.message}`);
+
+  // En produccion no exponemos detalles internos
+  const message = process.env.NODE_ENV === 'production'
+    ? 'Error interno del servidor'
+    : err.message || 'Error interno del servidor';
+
+  res.status(status).json({ error: message });
 };
 app.use(errorHandler);
 
