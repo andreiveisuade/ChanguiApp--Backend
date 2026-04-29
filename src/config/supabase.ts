@@ -4,13 +4,17 @@ const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-// Cliente estándar: valida JWTs de usuarios. Respeta RLS.
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Cliente con anon key. Respeta RLS. Solo usar si necesitamos validar
+// JWTs explicitamente (auth middleware con supabase.auth.getUser).
+export const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey);
 
-// Cliente admin: usa service_role key. Bypassa RLS.
-// SOLO usar en repositories de operaciones administrativas (sync, seeds, limpieza).
+// Cliente con service_role. Bypassa RLS. Es el cliente por default
+// para los repositorios del backend porque el control de acceso ya
+// se hace a nivel de aplicacion (auth middleware + filtrado por
+// user_id en cada query). RLS protege contra acceso directo a la DB
+// con anon key, no contra el backend.
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-// Mantener default export para backward-compatibility con repositorios existentes
-// que hacen `import supabase from '../config/supabase'` (usan service_role key).
-export default supabase;
+// Alias para compatibilidad con codigo existente que usa `supabase`.
+export const supabase = supabaseAdmin;
+export default supabaseAdmin;
