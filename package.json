@@ -31,6 +31,10 @@
   "homepage": "https://github.com/andreiveisuade/ChanguiApp--Backend#readme",
   "dependencies": {
     "@supabase/supabase-js": "^2.100.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.6.0",
+    "@types/swagger-ui-express": "^4.1.8",
     "axios": "^1.13.6",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
@@ -40,19 +44,15 @@
     "helmet": "^8.1.0",
     "mercadopago": "^1.5.17",
     "swagger-ui-express": "^5.0.1",
+    "typescript": "^6.0.3",
     "yaml": "^2.8.3"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.6.0",
     "@types/supertest": "^7.2.0",
-    "@types/swagger-ui-express": "^4.1.8",
     "jest": "^30.3.0",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.9",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "tsx": "^4.21.0"
   }
 }
