@@ -32,13 +32,12 @@ export async function addOrUpdateItem(
   unitPrice: number
 ): Promise<CartItem> {
   const { data, error } = await supabase
-    .from('cart_items')
-    .upsert(
-      { cart_id: cartId, product_id: productId, quantity, unit_price: unitPrice },
-      { onConflict: 'cart_id,product_id', ignoreDuplicates: false }
-    )
-    .select()
-    .single();
+    .rpc('upsert_cart_item', {
+      p_cart_id: cartId,
+      p_product_id: productId,
+      p_quantity: quantity,
+      p_unit_price: unitPrice,
+    });
 
   if (error) throw error;
   return data as CartItem;
