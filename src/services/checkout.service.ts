@@ -21,9 +21,14 @@ export async function createPreference(userId: string): Promise<CheckoutResponse
     currency_id: 'ARS',
   }));
 
+  // Webhook publico para que Mercado Pago notifique aprobacion/rechazo del pago.
+  // Se setea por preferencia (mas robusto que la config global del panel MP).
+  const baseUrl = process.env.PUBLIC_BASE_URL || 'https://changuiapp-backend.onrender.com';
+
   const response = await mercadopago.preferences.create({
     items: mpItems,
     external_reference: cart.id,
+    notification_url: `${baseUrl}/api/checkout/webhook`,
   });
 
   return {

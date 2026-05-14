@@ -1,0 +1,380 @@
+{
+  "info": {
+    "_postman_id": "changuiapp-backend-mvp-entrega1",
+    "name": "ChanguiApp Backend — Entrega 1",
+    "description": "Coleccion completa de endpoints del MVP de ChanguiApp para Entrega 1.\n\n## Setup\n\n1. Importar esta coleccion en Postman.\n2. Crear un Environment con las variables:\n   - `base_url` = `https://changuiapp-backend.onrender.com` (prod) o `http://localhost:3000` (local)\n   - `access_token` = (se setea automaticamente al hacer login)\n   - `admin_token` = el ADMIN_TOKEN configurado en Render\n3. Ejecutar los requests en orden: Register -> Login -> el resto.\n\n## Cobertura\n\n- Auth (register, login)\n- Users (profile GET/PUT/DELETE)\n- Products (GET by barcode)\n- Cart (GET, items POST/PUT/DELETE, cancel cart)\n- Checkout (POST, webhook)\n- Purchases (GET, GET by id)\n- Stores (GET)\n- Admin (sync precios claros)\n- Health",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Healthcheck. Debe responder 200 con `{\"status\":\"ok\"}`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/auth/register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.session && body.session.access_token) {",
+                  "    pm.environment.set('access_token', body.session.access_token);",
+                  "    console.log('access_token guardado en environment');",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@changuiapp.com\",\n  \"password\": \"DemoPass123\",\n  \"name\": \"Demo User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Registra un usuario nuevo. Crea entry en Supabase Auth y perfil en tabla users.\n\n**Validaciones**:\n- email, password, name son obligatorios (400 si faltan)\n- email debe tener formato valido (400 si no)\n- password >= 6 chars (400 si no)\n- email duplicado: 409"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/auth/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.session && body.session.access_token) {",
+                  "    pm.environment.set('access_token', body.session.access_token);",
+                  "    console.log('access_token guardado en environment');",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@changuiapp.com\",\n  \"password\": \"DemoPass123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login con credenciales. Devuelve session.access_token (JWT de Supabase).\n\n**Errores**:\n- 400: sin email o password\n- 401: credenciales invalidas"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "GET /api/users/profile",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Obtiene perfil del usuario autenticado.\n\n**Errores**:\n- 401: sin token o invalido\n- 404: perfil no encontrado en DB"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /api/users/profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Demo User Actualizado\",\n  \"avatar_url\": \"https://example.com/avatar.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Actualiza perfil. Solo permite full_name y avatar_url (otros campos se ignoran).\n\n**Errores**:\n- 400: ningun campo valido\n- 401: sin token"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/users/profile",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Elimina la cuenta del usuario autenticado.\n\n**Errores**:\n- 401: sin token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "GET /api/products/barcode/:code",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/products/barcode/7790895000782",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "barcode", "7790895000782"]
+            },
+            "description": "Busca producto por codigo de barras.\n\n**Casos**:\n- 200: producto encontrado\n- 404: barcode no existe en DB\n- 401: sin token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "GET /api/cart",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/cart",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart"]
+            },
+            "description": "Obtiene el carrito activo del usuario con items y total."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/cart/items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"prod-uuid-1\",\n  \"unit_price\": 1500,\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "items"]
+            },
+            "description": "Agrega un item al carrito activo (lo crea si no existe).\n\n**Errores**:\n- 400: sin product_id o unit_price"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /api/cart/items/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{access_token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/items/cart-item-uuid-1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "items", "cart-item-uuid-1"]
+            },
+            "description": "Actualiza cantidad de un item.\n\n**Errores**:\n- 400: sin quantity\n- 404: item no existe\n- 403: item no pertenece al usuario"
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/cart/items/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/cart/items/cart-item-uuid-1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "items", "cart-item-uuid-1"]
+            },
+            "description": "Elimina un item del carrito."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/cart (cancel)",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/cart",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart"]
+            },
+            "description": "Cancela el carrito activo (status -> cancelled).\n\n**Errores**:\n- 404: sin carrito activo"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Stores",
+      "item": [
+        {
+          "name": "GET /api/stores",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/stores",
+              "host": ["{{base_url}}"],
+              "path": ["api", "stores"]
+            },
+            "description": "Listado de sucursales/tiendas disponibles."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Checkout",
+      "item": [
+        {
+          "name": "POST /api/checkout",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "checkout"]
+            },
+            "description": "Crea preferencia de pago en Mercado Pago para el carrito activo.\n\nDevuelve `preference_id` y `init_point` (URL para redirigir al usuario al checkout MP).\n\n**Errores**:\n- 400: sin carrito activo o vacio\n- 401: sin token"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/checkout/webhook",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"payment\",\n  \"data\": { \"id\": \"MP-PAYMENT-ID\" }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/checkout/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["api", "checkout", "webhook"]
+            },
+            "description": "Webhook de Mercado Pago. MP llama a este endpoint cuando hay un evento de pago.\n\nNo requiere auth (es publico, pero MP firma el request).\n\nProcesa: si pago aprobado -> crea purchase + cierra carrito. Si rechazado/pending -> ignora."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Purchases",
+      "item": [
+        {
+          "name": "GET /api/purchases",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/purchases",
+              "host": ["{{base_url}}"],
+              "path": ["api", "purchases"],
+              "query": [{"key": "status", "value": "completed", "disabled": true}]
+            },
+            "description": "Lista las compras del usuario autenticado.\n\nQuery opcional: `?status=completed|failed|pending`"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/purchases/:id",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/purchases/purchase-uuid-1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "purchases", "purchase-uuid-1"]
+            },
+            "description": "Detalle de una compra con sus items.\n\n**Errores**:\n- 404: compra no existe o no pertenece al usuario\n- 401: sin token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "POST /api/admin/sync-precios-claros",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "x-admin-token", "value": "{{admin_token}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/admin/sync-precios-claros",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "sync-precios-claros"]
+            },
+            "description": "Sincroniza catalogo de productos desde la API de Precios Claros (SEPA).\n\nProtegido con header `x-admin-token`. Procesa hasta 1000 productos paginados.\n\nDevuelve stats: `{ created, updated, errors, duration_ms }`.\n\n**Errores**:\n- 401: token incorrecto o faltante\n- 500: error interno (API SEPA caida, error de DB)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {"key": "base_url", "value": "https://changuiapp-backend.onrender.com"},
+    {"key": "access_token", "value": ""},
+    {"key": "admin_token", "value": ""}
+  ]
+}

@@ -1,4 +1,4 @@
-import supabase from '../config/supabase';
+import supabase, { supabaseAdmin } from '../config/supabase';
 import type { User, UserUpdate } from '../types/domain';
 
 export async function findById(userId: string): Promise<User | null> {
@@ -31,4 +31,26 @@ export async function update(userId: string, fields: UserUpdate): Promise<User> 
 export async function remove(userId: string): Promise<void> {
   const { error } = await supabase.from('users').delete().eq('id', userId);
   if (error) throw error;
+}
+
+export async function createUserProfile(userId: string, email: string, name: string) {
+  const { data, error } = await supabaseAdmin
+    .from('users')
+    .insert([{ id: userId, email, full_name: name }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getUserByEmail(email: string) {
+  const { data, error } = await supabaseAdmin
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
 }

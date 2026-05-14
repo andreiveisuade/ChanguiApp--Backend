@@ -1,3 +1,5 @@
+export {};
+
 const storeService = require('../../../src/services/store.service');
 const storeRepository = require('../../../src/repositories/store.repository');
 
@@ -25,6 +27,12 @@ describe('StoreService', () => {
       const result = await storeService.list();
 
       expect(result).toEqual([]);
+    });
+
+    it('propaga error de DB del repository', async () => {
+      storeRepository.findAll.mockRejectedValue(new Error('DB connection lost'));
+
+      await expect(storeService.list()).rejects.toThrow('DB connection lost');
     });
   });
 });

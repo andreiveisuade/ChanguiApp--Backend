@@ -3,22 +3,29 @@ import express, {
   type Request,
   type Response,
 } from 'express';
-import rateLimit from 'express-rate-limit'; 
+import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import helmet from 'helmet';
-import fs from 'node:fs';
-import path from 'node:path';
-import YAML from 'yaml';
 import swaggerUi from 'swagger-ui-express';
 import 'dotenv/config';
+import { swaggerSpec } from './config/swagger';
 import cartRoutes from './routes/cart.routes';
 import productRoutes from './routes/product.routes';
 import userRoutes from './routes/user.routes';
 import purchaseRoutes from './routes/purchase.routes';
 import checkoutRoutes from './routes/checkout.routes';
+import storeRoutes from './routes/store.routes';
+import adminRoutes from './routes/admin.routes';
+import authRoutes from './routes/auth.routes';
 import { ApiError } from './types/domain';
 
 const app = express();
+
+// Render (y la mayoria de PaaS) corren detras de un proxy reverso que setea
+// X-Forwarded-For con la IP real del cliente. Sin esto, express-rate-limit
+// agrupa todas las requests bajo la misma IP (la del proxy).
+app.set('trust proxy', 1);
+
 app.use(helmet());
 const allowedOrigins: string[] = process.env.ALLOWED_ORIGINS?.split(',') ?? [
   'http://localhost:8081',
@@ -45,37 +52,100 @@ app.use(globalLimiter);                      // aplica a toda la API
 app.use('/api/auth', authLimiter);           // aplica SOLO a login y registro
 app.use(express.json());
 
-// Health check
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     tags: [health]
+ *     summary: Healthcheck
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: ok }
+ */
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
-// OpenAPI / Swagger UI
-const openapiSpec = YAML.parse(
-  fs.readFileSync(path.join(__dirname, '..', 'docs', 'openapi.yaml'), 'utf8')
+// OpenAPI / Swagger UI — el spec se genera escaneando los comentarios @swagger
+// de cada route file (ver src/config/swagger.ts).
+// persistAuthorization: true guarda el Bearer token en localStorage del browser,
+// asi se mantiene entre recargas y al cambiar de pestana de Swagger.
+app.use(
+  '/api/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    swaggerOptions: { persistAuthorization: true },
+  }),
 );
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
 
 // Rutas del MVP
+app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/purchases', purchaseRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/stores', storeRoutes);
+app.use('/api/admin', adminRoutes);
 
-// Error handler global
+// 404 handler para rutas no encontradas. Si llegamos aca es porque
+// ningun router previo matcheo el path.
+app.use((req: Request, res: Response) => {
+  res.status(404).json({
+    error: 'Endpoint no encontrado',
+    method: req.method,
+    path: req.path,
+  });
+});
+
+// Error handler global. Mapea errores comunes a respuestas amigables.
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  const status = err instanceof ApiError ? err.status : err.status || 500;
+  // 1. Body JSON malformado (express.json setea err.type)
+  if (err?.type === 'entity.parse.failed') {
+    console.error(`[ERROR] 400 - JSON malformado: ${err.message}`);
+    res.status(400).json({
+      error: 'JSON malformado en el body. Verificá comillas, comas y llaves.',
+    });
+    return;
+  }
 
-  // Logueamos el error en el servidor pero NUNCA lo mandamos al cliente
-  console.error(`[ERROR] ${status} - ${err.message}`);
+  // 2. Body demasiado grande
+  if (err?.type === 'entity.too.large') {
+    console.error(`[ERROR] 413 - Body too large`);
+    res.status(413).json({ error: 'Body demasiado grande' });
+    return;
+  }
 
-  // En produccion no exponemos detalles internos
-  const message = process.env.NODE_ENV === 'production'
-    ? 'Error interno del servidor'
-    : err.message || 'Error interno del servidor';
+  // 3. ApiError lanzado por el dominio (404, 401, 403, 400, etc.)
+  if (err instanceof ApiError) {
+    console.error(`[ERROR] ${err.status} - ${err.message}`);
+    res.status(err.status).json({ error: err.message });
+    return;
+  }
 
-  res.status(status).json({ error: message });
+  // 4. Error con status custom (ej: errores de Supabase con status)
+  if (typeof err?.status === 'number' && err.status >= 400 && err.status < 600) {
+    console.error(`[ERROR] ${err.status} - ${err.message}`);
+    const safe = process.env.NODE_ENV === 'production' && err.status >= 500
+      ? 'Error interno del servidor'
+      : err.message || 'Error sin descripcion';
+    res.status(err.status).json({ error: safe });
+    return;
+  }
+
+  // 5. Cualquier otro error inesperado: log completo + 500 sin filtrar a prod
+  console.error('[ERROR] 500 - Error inesperado:', err);
+  res.status(500).json({
+    error: process.env.NODE_ENV === 'production'
+      ? 'Error interno del servidor'
+      : err?.message || 'Error interno del servidor',
+  });
 };
 app.use(errorHandler);
 
