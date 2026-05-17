@@ -11,14 +11,22 @@ export const validate = (req: Request, res: Response, next: NextFunction): void 
   next();
 };
 
-// Validaciones para register y login
-export const authValidators = [
+// Validaciones para register: email valido + password min 6 chars
+export const registerValidators = [
   body('email')
     .isEmail().withMessage('Email invalido')
     .normalizeEmail(),
   body('password')
     .isLength({ min: 6 }).withMessage('La password debe tener al menos 6 caracteres')
     .trim(),
+];
+
+// Validaciones para login: solo email valido (la longitud de la password ya no
+// importa, supabase rechaza credenciales invalidas con 401).
+export const loginValidators = [
+  body('email')
+    .isEmail().withMessage('Email invalido')
+    .normalizeEmail(),
 ];
 
 // Validaciones para actualizar perfil
@@ -39,6 +47,12 @@ export const cartItemValidators = [
   body('product_id')
     .notEmpty().withMessage('product_id es requerido')
     .isString().trim(),
+  body('quantity')
+    .isInt({ min: 1 }).withMessage('La cantidad debe ser un numero entero mayor a 0'),
+];
+
+// Validaciones para actualizar quantity de un item existente
+export const cartItemUpdateValidators = [
   body('quantity')
     .isInt({ min: 1 }).withMessage('La cantidad debe ser un numero entero mayor a 0'),
 ];

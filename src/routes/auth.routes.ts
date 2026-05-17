@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { registerValidators, loginValidators, validate } from '../middleware/validators';
 import { register, login } from '../controllers/auth.controller';
 
 const router = Router();
@@ -28,7 +29,7 @@ const router = Router();
  *       '409':
  *         description: El email ya esta registrado
  */
-router.post('/register', register);
+router.post('/register', registerValidators, validate, register);
 
 /**
  * @swagger
@@ -52,6 +53,6 @@ router.post('/register', register);
  *       '401':
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.post('/login', login);
+router.post('/login', loginValidators, validate, login);
 
 export default router;
