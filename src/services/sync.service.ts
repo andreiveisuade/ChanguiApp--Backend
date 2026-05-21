@@ -1,5 +1,10 @@
 import * as productRepository from '../repositories/product.repository';
+import * as syncJobsRepository from '../repositories/sync_jobs.repository';
 import { supabase } from '../config/supabase';
+import { ApiError } from '../types/domain';
+
+export const SYNC_TYPE_PRECIOS_CLAROS = 'precios_claros';
+export const PAGE_LIMIT = 100;
 
 interface PreciosClarosProduct {
   id: string;
@@ -10,70 +15,111 @@ interface PreciosClarosProduct {
   imagen?: string;
 }
 
-export async function syncPreciosClaros(): Promise<{
-  created: number;
-  updated: number;
-  errors: number;
-  duration_ms: number;
-}> {
-  const start = Date.now();
+interface PreciosClarosResponse {
+  total: number;
+  productos: PreciosClarosProduct[];
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getDelayMs(): number {
+  const raw = process.env.SYNC_DELAY_MS;
+  const parsed = raw ? parseInt(raw, 10) : NaN;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 300;
+}
+
+async function fetchPage(
+  baseUrl: string,
+  storeId: string,
+  limit: number,
+  offset: number,
+): Promise<PreciosClarosResponse> {
+  const url = `${baseUrl}/productos?string=&limit=${limit}&offset=${offset}&id_sucursal=${storeId}`;
+  const response = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ChanguiApp/1.0)' },
+  });
+  return (await response.json()) as PreciosClarosResponse;
+}
+
+function mapProduct(p: PreciosClarosProduct): productRepository.ProductUpsertInput {
+  return {
+    barcode: p.id,
+    name: p.nombre,
+    brand: p.marca,
+    price: parseFloat(p.precioMax || p.precio || '0'),
+    image_url: p.imagen ?? undefined,
+  };
+}
+
+export async function startPreciosClarosSync(): Promise<{ sync_id: string }> {
+  const running = await syncJobsRepository.findRunning(SYNC_TYPE_PRECIOS_CLAROS);
+  if (running) {
+    throw new ApiError('Ya hay un sync en curso', 409);
+  }
+
+  const job = await syncJobsRepository.create(SYNC_TYPE_PRECIOS_CLAROS);
+
+  void runPreciosClarosSync(job.id).catch((err) => {
+    console.error('[sync] runner falló sin atrapar:', err);
+  });
+
+  return { sync_id: job.id };
+}
+
+export async function runPreciosClarosSync(jobId: string): Promise<void> {
   const baseUrl = process.env.PRECIOS_CLAROS_URL;
   const storeId = process.env.MVP_STORE_PRECIOS_CLAROS_ID;
+  const delayMs = getDelayMs();
 
-  let created = 0;
-  let updated = 0;
-  let errors = 0;
-
-  const MAX_PRODUCTS = 1000;
-  const limit = 100;
-  let offset = 0;
-  const allProducts: PreciosClarosProduct[] = [];
-
-  while (true) {
-    const url = `${baseUrl}/productos?string=&limit=${limit}&offset=${offset}&id_sucursal=${storeId}`;
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ChanguiApp/1.0)' },
-    });
-    const body = (await response.json()) as { productos: PreciosClarosProduct[] };
-    const productos = body.productos;
-
-    if (!productos || productos.length === 0) break;
-
-    allProducts.push(...productos);
-
-    if (allProducts.length >= MAX_PRODUCTS) break;
-    if (productos.length < limit) break;
-    offset += limit;
+  if (!baseUrl || !storeId) {
+    await syncJobsRepository.markFailed(
+      jobId,
+      'PRECIOS_CLAROS_URL o MVP_STORE_PRECIOS_CLAROS_ID no configurado',
+    );
+    return;
   }
 
-  const batchSize = 50;
-  for (let i = 0; i < allProducts.length; i += batchSize) {
-    const batch = allProducts.slice(i, i + batchSize);
+  try {
+    const head = await fetchPage(baseUrl, storeId, 1, 0);
+    const total = head.total ?? 0;
+    await syncJobsRepository.setTotal(jobId, total);
 
-    for (const p of batch) {
+    let processed = 0;
+    let errors = 0;
+    let offset = 0;
+
+    while (offset < total) {
+      const page = await fetchPage(baseUrl, storeId, PAGE_LIMIT, offset);
+      const productos = page.productos ?? [];
+
+      if (productos.length === 0) break;
+
       try {
-        const mapped = {
-          barcode: p.id,
-          name: p.nombre,
-          brand: p.marca,
-          price: parseFloat(p.precioMax || p.precio || '0'),
-          image_url: p.imagen ?? undefined,
-        };
-
-        const result = await productRepository.upsertByBarcode(mapped);
-        if (result.created) created++;
-        else updated++;
+        await productRepository.upsertBatch(productos.map(mapProduct));
+        processed += productos.length;
       } catch (err) {
-        errors++;
-        console.error('Error syncing product:', p.id, err);
+        errors += productos.length;
+        console.error('[sync] batch upsert falló', { offset, err });
       }
+
+      offset += productos.length;
+      await syncJobsRepository.updateProgress(jobId, processed, offset, errors);
+
+      if (productos.length < PAGE_LIMIT) break;
+      if (delayMs > 0) await sleep(delayMs);
     }
+
+    await supabase
+      .from('stores')
+      .update({ synced_at: new Date().toISOString() })
+      .eq('precios_claros_id', storeId);
+
+    await syncJobsRepository.markCompleted(jobId);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[sync] runner falló:', err);
+    await syncJobsRepository.markFailed(jobId, message);
   }
-
-  await supabase
-    .from('stores')
-    .update({ synced_at: new Date().toISOString() })
-    .eq('precios_claros_id', storeId);
-
-  return { created, updated, errors, duration_ms: Date.now() - start };
 }

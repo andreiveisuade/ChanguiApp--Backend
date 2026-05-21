@@ -82,6 +82,22 @@ export interface Store {
   distanceKm?: number;
 }
 
+export type SyncJobStatus = 'queued' | 'running' | 'completed' | 'failed';
+
+export interface SyncJob {
+  id: string;
+  type: string;
+  status: SyncJobStatus;
+  total_target: number | null;
+  processed: number;
+  errors: number;
+  last_offset: number;
+  error_message: string | null;
+  started_at: string;
+  completed_at: string | null;
+  created_at: string;
+}
+
 export class ApiError extends Error {
   status: number;
 
