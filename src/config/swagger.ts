@@ -171,13 +171,29 @@ const definition: swaggerJsdoc.SwaggerDefinition = {
           distanceKm: { type: 'number', format: 'float', nullable: true },
         },
       },
-      SyncStats: {
+      SyncAccepted: {
         type: 'object',
         properties: {
-          inserted: { type: 'integer' },
-          updated: { type: 'integer' },
+          sync_id: { type: 'string', format: 'uuid' },
+        },
+      },
+      SyncJob: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          type: { type: 'string', example: 'precios_claros' },
+          status: {
+            type: 'string',
+            enum: ['queued', 'running', 'completed', 'failed'],
+          },
+          total_target: { type: 'integer', nullable: true },
+          processed: { type: 'integer' },
           errors: { type: 'integer' },
-          duration_ms: { type: 'integer' },
+          last_offset: { type: 'integer' },
+          error_message: { type: 'string', nullable: true },
+          started_at: { type: 'string', format: 'date-time' },
+          completed_at: { type: 'string', format: 'date-time', nullable: true },
+          created_at: { type: 'string', format: 'date-time' },
         },
       },
     },

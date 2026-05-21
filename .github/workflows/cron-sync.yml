@@ -1,0 +1,32 @@
+name: Cron sync Precios Claros
+
+on:
+  schedule:
+    # 09:00 UTC = 06:00 Argentina (UTC-3)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST /api/admin/sync-precios-claros
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: |
+          set -euo pipefail
+          response=$(curl -sS -w "\n%{http_code}" \
+            -X POST "$BACKEND_URL/api/admin/sync-precios-claros" \
+            -H "X-Admin-Token: $ADMIN_TOKEN")
+
+          body=$(echo "$response" | head -n -1)
+          status=$(echo "$response" | tail -n 1)
+
+          echo "HTTP $status"
+          echo "Response: $body"
+
+          # 202 = sync encolado OK. 409 = ya hay uno corriendo (no es fallo del cron).
+          if [ "$status" != "202" ] && [ "$status" != "409" ]; then
+            exit 1
+          fi
