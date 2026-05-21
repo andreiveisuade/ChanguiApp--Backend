@@ -170,3 +170,69 @@ src/
 Esta estructura apunta a que tanto backend como frontend sigan reglas de dependencia claras, con capas bien definidas y responsabilidades simples de razonar para todo el equipo.
 
 <!-- DEV-25 -->
+
+## 6. Sincronizacion con Precios Claros
+
+El catalogo de productos se mantiene en la tabla `products` de Supabase. Para poblarlo se sincroniza periodicamente desde la API publica de Precios Claros (SEPA), que expone los precios de las sucursales relevadas en Argentina. La app nunca llama a Precios Claros en runtime: la consulta por codigo de barras se resuelve siempre contra Supabase.
+
+### 6.1 Motivacion del diseno async
+
+La sucursal del MVP (`12-1-158`, Coto Charcas) tiene mas de 8000 productos en Precios Claros. Sincronizar todos en una sola request HTTP era inviable porque:
+
+- Render free tier corta requests largas a ~168 segundos, devolviendo HTTP 502.
+- El cliente HTTP (curl, GitHub Actions) tenia que mantenerse esperando ~25 minutos.
+- Si fallaba a mitad de camino no habia forma de saber donde habia quedado.
+
+Por eso el endpoint admin se rediseno en DEV-164 como **fire-and-forget con estado persistido**: la request HTTP devuelve casi inmediatamente con un identificador, y el trabajo real corre en background dejando huella en una tabla operativa.
+
+### 6.2 Componentes
+
+- **POST `/api/admin/sync-precios-claros`**: crea un registro en `sync_jobs`, dispara el runner en background y devuelve **HTTP 202** con `{ sync_id }` en menos de un segundo. Si ya hay un sync en estado `running`, responde **HTTP 409** y no arranca otro.
+- **GET `/api/admin/sync-precios-claros/:id`**: devuelve el estado del job (status, processed, errors, last_offset, started_at, completed_at).
+- **Middleware `requireAdminToken`** (`src/config/adminAuth.ts`): protege ambos endpoints con header `X-Admin-Token`.
+- **Tabla `sync_jobs`** en Supabase: una fila por cada corrida del sync. Estados posibles: `queued`, `running`, `completed`, `failed`. Schema en `db/schema.sql`.
+- **`sync.service.ts`** (`src/services/`): orquesta el runner. Detecta el `total` de productos con una primera call `limit=1`, luego itera paginando de a `PAGE_LIMIT=100`, y aplica `await sleep(SYNC_DELAY_MS)` entre paginas para no saturar ni a Precios Claros ni al server.
+- **`product.repository.ts.upsertBatch`**: una unica query `INSERT ... ON CONFLICT (barcode)` por bloque de 100 productos. Reduce de ~16000 queries (una por producto) a ~80 queries por corrida.
+- **GitHub Actions** (`.github/workflows/cron-sync.yml`): cron diario a las 09:00 UTC (06:00 ART) + `workflow_dispatch` para disparo manual. Hace `curl POST` al endpoint admin usando los secrets `BACKEND_URL` y `ADMIN_TOKEN`.
+
+### 6.3 Flujo end-to-end
+
+```text
+[GitHub Actions / Admin]
+  → POST /api/admin/sync-precios-claros (X-Admin-Token)
+  → Backend: requireAdminToken middleware → controller
+  → Service: ¿hay sync running? Si → 409. No → INSERT sync_jobs (status=running)
+  → Response: 202 { sync_id }
+  → Service dispara runPreciosClarosSync(jobId) sin await (fire-and-forget)
+
+  [Background runner — ya corriendo en paralelo]
+  → fetch Precios Claros (limit=1) → leer total
+  → UPDATE sync_jobs SET total_target = total
+  → loop while offset < total:
+       fetch Precios Claros (limit=100, offset=offset)
+       productRepository.upsertBatch(productos)
+       UPDATE sync_jobs SET processed, last_offset, errors
+       await sleep(SYNC_DELAY_MS)
+  → UPDATE stores SET synced_at = NOW() WHERE precios_claros_id = ...
+  → UPDATE sync_jobs SET status=completed, completed_at=NOW()
+
+[Cliente que quiera ver progreso]
+  → GET /api/admin/sync-precios-claros/:sync_id
+  → Backend: requireAdminToken → controller → repository.findById
+  → Response: 200 con la fila completa de sync_jobs, o 404 si no existe
+```
+
+### 6.4 Idempotencia y resiliencia
+
+- **No corren dos syncs en paralelo**: el chequeo `findRunning(type)` antes de crear un job nuevo garantiza que solo hay uno activo a la vez. Si el cron diario se dispara mientras alguien hizo un sync manual, el segundo recibe 409 y no compite.
+- **No se duplican productos**: el constraint `UNIQUE (barcode)` en `products` + el `ON CONFLICT (barcode)` del upsert hacen que sucesivas corridas converjan al mismo estado, sin importar cuantas veces se sincronice.
+- **Estado siempre consultable**: cualquier falla queda registrada en `sync_jobs.error_message` con `status=failed`. No hay procesos zombi que solo vivan en memoria del container.
+- **Tolerancia a errores parciales**: si el upsert de un batch falla, se cuenta en `errors` y el sync continua con el siguiente batch en lugar de abortar todo.
+
+### 6.5 Configurabilidad
+
+- `SYNC_DELAY_MS` (env var): delay entre paginas de Precios Claros. Default **2000ms**. Sirve doble proposito: respetar la API publica y dejar tiempo al event loop de Node para atender otras requests mientras el sync corre. Con valores muy bajos (~300ms) el backend en Render free tier puede empezar a responder 503 a otras requests durante el sync.
+- `MVP_STORE_PRECIOS_CLAROS_ID` (env var): sucursal a sincronizar.
+- `PRECIOS_CLAROS_URL` (env var): base URL de la API. En dev se puede apuntar a una URL muerta (por ejemplo `http://10.255.255.1`) para hacer smoke del flujo de endpoints sin escribir productos reales: el runner arranca, falla rapido, marca `failed`, y no toca `products`.
+
+<!-- DEV-164 -->
