@@ -253,7 +253,7 @@ describe('SyncService', () => {
       expect(mockedJobs.markCompleted).toHaveBeenCalled();
     });
 
-    it('cae al default de 300ms si SYNC_DELAY_MS es inválido (no afecta cuando total=0)', async () => {
+    it('cae al default de 2000ms si SYNC_DELAY_MS es inválido (no afecta cuando total=0)', async () => {
       process.env.SYNC_DELAY_MS = 'no-es-numero';
 
       jest

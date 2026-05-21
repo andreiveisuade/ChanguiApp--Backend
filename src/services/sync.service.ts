@@ -27,7 +27,11 @@ function sleep(ms: number): Promise<void> {
 function getDelayMs(): number {
   const raw = process.env.SYNC_DELAY_MS;
   const parsed = raw ? parseInt(raw, 10) : NaN;
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 300;
+  // 2000ms default — alivia presión sobre Render free tier (CPU/memoria
+  // compartidas con otras requests). Con 300ms el server respondía 503
+  // a /health durante el sync. 2000ms hace el sync ~5 min en lugar de
+  // ~1.5 min pero deja al event loop atender otras requests.
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 2000;
 }
 
 async function fetchPage(
