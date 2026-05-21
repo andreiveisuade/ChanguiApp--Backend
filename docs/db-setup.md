@@ -2,6 +2,22 @@
 
 Instrucciones para inicializar el esquema de ChanguiApp en un proyecto Supabase.
 
+## Dev vs prod
+
+Cada dev del equipo debe tener **su propio proyecto Supabase free** para desarrollo local. **Nunca apuntar tu `.env` local al proyecto de prod** — un sync, un seed o un test puede pisar datos reales.
+
+- **Prod**: el proyecto Supabase conectado a Render (auto-deploy desde `main`). Lo gestiona el SM.
+- **Dev local (cada uno el suyo)**: proyecto Supabase free, separado por dev, con el mismo schema aplicado.
+
+### Setup dev local (5 min, una sola vez)
+
+1. Crear cuenta en https://supabase.com con tu mail de UADE (o el que prefieras).
+2. **New project** → nombre sugerido `changuiapp-dev-<tu-nombre>`, region `South America (São Paulo)`, plan **Free**.
+3. Esperar ~2 min a que provisione la DB.
+4. Aplicar el schema: SQL Editor → New query → pegar todo `db/schema.sql` → Run. (Idempotente, podés re-correrlo cuando se actualice).
+5. Settings → API → copiar `Project URL`, `anon key`, `service_role key` a tu `.env` local (ver `.env.example`).
+6. Verificar: `npm run dev` arranca sin errores y `curl http://localhost:3000/health` devuelve `{"status":"ok"}`.
+
 ## Prerrequisitos
 
 - Proyecto creado en https://supabase.com
