@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authMiddleware from '../middleware/auth';
+import { cartItemValidators, cartItemUpdateValidators, validate } from '../middleware/validators';
 import * as cartController from '../controllers/cart.controller';
 
 const router = Router();
@@ -82,7 +83,7 @@ router.get('/', authMiddleware, cartController.getCart);
  *       '401':
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.post('/items', authMiddleware, cartController.addItem);
+router.post('/items', authMiddleware, cartItemValidators, validate, cartController.addItem);
 
 /**
  * @swagger
@@ -113,7 +114,7 @@ router.post('/items', authMiddleware, cartController.addItem);
  *       '404':
  *         $ref: '#/components/responses/NotFound'
  */
-router.put('/items/:id', authMiddleware, cartController.updateItem);
+router.put('/items/:id', authMiddleware, cartItemUpdateValidators, validate, cartController.updateItem);
 
 /**
  * @swagger
