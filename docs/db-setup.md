@@ -36,7 +36,7 @@ Cada dev del equipo debe tener **su propio proyecto Supabase free** para desarro
 3. Pegar el contenido de [`db/schema.sql`](../db/schema.sql).
 4. Presionar **Run**.
 
-Esto crea las 9 tablas del DER (`users`, `stores`, `products`, `carts`, `cart_items`, `lists`, `list_items`, `purchases`, `purchase_items`) con sus FKs, índices y el trigger de `updated_at`.
+Esto crea las 9 tablas del DER (`users`, `stores`, `products`, `carts`, `cart_items`, `lists`, `list_items`, `purchases`, `purchase_items`) con sus FKs, índices y el trigger de `updated_at`, más la tabla operativa `sync_jobs` (estado de los jobs de sincronización con Precios Claros — DEV-164).
 
 ### 2. Cargar datos de prueba (opcional, recomendado para dev)
 
@@ -51,7 +51,7 @@ Esto inserta:
 ### 3. Verificar
 
 En el **Table Editor** del dashboard debe verse:
-- 9 tablas creadas
+- 10 tablas creadas (9 del DER + `sync_jobs`)
 - Tabla `stores` con 1 fila
 - Tabla `products` con 5 filas
 

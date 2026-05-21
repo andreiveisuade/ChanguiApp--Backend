@@ -120,6 +120,25 @@ CREATE TABLE IF NOT EXISTS purchase_items (
 );
 
 -- ============================================================
+-- sync_jobs — estado de jobs de sincronización (fire-and-forget)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS sync_jobs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  type TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'completed', 'failed')),
+  total_target INTEGER,
+  processed INTEGER NOT NULL DEFAULT 0,
+  errors INTEGER NOT NULL DEFAULT 0,
+  last_offset INTEGER NOT NULL DEFAULT 0,
+  error_message TEXT,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sync_jobs_type_status ON sync_jobs(type, status);
+
+-- ============================================================
 -- trigger genérico para mantener updated_at actualizado
 -- ============================================================
 CREATE OR REPLACE FUNCTION set_updated_at()

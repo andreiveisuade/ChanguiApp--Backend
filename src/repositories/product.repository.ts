@@ -34,3 +34,21 @@ export async function upsertByBarcode(product: {
 
   return { created: !existing };
 }
+
+export interface ProductUpsertInput {
+  barcode: string;
+  name: string;
+  brand?: string;
+  price: number;
+  image_url?: string;
+}
+
+export async function upsertBatch(products: ProductUpsertInput[]): Promise<void> {
+  if (products.length === 0) return;
+
+  const { error } = await supabaseAdmin
+    .from('products')
+    .upsert(products, { onConflict: 'barcode' });
+
+  if (error) throw error;
+}

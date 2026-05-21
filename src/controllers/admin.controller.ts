@@ -1,23 +1,33 @@
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import * as syncService from '../services/sync.service';
+import * as syncJobsRepository from '../repositories/sync_jobs.repository';
+import { ApiError } from '../types/domain';
 
-export async function syncPreciosClarosHandler(
+export async function startSyncPreciosClarosHandler(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { sync_id } = await syncService.startPreciosClarosSync();
+    res.status(202).json({ sync_id });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getSyncPreciosClarosStatusHandler(
   req: Request,
   res: Response,
+  next: NextFunction,
 ): Promise<void> {
-  const adminToken = process.env.ADMIN_TOKEN;
-  const provided = req.headers['x-admin-token'];
-
-  if (!provided || provided !== adminToken) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
-
   try {
-    const stats = await syncService.syncPreciosClaros();
-    res.json(stats);
+    const job = await syncJobsRepository.findById(String(req.params.id));
+    if (!job) {
+      throw new ApiError('Sync no encontrado', 404);
+    }
+    res.json(job);
   } catch (err) {
-    console.error('[admin] sync-precios-claros failed:', err);
-    res.status(500).json({ error: 'Sync failed' });
+    next(err);
   }
 }
