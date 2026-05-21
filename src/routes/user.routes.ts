@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authMiddleware from '../middleware/auth';
+import { updateProfileValidators, validate } from '../middleware/validators';
 import * as userController from '../controllers/user.controller';
 
 const router = Router();
@@ -47,7 +48,7 @@ router.get('/profile', authMiddleware, userController.getProfile);
  *       '401':
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.put('/profile', authMiddleware, userController.updateProfile);
+router.put('/profile', authMiddleware, updateProfileValidators, validate, userController.updateProfile);
 
 /**
  * @swagger
