@@ -19,17 +19,13 @@ jest.mock('../../src/middleware/auth', () => {
   };
 });
 
-jest.mock('mercadopago', () => ({
-  configure: jest.fn(),
-  preferences: {
-    create: jest.fn(),
-  },
-  payment: {
-    findById: jest.fn(),
-  },
+jest.mock('../../src/config/mercadopago', () => ({
+  __esModule: true,
+  preference: { create: jest.fn() },
+  payment: { get: jest.fn() },
 }));
 
-const mercadopago = require('mercadopago');
+const mercadopagoConfig = require('../../src/config/mercadopago');
 
 describe('Checkout Endpoints', () => {
   afterEach(() => jest.clearAllMocks());
@@ -41,8 +37,9 @@ describe('Checkout Endpoints', () => {
         items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
       };
       mockSupabase.single.mockResolvedValue({ data: cartWithItems, error: null });
-      mercadopago.preferences.create.mockResolvedValue({
-        body: validCheckoutPreference,
+      mercadopagoConfig.preference.create.mockResolvedValue({
+        id: validCheckoutPreference.preference_id,
+        init_point: validCheckoutPreference.init_point,
       });
 
       const res = await request(app)
@@ -83,13 +80,11 @@ describe('Checkout Endpoints', () => {
 
   describe('POST /api/checkout/webhook', () => {
     it('con notificación válida de pago aprobado devuelve 200', async () => {
-      mercadopago.payment.findById.mockResolvedValue({
-        body: {
-          id: 'MP-123456',
-          status: 'approved',
-          external_reference: validCart.id,
-          transaction_amount: 3000,
-        },
+      mercadopagoConfig.payment.get.mockResolvedValue({
+        id: 'MP-123456',
+        status: 'approved',
+        external_reference: validCart.id,
+        transaction_amount: 3000,
       });
       mockSupabase.single
         .mockResolvedValueOnce({
