@@ -17,8 +17,14 @@ describe('ProductService', () => {
       const result = await productService.getByBarcode(validProduct.barcode);
 
       expect(productRepository.findByBarcode).toHaveBeenCalledWith(validProduct.barcode);
-      expect(result).toEqual(validProduct);
+      expect(result).toMatchObject(validProduct);
       expect(result.price).toBe(1500);
+      expect(result.tax).toEqual({
+        category: 'General',
+        rate: 21,
+        net_price: 1239.67,
+        tax_amount: 260.33,
+      });
     });
 
     it('lanza error 404 si el barcode no está en el catálogo', async () => {

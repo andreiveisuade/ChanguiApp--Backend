@@ -6,7 +6,7 @@ export async function findActiveCartByUserId(
 ): Promise<CartWithItems | null> {
   const { data, error } = await supabase
     .from('carts')
-    .select('*, items:cart_items(*, product:products(*))')
+    .select('*, items:cart_items(*, product:products(*, tax_category:tax_categories(id, name, rate)))')
     .eq('user_id', userId)
     .eq('status', 'active')
     .single();
@@ -22,7 +22,7 @@ export async function findActiveCartByUserId(
 export async function findCartById(cartId: string): Promise<CartWithItems | null> {
   const { data, error } = await supabase
     .from('carts')
-    .select('*, items:cart_items(*, product:products(*))')
+    .select('*, items:cart_items(*, product:products(*, tax_category:tax_categories(id, name, rate)))')
     .eq('id', cartId)
     .single();
 
@@ -57,6 +57,7 @@ export async function insertPurchaseItems(
     barcode: i.product?.barcode || '',
     quantity: i.quantity,
     unit_price: i.unit_price,
+    tax_rate: i.product?.tax_category?.rate ?? 21,
   }));
 
   const { error } = await supabase.from('purchase_items').insert(rows);
