@@ -1,4 +1,5 @@
 import * as purchaseRepository from '../repositories/purchase.repository';
+import { summarizeByRate } from './pricing.service';
 import { ApiError, type Purchase, type PurchaseDetail } from '../types/domain';
 
 export async function list(userId: string, status?: string): Promise<Purchase[]> {
@@ -13,5 +14,12 @@ export async function getById(
   if (!purchase) {
     throw new ApiError('Compra no encontrada', 404);
   }
-  return purchase;
+
+  const items = purchase.items ?? [];
+  // Desglose con la alícuota congelada en el ticket, no la categoría actual.
+  const summary = summarizeByRate(
+    items.map((i) => ({ lineTotal: i.unit_price * i.quantity, rate: i.tax_rate }))
+  );
+
+  return { ...purchase, summary };
 }

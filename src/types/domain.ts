@@ -12,6 +12,42 @@ export interface UserUpdate {
   avatar_url?: string;
 }
 
+export interface TaxCategory {
+  id: string;
+  name: string;
+  rate: number;
+  legal_reference: string;
+  keywords: string[];
+  priority: number;
+  is_fallback: boolean;
+}
+
+export interface TaxCategoryRef {
+  id: string;
+  name: string;
+  rate: number;
+}
+
+export interface TaxBreakdown {
+  category: string;
+  rate: number;
+  net_price: number;
+  tax_amount: number;
+}
+
+export interface TaxLine {
+  rate: number;
+  label: string;
+  base: number;
+  amount: number;
+}
+
+export interface TaxSummary {
+  subtotal_net: number;
+  taxes: TaxLine[];
+  total: number;
+}
+
 export interface Product {
   id: string;
   barcode: string;
@@ -19,6 +55,13 @@ export interface Product {
   brand: string | null;
   price: number;
   image_url: string | null;
+  tax_category_id?: string;
+  tax_locked?: boolean;
+  tax_category?: TaxCategoryRef | null;
+}
+
+export interface ProductWithTax extends Product {
+  tax: TaxBreakdown;
 }
 
 export interface Cart {
@@ -61,10 +104,12 @@ export interface PurchaseItem {
   barcode: string;
   quantity: number;
   unit_price: number;
+  tax_rate: number;
 }
 
 export interface PurchaseDetail extends Purchase {
   items: PurchaseItem[];
+  summary?: TaxSummary;
 }
 
 export interface CheckoutResponse {

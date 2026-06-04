@@ -4,7 +4,7 @@ import type { Cart, CartItem, CartWithItems } from '../types/domain';
 export async function findActiveCartByUserId(userId: string): Promise<CartWithItems | null> {
   const { data, error } = await supabase
     .from('carts')
-    .select('*, items:cart_items(*, product:products(*))')
+    .select('*, items:cart_items(*, product:products(*, tax_category:tax_categories(id, name, rate)))')
     .eq('user_id', userId)
     .eq('status', 'active')
     .maybeSingle();
