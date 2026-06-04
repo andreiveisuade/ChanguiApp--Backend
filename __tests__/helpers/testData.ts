@@ -12,6 +12,9 @@ export const validProduct = {
   brand: 'Coca Cola',
   price: 1500,
   image_url: null,
+  tax_category_id: 'general',
+  tax_locked: false,
+  tax_category: { id: 'general', name: 'General', rate: 21 },
 };
 
 export const validCartItem = {
@@ -70,7 +73,39 @@ export const validPurchaseItem = {
   barcode: '7790895000782',
   quantity: 2,
   unit_price: 1500,
+  tax_rate: 21,
 };
+
+// Categorías fiscales de muestra para tests del clasificador (Ley 23.349).
+export const validTaxCategories = [
+  {
+    id: 'leche',
+    name: 'Leche fluida',
+    rate: 0,
+    legal_reference: 'Ley 23.349 art. 7 inc. f',
+    keywords: ['leche entera', 'leche descremada', 'leche fluida'],
+    priority: 5,
+    is_fallback: false,
+  },
+  {
+    id: 'carnes',
+    name: 'Carnes',
+    rate: 10.5,
+    legal_reference: 'Ley 23.349 art. 28 inc. a',
+    keywords: ['carne', 'pollo', 'bife', 'milanesa'],
+    priority: 10,
+    is_fallback: false,
+  },
+  {
+    id: 'general',
+    name: 'General',
+    rate: 21,
+    legal_reference: 'Ley 23.349 art. 28 (alícuota general)',
+    keywords: [],
+    priority: 999,
+    is_fallback: true,
+  },
+];
 
 export const validCheckoutPreference = {
   preference_id: 'pref-uuid-1',

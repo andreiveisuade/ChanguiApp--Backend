@@ -45,6 +45,21 @@ Integracion con **Checkout Pro** (flujo hosted). El backend crea una preferencia
 
 - **sync-precios-claros** (diario, 03:00 UTC): invoca `POST /api/admin/sync-precios-claros` con header `X-Admin-Token`. Configurado en Render Dashboard. Sincroniza catalogo Precios Claros (SEPA) a Supabase.
 
+## Modelo fiscal (IVA)
+
+En Argentina es obligatorio mostrar el precio discriminando el IVA según la alícuota fiscal de cada producto (Ley 27.221 + Lealtad Comercial). Precios Claros entrega el **precio final con IVA incluido** y no expone la alícuota, así que ChanguiApp la infiere.
+
+- **Fuente legal:** las alícuotas surgen de la **Ley 23.349 (Ley del IVA)** — art. 28 (reducida 10,5%: carnes, frutas, verduras, granos, miel, pan común) y art. 7 (exentos 0%: leche fluida, libros). El resto, 21% (general).
+- **Catálogo:** `tax_categories` codifica cada categoría con su alícuota, su referencia legal y las keywords de clasificación. Es la fuente de verdad.
+- **Clasificación:** en el sync, `classifyProduct` asigna a cada producto una categoría por coincidencia de keywords sobre el nombre (match por tokens). Sin coincidencia → `general` (21%), criterio conservador. Reclasificable con `POST /api/admin/reclassify`.
+- **Override:** `POST /api/admin/products/:barcode/tax-category` fija la categoría a mano y bloquea el producto (`tax_locked`) para que el sync no lo pise.
+- **Cálculo:** el desglose (precio sin IVA + IVA) se calcula en runtime al consultar producto o carrito; no se almacena. El carrito agrupa el IVA por alícuota.
+- **Comprobante:** al confirmar la compra, `purchase_items.tax_rate` congela la alícuota: el ticket histórico es inmutable aunque luego se recategorice el producto.
+
+**Limitación conocida:** la clasificación por keywords es aproximada; casos borde se corrigen con el override. En producción se complementaría con OpenFoodFacts o clasificación a código NCM (AFIP) — fuera del alcance actual.
+
+Flujo completo en [`docs/diagramas-secuencia/secuencia-iva.md`](./docs/diagramas-secuencia/secuencia-iva.md).
+
 ## Arquitectura
 
 ```
@@ -86,7 +101,10 @@ Post-migracion a TS, la extension de todos los archivos en `src/` y `__tests__/`
 | POST | `/api/checkout` | Crear preferencia de pago (Mercado Pago) |
 | POST | `/api/checkout/webhook` | Webhook de notificacion de pago |
 | GET | `/api/purchases` | Historial de compras |
-| GET | `/api/purchases/:id` | Detalle de una compra |
+| GET | `/api/purchases/:id` | Detalle de una compra (con desglose de IVA congelado) |
+| POST | `/api/admin/sync-precios-claros` | Disparar sync del catálogo (admin) |
+| POST | `/api/admin/reclassify` | Reclasificar productos por categoría fiscal (admin) |
+| POST | `/api/admin/products/:barcode/tax-category` | Override manual de categoría fiscal (admin) |
 | GET | `/api/stores` | Listar supermercados (pospuesto post-MVP, DEV-112) |
 | GET | `/api/lists` | Listas de compras (pospuesto post-MVP) |
 
@@ -121,7 +139,7 @@ npm run test:coverage    # reporte de cobertura
 ## Docs
 
 - [ARQUITECTURA.md](./docs/ARQUITECTURA.md) — arquitectura del sistema
-- [diagramas-secuencia/](./docs/diagramas-secuencia/) — auth, scan & go, pago
+- [diagramas-secuencia/](./docs/diagramas-secuencia/) — auth, scan & go, pago, IVA
 - [DER/](./docs/DER/) — diagrama entidad-relacion
 - [db-setup.md](./docs/db-setup.md) — inicializacion de Supabase
 - [openapi.yaml](./docs/openapi.yaml) — spec OpenAPI 3.0 (post DEV-142)

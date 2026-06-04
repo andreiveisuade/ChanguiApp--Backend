@@ -139,6 +139,53 @@ CREATE TABLE IF NOT EXISTS sync_jobs (
 CREATE INDEX IF NOT EXISTS idx_sync_jobs_type_status ON sync_jobs(type, status);
 
 -- ============================================================
+-- tax_categories — catálogo de categorías fiscales (IVA)
+-- Datos de referencia del sistema (NO de prueba): las alícuotas
+-- surgen de la Ley 23.349 (Ley del IVA). Es la fuente de verdad
+-- del desglose de IVA. Precios Claros entrega el precio final con
+-- IVA incluido y no expone alícuota, así que la clasificamos acá.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS tax_categories (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  rate NUMERIC(4, 2) NOT NULL,            -- porcentaje: 21.00 | 10.50 | 0.00
+  legal_reference TEXT NOT NULL,
+  keywords TEXT[] NOT NULL DEFAULT '{}',  -- match por tokens sobre products.name
+  priority INTEGER NOT NULL DEFAULT 100,  -- menor = se evalúa primero (más específica)
+  is_fallback BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+INSERT INTO tax_categories (id, name, rate, legal_reference, keywords, priority, is_fallback) VALUES
+  ('leche', 'Leche fluida', 0.00, 'Ley 23.349 art. 7 inc. f',
+    ARRAY['leche entera', 'leche descremada', 'leche fluida', 'leche parcialmente descremada'], 5, FALSE),
+  ('libros', 'Libros', 0.00, 'Ley 23.349 art. 7 inc. a',
+    ARRAY['libro'], 5, FALSE),
+  ('carnes', 'Carnes', 10.50, 'Ley 23.349 art. 28 inc. a',
+    ARRAY['carne', 'bife', 'asado', 'milanesa', 'pollo', 'cerdo', 'pescado', 'merluza', 'nalga', 'peceto', 'matambre'], 10, FALSE),
+  ('frutas_verduras', 'Frutas y verduras', 10.50, 'Ley 23.349 art. 28 inc. a',
+    ARRAY['fruta', 'verdura', 'manzana', 'banana', 'tomate', 'papa', 'cebolla', 'lechuga', 'naranja', 'zanahoria', 'zapallo', 'limon', 'mandarina', 'pera', 'frutilla'], 10, FALSE),
+  ('granos_legumbres', 'Granos y legumbres', 10.50, 'Ley 23.349 art. 28 inc. a',
+    ARRAY['harina', 'lenteja', 'garbanzo', 'poroto', 'arveja', 'trigo'], 20, FALSE),
+  ('pan_comun', 'Pan común', 10.50, 'Ley 23.349 art. 28 inc. a',
+    ARRAY['pan comun', 'pan frances', 'pan criollo', 'pan minon'], 10, FALSE),
+  ('miel', 'Miel', 10.50, 'Ley 23.349 art. 28 inc. a',
+    ARRAY['miel'], 10, FALSE),
+  ('general', 'General', 21.00, 'Ley 23.349 art. 28 (alícuota general)',
+    ARRAY[]::TEXT[], 999, TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- products — categoría fiscal asignada + candado de override manual.
+-- DEFAULT 'general' garantiza FK válida para filas existentes y nuevas.
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS tax_category_id TEXT NOT NULL DEFAULT 'general' REFERENCES tax_categories(id),
+  ADD COLUMN IF NOT EXISTS tax_locked BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- purchase_items — snapshot inmutable de la alícuota al momento de la compra.
+-- Un comprobante emitido no cambia aunque luego se recategorice el producto.
+ALTER TABLE purchase_items
+  ADD COLUMN IF NOT EXISTS tax_rate NUMERIC(4, 2) NOT NULL DEFAULT 21.00;
+
+-- ============================================================
 -- trigger genérico para mantener updated_at actualizado
 -- ============================================================
 CREATE OR REPLACE FUNCTION set_updated_at()

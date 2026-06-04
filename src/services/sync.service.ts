@@ -1,5 +1,6 @@
 import * as productRepository from '../repositories/product.repository';
 import * as syncJobsRepository from '../repositories/sync_jobs.repository';
+import * as classificationService from './classification.service';
 import { supabase } from '../config/supabase';
 import { ApiError } from '../types/domain';
 
@@ -119,6 +120,14 @@ export async function runPreciosClarosSync(jobId: string): Promise<void> {
       .from('stores')
       .update({ synced_at: new Date().toISOString() })
       .eq('precios_claros_id', storeId);
+
+    // Clasificación fiscal de los productos nuevos/no bloqueados. Un fallo acá
+    // no invalida el sync de datos: los productos quedan en 'general' (21%).
+    try {
+      await classificationService.reclassifyAll();
+    } catch (err) {
+      console.error('[sync] reclasificación fiscal falló:', err);
+    }
 
     await syncJobsRepository.markCompleted(jobId);
   } catch (err) {

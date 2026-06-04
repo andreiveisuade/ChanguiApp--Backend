@@ -83,8 +83,40 @@ const definition: swaggerJsdoc.SwaggerDefinition = {
           barcode: { type: 'string', example: '7790895000782' },
           name: { type: 'string' },
           brand: { type: 'string', nullable: true },
-          price: { type: 'number', format: 'float' },
+          price: { type: 'number', format: 'float', description: 'Precio final con IVA incluido' },
           image_url: { type: 'string', nullable: true },
+          tax_category_id: { type: 'string', example: 'leche' },
+          tax_locked: { type: 'boolean', description: 'Override manual: el sync no lo reclasifica' },
+          tax: {
+            type: 'object',
+            description: 'Desglose calculado en runtime según la alícuota de la categoría',
+            properties: {
+              category: { type: 'string', example: 'Leche fluida' },
+              rate: { type: 'number', example: 0 },
+              net_price: { type: 'number', example: 850, description: 'Precio sin IVA (base imponible)' },
+              tax_amount: { type: 'number', example: 0 },
+            },
+          },
+        },
+      },
+      TaxSummary: {
+        type: 'object',
+        description: 'Desglose de IVA agrupado por alícuota (carrito o ticket)',
+        properties: {
+          subtotal_net: { type: 'number' },
+          total: { type: 'number' },
+          taxes: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                rate: { type: 'number', example: 21 },
+                label: { type: 'string', example: 'IVA 21%' },
+                base: { type: 'number' },
+                amount: { type: 'number' },
+              },
+            },
+          },
         },
       },
       CartItem: {

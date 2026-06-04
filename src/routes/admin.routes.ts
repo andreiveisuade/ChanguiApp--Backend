@@ -58,4 +58,67 @@ router.post('/sync-precios-claros', adminController.startSyncPreciosClarosHandle
  */
 router.get('/sync-precios-claros/:id', adminController.getSyncPreciosClarosStatusHandler);
 
+/**
+ * @swagger
+ * /api/admin/products/{barcode}/tax-category:
+ *   post:
+ *     tags: [admin]
+ *     security: [{ adminAuth: [] }]
+ *     summary: Override manual de la categoría fiscal de un producto
+ *     description: |
+ *       Fija la categoría fiscal del producto y lo bloquea (`tax_locked = true`)
+ *       para que el sync/reclasificación no lo pisen. Útil cuando la heurística
+ *       clasifica mal un producto puntual.
+ *     parameters:
+ *       - in: path
+ *         name: barcode
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [category_id]
+ *             properties:
+ *               category_id: { type: string, example: carnes }
+ *     responses:
+ *       '200':
+ *         description: Categoría actualizada
+ *       '400':
+ *         description: category_id faltante o inválido
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.post('/products/:barcode/tax-category', adminController.overrideTaxCategoryHandler);
+
+/**
+ * @swagger
+ * /api/admin/reclassify:
+ *   post:
+ *     tags: [admin]
+ *     security: [{ adminAuth: [] }]
+ *     summary: Reclasificar todos los productos no bloqueados por categoría fiscal
+ *     description: |
+ *       Backfill de la clasificación fiscal. Recorre los productos con
+ *       `tax_locked = false`, los clasifica por keywords (Ley 23.349) y
+ *       actualiza su categoría. Permite aplicar cambios de keywords sin
+ *       esperar al sync nocturno.
+ *     responses:
+ *       '200':
+ *         description: Cantidad de productos clasificados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 classified: { type: integer, example: 8021 }
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.post('/reclassify', adminController.reclassifyHandler);
+
 export default router;
