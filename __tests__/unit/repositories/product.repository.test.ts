@@ -75,14 +75,28 @@ describe('ProductRepository.findByBarcode', () => {
 describe('ProductRepository.getAllForClassification', () => {
   afterEach(() => jest.clearAllMocks());
 
-  it('devuelve los productos no bloqueados', async () => {
-    mockSupabase.eq.mockResolvedValueOnce({ data: [{ id: 'p1', name: 'A' }], error: null });
+  it('devuelve los productos no bloqueados (una página)', async () => {
+    mockSupabase.range.mockResolvedValueOnce({ data: [{ id: 'p1', name: 'A' }], error: null });
 
     const result = await productRepository.getAllForClassification();
 
     expect(mockSupabase.from).toHaveBeenCalledWith('products');
     expect(mockSupabase.eq).toHaveBeenCalledWith('tax_locked', false);
+    expect(mockSupabase.range).toHaveBeenCalledWith(0, 999);
     expect(result).toEqual([{ id: 'p1', name: 'A' }]);
+  });
+
+  it('pagina cuando hay más de 1000 productos', async () => {
+    const fullPage = Array.from({ length: 1000 }, (_, i) => ({ id: `p${i}`, name: 'X' }));
+    mockSupabase.range
+      .mockResolvedValueOnce({ data: fullPage, error: null })
+      .mockResolvedValueOnce({ data: [{ id: 'p1000', name: 'Y' }], error: null });
+
+    const result = await productRepository.getAllForClassification();
+
+    expect(result).toHaveLength(1001);
+    expect(mockSupabase.range).toHaveBeenNthCalledWith(1, 0, 999);
+    expect(mockSupabase.range).toHaveBeenNthCalledWith(2, 1000, 1999);
   });
 });
 
@@ -102,6 +116,17 @@ describe('ProductRepository.bulkSetCategory', () => {
     expect(mockSupabase.update).toHaveBeenCalledWith({ tax_category_id: 'carnes' });
     expect(mockSupabase.in).toHaveBeenCalledWith('id', ['p1', 'p2']);
     expect(mockSupabase.eq).toHaveBeenCalledWith('tax_locked', false);
+  });
+
+  it('parte en chunks cuando hay muchos ids (evita el límite de URL)', async () => {
+    mockSupabase.eq.mockResolvedValue({ data: null, error: null });
+    const ids = Array.from({ length: 250 }, (_, i) => `p${i}`);
+
+    await productRepository.bulkSetCategory('carnes', ids);
+
+    expect(mockSupabase.update).toHaveBeenCalledTimes(2);
+    expect(mockSupabase.in).toHaveBeenNthCalledWith(1, 'id', ids.slice(0, 200));
+    expect(mockSupabase.in).toHaveBeenNthCalledWith(2, 'id', ids.slice(200));
   });
 });
 

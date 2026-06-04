@@ -9,6 +9,7 @@ const mockSupabase: any = {
   in: jest.fn().mockReturnThis(),
   order: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
+  range: jest.fn().mockReturnThis(),
   upsert: jest.fn().mockReturnThis(),
   single: jest.fn().mockResolvedValue({ data: null, error: null }),
   maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
