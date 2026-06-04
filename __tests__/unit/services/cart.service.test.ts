@@ -33,6 +33,36 @@ describe('CartService', () => {
       expect(result.cart).toBeNull();
       expect(result.items).toHaveLength(0);
       expect(result.total).toBe(0);
+      expect(result.summary.taxes).toHaveLength(0);
+    });
+
+    it('arma el summary con IVA discriminado por alícuota', async () => {
+      const cartWithItems = {
+        ...validCart,
+        items: [
+          {
+            ...validCartItem,
+            quantity: 1,
+            unit_price: 1500,
+            product: { ...validProduct, tax_category: { id: 'general', name: 'General', rate: 21 } },
+          },
+          {
+            ...validCartItem,
+            id: 'cart-item-uuid-2',
+            quantity: 1,
+            unit_price: 850,
+            product: { ...validProduct, tax_category: { id: 'leche', name: 'Leche fluida', rate: 0 } },
+          },
+        ],
+      };
+      mockRepo.findActiveCartByUserId.mockResolvedValue(cartWithItems as any);
+
+      const result = await cartService.getCart(validUser.id);
+
+      expect(result.total).toBe(2350);
+      expect(result.summary.taxes).toHaveLength(2);
+      expect(result.summary.taxes.find((t) => t.rate === 21)?.amount).toBe(260.33);
+      expect(result.summary.taxes.find((t) => t.rate === 0)?.amount).toBe(0);
     });
   });
 
