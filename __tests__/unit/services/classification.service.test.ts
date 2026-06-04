@@ -13,44 +13,34 @@ describe('classification.service', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('classifyProduct', () => {
-    it('clasifica por keyword de una palabra', () => {
-      expect(classifyProduct('Carne Picada Especial 1kg', validTaxCategories)).toBe('carnes');
-    });
-
-    it('match por tokens: keyword multi-palabra con la marca en el medio', () => {
-      expect(classifyProduct('Leche La Serenísima Entera 1L', validTaxCategories)).toBe('leche');
-    });
-
-    it('leche en polvo NO cae en exento (criterio conservador → general)', () => {
-      expect(classifyProduct('Leche en Polvo Nido 400g', validTaxCategories)).toBe('general');
-    });
-
-    it('es case-insensitive', () => {
-      expect(classifyProduct('POLLO ENTERO FRESCO', validTaxCategories)).toBe('carnes');
-    });
-
-    it('sin coincidencia cae en el fallback', () => {
-      expect(classifyProduct('Lavandina Ayudín 1L', validTaxCategories)).toBe('general');
-    });
-
-    it('respeta priority (la categoría más específica gana)', () => {
-      expect(classifyProduct('Leche Descremada 1L', validTaxCategories)).toBe('leche');
-    });
-
-    it('nombre vacío cae en el fallback', () => {
-      expect(classifyProduct('', validTaxCategories)).toBe('general');
+    // match por keyword de una palabra, match por tokens (marca en el medio),
+    // criterio conservador (leche en polvo → general), case-insensitive,
+    // fallback sin match, prioridad y nombre vacío.
+    it.each([
+      ['Carne Picada Especial 1kg', 'carnes'],
+      ['Leche La Serenísima Entera 1L', 'leche'],
+      ['Leche en Polvo Nido 400g', 'general'],
+      ['POLLO ENTERO FRESCO', 'carnes'],
+      ['Lavandina Ayudín 1L', 'general'],
+      ['Leche Descremada 1L', 'leche'],
+      ['', 'general'],
+    ])('clasifica "%s" → %s', (name, expected) => {
+      expect(classifyProduct(name, validTaxCategories)).toBe(expected);
     });
   });
 
   describe('reclassifyAll', () => {
-    it('clasifica los productos no bloqueados y actualiza por categoría', async () => {
+    beforeEach(() => {
       mockTaxRepo.getAll.mockResolvedValue(validTaxCategories as never);
+      mockProductRepo.bulkSetCategory.mockResolvedValue(undefined);
+    });
+
+    it('clasifica los productos no bloqueados y actualiza por categoría', async () => {
       mockProductRepo.getAllForClassification.mockResolvedValue([
         { id: 'p1', name: 'Carne Picada 1kg' },
         { id: 'p2', name: 'Leche Entera 1L' },
         { id: 'p3', name: 'Lavandina 1L' },
       ]);
-      mockProductRepo.bulkSetCategory.mockResolvedValue(undefined);
 
       const result = await reclassifyAll();
 
@@ -61,7 +51,6 @@ describe('classification.service', () => {
     });
 
     it('sin productos no llama a bulkSetCategory', async () => {
-      mockTaxRepo.getAll.mockResolvedValue(validTaxCategories as never);
       mockProductRepo.getAllForClassification.mockResolvedValue([]);
 
       const result = await reclassifyAll();
