@@ -63,27 +63,45 @@ export async function upsertBatch(products: ProductUpsertInput[]): Promise<void>
 }
 
 // Productos sin candado de override, para reclasificar por categoría fiscal.
+// Supabase limita a 1000 filas por query, así que se pagina con range().
 export async function getAllForClassification(): Promise<Array<{ id: string; name: string }>> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, name')
-    .eq('tax_locked', false);
+  const PAGE_SIZE = 1000;
+  const all: Array<{ id: string; name: string }> = [];
 
-  if (error) throw error;
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, name')
+      .eq('tax_locked', false)
+      .range(from, from + PAGE_SIZE - 1);
 
-  return (data ?? []) as Array<{ id: string; name: string }>;
+    if (error) throw error;
+
+    const rows = (data ?? []) as Array<{ id: string; name: string }>;
+    all.push(...rows);
+
+    if (rows.length < PAGE_SIZE) break;
+  }
+
+  return all;
 }
 
 export async function bulkSetCategory(categoryId: string, productIds: string[]): Promise<void> {
   if (productIds.length === 0) return;
 
-  const { error } = await supabaseAdmin
-    .from('products')
-    .update({ tax_category_id: categoryId })
-    .in('id', productIds)
-    .eq('tax_locked', false);
+  // Supabase manda los ids en la URL; con miles de ids la query excede el
+  // límite y devuelve "Bad Request". Por eso se actualiza en chunks.
+  const CHUNK_SIZE = 200;
+  for (let i = 0; i < productIds.length; i += CHUNK_SIZE) {
+    const chunk = productIds.slice(i, i + CHUNK_SIZE);
+    const { error } = await supabaseAdmin
+      .from('products')
+      .update({ tax_category_id: categoryId })
+      .in('id', chunk)
+      .eq('tax_locked', false);
 
-  if (error) throw error;
+    if (error) throw error;
+  }
 }
 
 // Override manual: fija la categoría y bloquea el producto para que el sync no lo pise.
