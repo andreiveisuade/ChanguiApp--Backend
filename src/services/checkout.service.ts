@@ -29,10 +29,7 @@ async function assertTestCredentials(): Promise<void> {
   }
 }
 
-export async function createPreference(
-  userId: string,
-  returnUrl?: string
-): Promise<CheckoutResponse> {
+export async function createPreference(userId: string): Promise<CheckoutResponse> {
   await assertTestCredentials();
 
   const cart = await checkoutRepository.findActiveCartByUserId(userId);
@@ -53,10 +50,8 @@ export async function createPreference(
   const baseUrl = process.env.PUBLIC_BASE_URL || 'https://changuiapp-backend.onrender.com';
 
   // back_url al que MP redirige tras el pago. La pagina /return reenvia al deep
-  // link de la app (returnUrl). auto_return hace el retorno automatico en approved.
-  const backUrl = returnUrl
-    ? `${baseUrl}/api/checkout/return?rt=${encodeURIComponent(returnUrl)}`
-    : `${baseUrl}/api/checkout/return`;
+  // link de la app. auto_return hace el retorno automatico en approved.
+  const backUrl = `${baseUrl}/api/checkout/return`;
 
   const response = await preference.create({
     body: {

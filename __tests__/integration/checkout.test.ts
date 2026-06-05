@@ -163,26 +163,11 @@ describe('Checkout Endpoints', () => {
   });
 
   describe('GET /api/checkout/return', () => {
-    it('con deep link permitido devuelve HTML que redirige a la app', async () => {
-      const res = await request(app)
-        .get('/api/checkout/return')
-        .query({ rt: 'changuiapp://checkout/return', preference_id: 'pref-uuid-1', status: 'approved' });
+    it('redirige (302) al deep link constante de la app', async () => {
+      const res = await request(app).get('/api/checkout/return');
 
-      expect(res.statusCode).toBe(200);
-      expect(res.type).toMatch(/html/);
-      expect(res.text).toContain('window.location.replace');
-      expect(res.text).toContain('changuiapp://checkout/return');
-      expect(res.text).toContain('pref-uuid-1');
-    });
-
-    it('con rt de scheme no permitido muestra fallback sin redirigir', async () => {
-      const res = await request(app)
-        .get('/api/checkout/return')
-        .query({ rt: 'https://evil.example.com', preference_id: 'pref-uuid-1' });
-
-      expect(res.statusCode).toBe(200);
-      expect(res.text).not.toContain('window.location.replace');
-      expect(res.text).toContain('ChanguiApp');
+      expect(res.statusCode).toBe(302);
+      expect(res.headers.location).toBe('changuiapp://checkout/return');
     });
   });
 });

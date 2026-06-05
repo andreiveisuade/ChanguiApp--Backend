@@ -21,6 +21,12 @@ const {
   validPurchase,
 } = require('../../helpers/testData');
 
+const cartWithProduct = (extra = {}) => ({
+  ...validCart,
+  ...extra,
+  items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+});
+
 describe('CheckoutService', () => {
   afterEach(() => jest.clearAllMocks());
 
@@ -31,10 +37,7 @@ describe('CheckoutService', () => {
 
   describe('createPreference', () => {
     it('genera preferencia MP con items del carrito activo', async () => {
-      const cartWithItems = {
-        ...validCart,
-        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
-      };
+      const cartWithItems = cartWithProduct();
       checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
       mercadopagoConfig.preference.create.mockResolvedValue({
         id: validCheckoutPreference.preference_id,
@@ -80,25 +83,21 @@ describe('CheckoutService', () => {
       });
     });
 
-    it('con returnUrl setea back_urls + auto_return y guarda el preference_id en el carrito', async () => {
-      const cartWithItems = {
-        ...validCart,
-        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
-      };
-      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
+    it('setea back_urls (/api/checkout/return) + auto_return y guarda el preference_id', async () => {
+      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithProduct());
       mercadopagoConfig.preference.create.mockResolvedValue({
         id: validCheckoutPreference.preference_id,
         init_point: validCheckoutPreference.init_point,
       });
 
-      await checkoutService.createPreference(validUser.id, 'changuiapp://checkout/return');
+      await checkoutService.createPreference(validUser.id);
 
       expect(mercadopagoConfig.preference.create).toHaveBeenCalledWith(
         expect.objectContaining({
           body: expect.objectContaining({
             auto_return: 'approved',
             back_urls: expect.objectContaining({
-              success: expect.stringContaining(encodeURIComponent('changuiapp://checkout/return')),
+              success: expect.stringContaining('/api/checkout/return'),
             }),
           }),
         }),
@@ -109,31 +108,9 @@ describe('CheckoutService', () => {
       );
     });
 
-    it('sin returnUrl igual guarda el preference_id en el carrito', async () => {
-      const cartWithItems = {
-        ...validCart,
-        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
-      };
-      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
-      mercadopagoConfig.preference.create.mockResolvedValue({
-        id: validCheckoutPreference.preference_id,
-        init_point: validCheckoutPreference.init_point,
-      });
-
-      await checkoutService.createPreference(validUser.id);
-
-      expect(checkoutRepository.savePreferenceId).toHaveBeenCalledWith(
-        validCart.id,
-        validCheckoutPreference.preference_id,
-      );
-    });
-
     it('bloquea con 503 si el token NO es de usuario de prueba', async () => {
       mercadopagoConfig.getAccountTags.mockResolvedValue([]); // cuenta real
-      const cartWithItems = {
-        ...validCart,
-        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
-      };
+      const cartWithItems = cartWithProduct();
       checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
 
       await expect(checkoutService.createPreference(validUser.id)).rejects.toMatchObject({
@@ -145,10 +122,7 @@ describe('CheckoutService', () => {
     it('con MP_REQUIRE_TEST_USER=false permite el checkout sin validar test user', async () => {
       process.env.MP_REQUIRE_TEST_USER = 'false';
       mercadopagoConfig.getAccountTags.mockResolvedValue([]); // no se valida
-      const cartWithItems = {
-        ...validCart,
-        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
-      };
+      const cartWithItems = cartWithProduct();
       checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
       mercadopagoConfig.preference.create.mockResolvedValue({
         id: validCheckoutPreference.preference_id,
@@ -162,10 +136,7 @@ describe('CheckoutService', () => {
     });
 
     it('en modo prueba usa el sandbox_init_point si está disponible', async () => {
-      const cartWithItems = {
-        ...validCart,
-        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
-      };
+      const cartWithItems = cartWithProduct();
       checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
       mercadopagoConfig.preference.create.mockResolvedValue({
         id: validCheckoutPreference.preference_id,
@@ -181,10 +152,7 @@ describe('CheckoutService', () => {
 
   describe('handleWebhook', () => {
     it('si pago aprobado, crea purchase + inserta items + cierra carrito', async () => {
-      const cartWithItems = {
-        ...validCart,
-        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
-      };
+      const cartWithItems = cartWithProduct();
       mercadopagoConfig.payment.get.mockResolvedValue({
         id: 'MP-123456',
         status: 'approved',
