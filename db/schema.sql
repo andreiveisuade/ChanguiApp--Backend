@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS carts (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   store_id UUID REFERENCES stores(id),
   status TEXT NOT NULL CHECK (status IN ('active', 'checked_out', 'closed')),
+  mp_preference_id TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -102,10 +103,12 @@ CREATE TABLE IF NOT EXISTS purchases (
   total NUMERIC(10, 2) NOT NULL,
   payment_id TEXT NOT NULL,
   payment_status TEXT NOT NULL CHECK (payment_status IN ('pending', 'completed', 'failed')),
+  mp_preference_id TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_purchases_user_created ON purchases(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_purchases_user_preference ON purchases(user_id, mp_preference_id);
 
 -- ============================================================
 -- purchase_items — snapshot inmutable de los productos comprados
