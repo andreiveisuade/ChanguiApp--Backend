@@ -101,4 +101,69 @@ describe('Checkout Endpoints', () => {
       expect(res.statusCode).toBe(200);
     });
   });
+
+  describe('GET /api/checkout/status', () => {
+    it('devuelve el status de la compra asociada a la preferencia', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({
+        data: { id: 'purchase-uuid-1', payment_status: 'completed', mp_preference_id: 'pref-uuid-1' },
+        error: null,
+      });
+
+      const res = await request(app)
+        .get('/api/checkout/status')
+        .query({ preference_id: 'pref-uuid-1' })
+        .set(authHeader);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ status: 'completed' });
+    });
+
+    it('devuelve not_found si todavía no hay compra para esa preferencia', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
+
+      const res = await request(app)
+        .get('/api/checkout/status')
+        .query({ preference_id: 'pref-pendiente' })
+        .set(authHeader);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ status: 'not_found' });
+    });
+
+    it('sin preference_id devuelve 400', async () => {
+      const res = await request(app).get('/api/checkout/status').set(authHeader);
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('sin token devuelve 401', async () => {
+      const res = await request(app).get('/api/checkout/status').query({ preference_id: 'x' });
+
+      expect(res.statusCode).toBe(401);
+    });
+  });
+
+  describe('GET /api/checkout/return', () => {
+    it('con deep link permitido devuelve HTML que redirige a la app', async () => {
+      const res = await request(app)
+        .get('/api/checkout/return')
+        .query({ rt: 'changuiapp://checkout/return', preference_id: 'pref-uuid-1', status: 'approved' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.type).toMatch(/html/);
+      expect(res.text).toContain('window.location.replace');
+      expect(res.text).toContain('changuiapp://checkout/return');
+      expect(res.text).toContain('pref-uuid-1');
+    });
+
+    it('con rt de scheme no permitido muestra fallback sin redirigir', async () => {
+      const res = await request(app)
+        .get('/api/checkout/return')
+        .query({ rt: 'https://evil.example.com', preference_id: 'pref-uuid-1' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.text).not.toContain('window.location.replace');
+      expect(res.text).toContain('ChanguiApp');
+    });
+  });
 });

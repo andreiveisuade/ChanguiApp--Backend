@@ -73,6 +73,54 @@ describe('CheckoutService', () => {
         status: 400,
       });
     });
+
+    it('con returnUrl setea back_urls + auto_return y guarda el preference_id en el carrito', async () => {
+      const cartWithItems = {
+        ...validCart,
+        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+      };
+      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
+      mercadopagoConfig.preference.create.mockResolvedValue({
+        id: validCheckoutPreference.preference_id,
+        init_point: validCheckoutPreference.init_point,
+      });
+
+      await checkoutService.createPreference(validUser.id, 'changuiapp://checkout/return');
+
+      expect(mercadopagoConfig.preference.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: expect.objectContaining({
+            auto_return: 'approved',
+            back_urls: expect.objectContaining({
+              success: expect.stringContaining(encodeURIComponent('changuiapp://checkout/return')),
+            }),
+          }),
+        }),
+      );
+      expect(checkoutRepository.savePreferenceId).toHaveBeenCalledWith(
+        validCart.id,
+        validCheckoutPreference.preference_id,
+      );
+    });
+
+    it('sin returnUrl igual guarda el preference_id en el carrito', async () => {
+      const cartWithItems = {
+        ...validCart,
+        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+      };
+      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
+      mercadopagoConfig.preference.create.mockResolvedValue({
+        id: validCheckoutPreference.preference_id,
+        init_point: validCheckoutPreference.init_point,
+      });
+
+      await checkoutService.createPreference(validUser.id);
+
+      expect(checkoutRepository.savePreferenceId).toHaveBeenCalledWith(
+        validCart.id,
+        validCheckoutPreference.preference_id,
+      );
+    });
   });
 
   describe('handleWebhook', () => {
@@ -229,6 +277,57 @@ describe('CheckoutService', () => {
           }),
         }),
       );
+    });
+
+    it('copia el mp_preference_id del carrito a la compra creada', async () => {
+      const cartWithItems = {
+        ...validCart,
+        mp_preference_id: validCheckoutPreference.preference_id,
+        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+      };
+      mercadopagoConfig.payment.get.mockResolvedValue({
+        id: 'MP-PREF',
+        status: 'approved',
+        external_reference: validCart.id,
+      });
+      checkoutRepository.findCartById.mockResolvedValue(cartWithItems);
+      checkoutRepository.createPurchase.mockResolvedValue(validPurchase);
+      checkoutRepository.insertPurchaseItems.mockResolvedValue(undefined);
+      checkoutRepository.closeCart.mockResolvedValue(undefined);
+
+      await checkoutService.handleWebhook({ type: 'payment', data: { id: 'MP-PREF' } });
+
+      expect(checkoutRepository.createPurchase).toHaveBeenCalledWith(
+        expect.objectContaining({ mp_preference_id: validCheckoutPreference.preference_id }),
+      );
+    });
+  });
+
+  describe('getCheckoutStatus', () => {
+    it('devuelve el payment_status de la compra encontrada', async () => {
+      checkoutRepository.findPurchaseByPreferenceId.mockResolvedValue({
+        ...validPurchase,
+        payment_status: 'completed',
+      });
+
+      const result = await checkoutService.getCheckoutStatus(
+        validUser.id,
+        validCheckoutPreference.preference_id,
+      );
+
+      expect(checkoutRepository.findPurchaseByPreferenceId).toHaveBeenCalledWith(
+        validUser.id,
+        validCheckoutPreference.preference_id,
+      );
+      expect(result).toEqual({ status: 'completed' });
+    });
+
+    it('devuelve not_found si no hay compra para esa preferencia', async () => {
+      checkoutRepository.findPurchaseByPreferenceId.mockResolvedValue(null);
+
+      const result = await checkoutService.getCheckoutStatus(validUser.id, 'pref-inexistente');
+
+      expect(result).toEqual({ status: 'not_found' });
     });
   });
 });

@@ -1,6 +1,33 @@
 import supabase from '../config/supabase';
 import type { CartWithItems, Purchase, CartItem } from '../types/domain';
 
+export async function savePreferenceId(
+  cartId: string,
+  preferenceId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('carts')
+    .update({ mp_preference_id: preferenceId })
+    .eq('id', cartId);
+
+  if (error) throw error;
+}
+
+export async function findPurchaseByPreferenceId(
+  userId: string,
+  preferenceId: string
+): Promise<Purchase | null> {
+  const { data, error } = await supabase
+    .from('purchases')
+    .select('id, total, payment_id, payment_status, created_at, store_id, mp_preference_id')
+    .eq('user_id', userId)
+    .eq('mp_preference_id', preferenceId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as Purchase) || null;
+}
+
 export async function findActiveCartByUserId(
   userId: string
 ): Promise<CartWithItems | null> {

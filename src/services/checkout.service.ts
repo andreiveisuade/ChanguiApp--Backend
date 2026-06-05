@@ -1,6 +1,10 @@
 import { preference, payment } from '../config/mercadopago';
 import * as checkoutRepository from '../repositories/checkout.repository';
-import { ApiError, type CheckoutResponse } from '../types/domain';
+import {
+  ApiError,
+  type CheckoutResponse,
+  type CheckoutStatusResponse,
+} from '../types/domain';
 
 const STATUS_MAP: Record<string, 'completed' | 'failed' | 'pending'> = {
   approved: 'completed',
@@ -8,7 +12,10 @@ const STATUS_MAP: Record<string, 'completed' | 'failed' | 'pending'> = {
   pending: 'pending',
 };
 
-export async function createPreference(userId: string): Promise<CheckoutResponse> {
+export async function createPreference(
+  userId: string,
+  returnUrl?: string
+): Promise<CheckoutResponse> {
   const cart = await checkoutRepository.findActiveCartByUserId(userId);
   if (!cart || !cart.items || cart.items.length === 0) {
     throw new ApiError('No hay carrito activo con items', 400);
@@ -26,11 +33,19 @@ export async function createPreference(userId: string): Promise<CheckoutResponse
   // Se setea por preferencia (mas robusto que la config global del panel MP).
   const baseUrl = process.env.PUBLIC_BASE_URL || 'https://changuiapp-backend.onrender.com';
 
+  // back_url al que MP redirige tras el pago. La pagina /return reenvia al deep
+  // link de la app (returnUrl). auto_return hace el retorno automatico en approved.
+  const backUrl = returnUrl
+    ? `${baseUrl}/api/checkout/return?rt=${encodeURIComponent(returnUrl)}`
+    : `${baseUrl}/api/checkout/return`;
+
   const response = await preference.create({
     body: {
       items: mpItems,
       external_reference: cart.id,
       notification_url: `${baseUrl}/api/checkout/webhook`,
+      back_urls: { success: backUrl, pending: backUrl, failure: backUrl },
+      auto_return: 'approved',
     },
   });
 
@@ -38,10 +53,26 @@ export async function createPreference(userId: string): Promise<CheckoutResponse
     throw new ApiError('Error al crear preferencia de pago', 500);
   }
 
+  // Linkea la preferencia al carrito para correlacionar la compra (creada por el
+  // webhook) con este checkout y poder consultar su estado de forma deterministica.
+  await checkoutRepository.savePreferenceId(cart.id, response.id);
+
   return {
     preference_id: response.id,
     init_point: response.init_point,
   };
+}
+
+export async function getCheckoutStatus(
+  userId: string,
+  preferenceId: string
+): Promise<CheckoutStatusResponse> {
+  const purchase = await checkoutRepository.findPurchaseByPreferenceId(userId, preferenceId);
+  if (!purchase) {
+    // El webhook aun no proceso el pago, o fue rechazado (no crea purchase).
+    return { status: 'not_found' };
+  }
+  return { status: purchase.payment_status };
 }
 
 interface WebhookBody {
@@ -75,6 +106,7 @@ export async function handleWebhook(body: WebhookBody): Promise<void> {
     total,
     payment_id: String(info.id),
     payment_status: STATUS_MAP[info.status] || 'pending',
+    mp_preference_id: cart.mp_preference_id ?? null,
   });
 
   await checkoutRepository.insertPurchaseItems(purchase.id, items);
