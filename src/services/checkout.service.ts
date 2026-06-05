@@ -1,4 +1,4 @@
-import { preference, payment } from '../config/mercadopago';
+import { preference, payment, getAccountTags } from '../config/mercadopago';
 import * as checkoutRepository from '../repositories/checkout.repository';
 import {
   ApiError,
@@ -12,10 +12,29 @@ const STATUS_MAP: Record<string, 'completed' | 'failed' | 'pending'> = {
   pending: 'pending',
 };
 
+/**
+ * Seguro anti-cobro real: salvo MP_REQUIRE_TEST_USER='false', el checkout solo
+ * corre si el MP_ACCESS_TOKEN es de un usuario de prueba (tag 'test_user').
+ * Falla cerrado: ante la duda, bloquea en vez de cobrar de verdad.
+ */
+async function assertTestCredentials(): Promise<void> {
+  if (process.env.MP_REQUIRE_TEST_USER === 'false') return;
+  const tags = await getAccountTags();
+  if (!tags.includes('test_user')) {
+    throw new ApiError(
+      'Pagos deshabilitados: se requieren credenciales de prueba de Mercado Pago (usuario de prueba). ' +
+        'Configurá un MP_ACCESS_TOKEN de test user o seteá MP_REQUIRE_TEST_USER=false para habilitar cobros reales.',
+      503
+    );
+  }
+}
+
 export async function createPreference(
   userId: string,
   returnUrl?: string
 ): Promise<CheckoutResponse> {
+  await assertTestCredentials();
+
   const cart = await checkoutRepository.findActiveCartByUserId(userId);
   if (!cart || !cart.items || cart.items.length === 0) {
     throw new ApiError('No hay carrito activo con items', 400);
@@ -57,9 +76,17 @@ export async function createPreference(
   // webhook) con este checkout y poder consultar su estado de forma deterministica.
   await checkoutRepository.savePreferenceId(cart.id, response.id);
 
+  // En modo prueba (default) abrimos el sandbox_init_point: el checkout corre en
+  // el entorno de prueba de MP y no debita dinero real.
+  const allowRealPayments = process.env.MP_REQUIRE_TEST_USER === 'false';
+  const initPoint =
+    !allowRealPayments && response.sandbox_init_point
+      ? response.sandbox_init_point
+      : response.init_point;
+
   return {
     preference_id: response.id,
-    init_point: response.init_point,
+    init_point: initPoint,
   };
 }
 

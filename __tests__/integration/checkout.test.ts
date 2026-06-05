@@ -23,12 +23,18 @@ jest.mock('../../src/config/mercadopago', () => ({
   __esModule: true,
   preference: { create: jest.fn() },
   payment: { get: jest.fn() },
+  getAccountTags: jest.fn(),
 }));
 
 const mercadopagoConfig = require('../../src/config/mercadopago');
 
 describe('Checkout Endpoints', () => {
   afterEach(() => jest.clearAllMocks());
+
+  beforeEach(() => {
+    delete process.env.MP_REQUIRE_TEST_USER;
+    mercadopagoConfig.getAccountTags.mockResolvedValue(['test_user']);
+  });
 
   describe('POST /api/checkout', () => {
     it('con carrito activo devuelve 200 con preference_id e init_point', async () => {
@@ -75,6 +81,19 @@ describe('Checkout Endpoints', () => {
       const res = await request(app).post('/api/checkout');
 
       expect(res.statusCode).toBe(401);
+    });
+
+    it('con credenciales que no son de prueba devuelve 503 (seguro anti-cobro real)', async () => {
+      mercadopagoConfig.getAccountTags.mockResolvedValue([]); // cuenta real
+      mockSupabase.single.mockResolvedValue({
+        data: { ...validCart, items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }] },
+        error: null,
+      });
+
+      const res = await request(app).post('/api/checkout').set(authHeader);
+
+      expect(res.statusCode).toBe(503);
+      expect(mercadopagoConfig.preference.create).not.toHaveBeenCalled();
     });
   });
 

@@ -5,6 +5,7 @@ jest.mock('../../../src/config/mercadopago', () => ({
   __esModule: true,
   preference: { create: jest.fn() },
   payment: { get: jest.fn() },
+  getAccountTags: jest.fn(),
 }));
 
 const checkoutService = require('../../../src/services/checkout.service');
@@ -22,6 +23,11 @@ const {
 
 describe('CheckoutService', () => {
   afterEach(() => jest.clearAllMocks());
+
+  beforeEach(() => {
+    delete process.env.MP_REQUIRE_TEST_USER;
+    mercadopagoConfig.getAccountTags.mockResolvedValue(['test_user']);
+  });
 
   describe('createPreference', () => {
     it('genera preferencia MP con items del carrito activo', async () => {
@@ -120,6 +126,56 @@ describe('CheckoutService', () => {
         validCart.id,
         validCheckoutPreference.preference_id,
       );
+    });
+
+    it('bloquea con 503 si el token NO es de usuario de prueba', async () => {
+      mercadopagoConfig.getAccountTags.mockResolvedValue([]); // cuenta real
+      const cartWithItems = {
+        ...validCart,
+        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+      };
+      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
+
+      await expect(checkoutService.createPreference(validUser.id)).rejects.toMatchObject({
+        status: 503,
+      });
+      expect(mercadopagoConfig.preference.create).not.toHaveBeenCalled();
+    });
+
+    it('con MP_REQUIRE_TEST_USER=false permite el checkout sin validar test user', async () => {
+      process.env.MP_REQUIRE_TEST_USER = 'false';
+      mercadopagoConfig.getAccountTags.mockResolvedValue([]); // no se valida
+      const cartWithItems = {
+        ...validCart,
+        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+      };
+      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
+      mercadopagoConfig.preference.create.mockResolvedValue({
+        id: validCheckoutPreference.preference_id,
+        init_point: validCheckoutPreference.init_point,
+      });
+
+      const result = await checkoutService.createPreference(validUser.id);
+
+      expect(result.preference_id).toBe(validCheckoutPreference.preference_id);
+      expect(result.init_point).toBe(validCheckoutPreference.init_point);
+    });
+
+    it('en modo prueba usa el sandbox_init_point si está disponible', async () => {
+      const cartWithItems = {
+        ...validCart,
+        items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+      };
+      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
+      mercadopagoConfig.preference.create.mockResolvedValue({
+        id: validCheckoutPreference.preference_id,
+        init_point: 'https://www.mercadopago.com/prod',
+        sandbox_init_point: 'https://sandbox.mercadopago.com/test',
+      });
+
+      const result = await checkoutService.createPreference(validUser.id);
+
+      expect(result.init_point).toBe('https://sandbox.mercadopago.com/test');
     });
   });
 
