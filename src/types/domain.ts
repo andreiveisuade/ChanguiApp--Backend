@@ -71,6 +71,7 @@ export interface Cart {
   status: 'active' | 'checked_out' | 'closed';
   created_at: string;
   updated_at: string;
+  mp_preference_id?: string | null;
 }
 
 export interface CartItem {
@@ -95,6 +96,7 @@ export interface Purchase {
   payment_status: 'pending' | 'completed' | 'failed';
   created_at: string;
   store_name?: string | null;
+  mp_preference_id?: string | null;
 }
 
 export interface PurchaseItem {
@@ -115,6 +117,12 @@ export interface PurchaseDetail extends Purchase {
 export interface CheckoutResponse {
   preference_id: string;
   init_point: string;
+}
+
+export type CheckoutPaymentStatus = 'pending' | 'completed' | 'failed' | 'not_found';
+
+export interface CheckoutStatusResponse {
+  status: CheckoutPaymentStatus;
 }
 
 export interface Store {
