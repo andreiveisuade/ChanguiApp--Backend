@@ -42,6 +42,19 @@ export async function findRunning(type: string): Promise<SyncJob | null> {
   return (data as SyncJob | null) ?? null;
 }
 
+export async function findLatest(type: string): Promise<SyncJob | null> {
+  const { data, error } = await supabaseAdmin
+    .from('sync_jobs')
+    .select(COLUMNS)
+    .eq('type', type)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as SyncJob | null) ?? null;
+}
+
 export async function setTotal(id: string, total: number): Promise<void> {
   const { error } = await supabaseAdmin
     .from('sync_jobs')
@@ -67,6 +80,14 @@ export async function markCompleted(id: string): Promise<void> {
   const { error } = await supabaseAdmin
     .from('sync_jobs')
     .update({ status: 'completed', completed_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function markPartial(id: string, lastOffset: number): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('sync_jobs')
+    .update({ status: 'partial', last_offset: lastOffset })
     .eq('id', id);
   if (error) throw error;
 }
