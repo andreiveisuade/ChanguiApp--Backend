@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS purchase_items (
 CREATE TABLE IF NOT EXISTS sync_jobs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   type TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'completed', 'failed')),
+  status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'completed', 'failed', 'partial')),
   total_target INTEGER,
   processed INTEGER NOT NULL DEFAULT 0,
   errors INTEGER NOT NULL DEFAULT 0,
@@ -170,6 +170,13 @@ CREATE TABLE IF NOT EXISTS sync_jobs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sync_jobs_type_status ON sync_jobs(type, status);
+
+-- 'partial' (DEV-192): un job que avanzó un chunk pero no terminó el catálogo,
+-- reanudable desde last_offset. En una DB ya existente, CREATE TABLE IF NOT
+-- EXISTS no toca el CHECK viejo: recrearlo de forma idempotente.
+ALTER TABLE sync_jobs DROP CONSTRAINT IF EXISTS sync_jobs_status_check;
+ALTER TABLE sync_jobs ADD CONSTRAINT sync_jobs_status_check
+  CHECK (status IN ('queued', 'running', 'completed', 'failed', 'partial'));
 
 -- ============================================================
 -- tax_categories — catálogo de categorías fiscales (IVA)
