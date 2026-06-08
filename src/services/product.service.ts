@@ -6,12 +6,45 @@ import { ApiError, type ProductWithTax } from '../types/domain';
 export const CATALOG_DEFAULT_LIMIT = 500;
 export const CATALOG_MAX_LIMIT = 1000;
 
+// Producto del catálogo con su IVA ya desglosado (misma forma que el detalle
+// por barcode), para que el front lo cachee y lo muestre offline sin recalcular.
+export interface CatalogItem {
+  id: string;
+  barcode: string;
+  name: string;
+  brand: string | null;
+  price: number;
+  image_url: string | null;
+  updated_at: string;
+  tax: ProductWithTax['tax'];
+}
+
 export interface CatalogPage {
-  products: CatalogProduct[];
+  products: CatalogItem[];
   count: number;
   has_more: boolean;
   // Máximo updated_at de la página: el front lo guarda como cursor del próximo sync.
   next_cursor: string | null;
+}
+
+function toCatalogItem(p: CatalogProduct): CatalogItem {
+  const rate = p.tax_category?.rate ?? 21;
+  const pricing = calculatePricing(p.price, rate);
+  return {
+    id: p.id,
+    barcode: p.barcode,
+    name: p.name,
+    brand: p.brand,
+    price: p.price,
+    image_url: p.image_url,
+    updated_at: p.updated_at,
+    tax: {
+      category: p.tax_category?.name ?? 'General',
+      rate: pricing.rate,
+      net_price: pricing.net_price,
+      tax_amount: pricing.tax_amount,
+    },
+  };
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -41,7 +74,8 @@ export async function getCatalogSince(
   );
   const off = Number.isFinite(offset) && (offset as number) > 0 ? Math.floor(offset as number) : 0;
 
-  const products = await productRepository.findUpdatedSince(since, lim, off);
+  const rows = await productRepository.findUpdatedSince(since, lim, off);
+  const products = rows.map(toCatalogItem);
 
   return {
     products,

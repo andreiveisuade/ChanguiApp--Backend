@@ -52,6 +52,8 @@ export interface CatalogProduct {
   price: number;
   image_url: string | null;
   updated_at: string;
+  // Embed de la categoría fiscal para calcular el IVA del producto en el catálogo.
+  tax_category: { name: string; rate: number } | null;
 }
 
 // Catálogo para el cache local del front: filas con updated_at > since,
@@ -63,14 +65,23 @@ export async function findUpdatedSince(
 ): Promise<CatalogProduct[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('id, barcode, name, brand, price, image_url, updated_at')
+    .select(
+      'id, barcode, name, brand, price, image_url, updated_at, tax_category:tax_categories(name, rate)',
+    )
     .gt('updated_at', since)
     .order('updated_at', { ascending: true })
     .order('id', { ascending: true })
     .range(offset, offset + limit - 1);
 
   if (error) throw error;
-  return (data ?? []) as CatalogProduct[];
+
+  // Supabase tipa el embed to-one como array; en runtime es un objeto único.
+  return (data ?? []).map((row) => {
+    const r = row as Record<string, unknown>;
+    const raw = r.tax_category;
+    r.tax_category = Array.isArray(raw) ? raw[0] ?? null : raw ?? null;
+    return r as unknown as CatalogProduct;
+  });
 }
 
 export interface ProductUpsertInput {

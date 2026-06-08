@@ -56,10 +56,11 @@ describe('Products Endpoints', () => {
   describe('GET /api/products (catálogo incremental)', () => {
     const row = {
       id: 'p1', barcode: '111', name: 'A', brand: 'X',
-      price: 100, image_url: null, updated_at: '2026-06-08T10:00:00.000Z',
+      price: 121, image_url: null, updated_at: '2026-06-08T10:00:00.000Z',
+      tax_category: [{ name: 'General', rate: 21 }],
     };
 
-    it('devuelve la página del catálogo con cursor', async () => {
+    it('devuelve la página del catálogo con cursor e IVA desglosado', async () => {
       mockSupabase.range.mockResolvedValue({ data: [row], error: null });
 
       const res = await request(app)
@@ -71,6 +72,9 @@ describe('Products Endpoints', () => {
       expect(res.body.has_more).toBe(false);
       expect(res.body.next_cursor).toBe('2026-06-08T10:00:00.000Z');
       expect(res.body.products[0].barcode).toBe('111');
+      expect(res.body.products[0].tax).toEqual({
+        category: 'General', rate: 21, net_price: 100, tax_amount: 21,
+      });
     });
 
     it('updated_since inválido devuelve 400', async () => {

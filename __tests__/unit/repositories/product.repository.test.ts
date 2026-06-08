@@ -103,9 +103,9 @@ describe('ProductRepository.getAllForClassification', () => {
 describe('ProductRepository.findUpdatedSince', () => {
   afterEach(() => jest.clearAllMocks());
 
-  it('filtra por updated_at > since, ordena y pagina', async () => {
+  it('filtra por updated_at > since, ordena, pagina y normaliza el embed tax', async () => {
     const rows = [
-      { id: 'p1', barcode: '111', name: 'A', brand: 'X', price: 100, image_url: null, updated_at: '2026-06-08T10:00:00Z' },
+      { id: 'p1', barcode: '111', name: 'A', brand: 'X', price: 100, image_url: null, updated_at: '2026-06-08T10:00:00Z', tax_category: [{ name: 'General', rate: 21 }] },
     ];
     mockSupabase.range.mockResolvedValueOnce({ data: rows, error: null });
 
@@ -116,13 +116,25 @@ describe('ProductRepository.findUpdatedSince', () => {
     expect(mockSupabase.order).toHaveBeenCalledWith('updated_at', { ascending: true });
     expect(mockSupabase.order).toHaveBeenCalledWith('id', { ascending: true });
     expect(mockSupabase.range).toHaveBeenCalledWith(0, 499);
-    expect(result).toEqual(rows);
+    // el embed array de Supabase queda normalizado a objeto único
+    expect(result[0].tax_category).toEqual({ name: 'General', rate: 21 });
+  });
+
+  it('normaliza tax_category ausente a null', async () => {
+    const rows = [
+      { id: 'p1', barcode: '111', name: 'A', brand: null, price: 100, image_url: null, updated_at: '2026-06-08T10:00:00Z', tax_category: null },
+    ];
+    mockSupabase.range.mockResolvedValueOnce({ data: rows, error: null });
+
+    const result = await productRepository.findUpdatedSince('2026-06-01T00:00:00Z', 100, 200);
+
+    expect(result[0].tax_category).toBeNull();
+    expect(mockSupabase.range).toHaveBeenCalledWith(200, 299);
   });
 
   it('devuelve [] cuando data es null', async () => {
     mockSupabase.range.mockResolvedValueOnce({ data: null, error: null });
     expect(await productRepository.findUpdatedSince('2026-06-01T00:00:00Z', 100, 200)).toEqual([]);
-    expect(mockSupabase.range).toHaveBeenCalledWith(200, 299);
   });
 
   it('lanza el error de supabase', async () => {
