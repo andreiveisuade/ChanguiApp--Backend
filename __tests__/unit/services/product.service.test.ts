@@ -46,10 +46,11 @@ describe('ProductService', () => {
   describe('getCatalogSince', () => {
     const row = {
       id: 'p1', barcode: '111', name: 'A', brand: 'X',
-      price: 100, image_url: null, updated_at: '2026-06-08T10:00:00.000Z',
+      price: 121, image_url: null, updated_at: '2026-06-08T10:00:00.000Z',
+      tax_category: { name: 'General', rate: 21 },
     };
 
-    it('sin updated_since baja todo desde epoch, con limit/offset por defecto', async () => {
+    it('sin updated_since baja todo desde epoch, calcula el IVA y arma next_cursor', async () => {
       productRepository.findUpdatedSince.mockResolvedValue([row]);
 
       const result = await productService.getCatalogSince();
@@ -59,11 +60,23 @@ describe('ProductService', () => {
         productService.CATALOG_DEFAULT_LIMIT,
         0,
       );
-      expect(result).toEqual({
-        products: [row],
-        count: 1,
-        has_more: false,
-        next_cursor: '2026-06-08T10:00:00.000Z',
+      expect(result.count).toBe(1);
+      expect(result.has_more).toBe(false);
+      expect(result.next_cursor).toBe('2026-06-08T10:00:00.000Z');
+      expect(result.products[0]).toEqual({
+        id: 'p1', barcode: '111', name: 'A', brand: 'X',
+        price: 121, image_url: null, updated_at: '2026-06-08T10:00:00.000Z',
+        tax: { category: 'General', rate: 21, net_price: 100, tax_amount: 21 },
+      });
+    });
+
+    it('producto sin categoría fiscal cae al 21% (General)', async () => {
+      productRepository.findUpdatedSince.mockResolvedValue([{ ...row, tax_category: null }]);
+
+      const result = await productService.getCatalogSince();
+
+      expect(result.products[0].tax).toEqual({
+        category: 'General', rate: 21, net_price: 100, tax_amount: 21,
       });
     });
 
