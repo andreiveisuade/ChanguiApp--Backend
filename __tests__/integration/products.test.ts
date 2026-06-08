@@ -52,4 +52,38 @@ describe('Products Endpoints', () => {
       expect(res.statusCode).toBe(401);
     });
   });
+
+  describe('GET /api/products (catálogo incremental)', () => {
+    const row = {
+      id: 'p1', barcode: '111', name: 'A', brand: 'X',
+      price: 100, image_url: null, updated_at: '2026-06-08T10:00:00.000Z',
+    };
+
+    it('devuelve la página del catálogo con cursor', async () => {
+      mockSupabase.range.mockResolvedValue({ data: [row], error: null });
+
+      const res = await request(app)
+        .get('/api/products?updated_since=2026-06-01T00:00:00Z&limit=10&offset=0')
+        .set(authHeader);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.count).toBe(1);
+      expect(res.body.has_more).toBe(false);
+      expect(res.body.next_cursor).toBe('2026-06-08T10:00:00.000Z');
+      expect(res.body.products[0].barcode).toBe('111');
+    });
+
+    it('updated_since inválido devuelve 400', async () => {
+      const res = await request(app)
+        .get('/api/products?updated_since=no-es-fecha')
+        .set(authHeader);
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('sin token devuelve 401', async () => {
+      const res = await request(app).get('/api/products');
+      expect(res.statusCode).toBe(401);
+    });
+  });
 });

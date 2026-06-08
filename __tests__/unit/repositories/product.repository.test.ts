@@ -100,6 +100,39 @@ describe('ProductRepository.getAllForClassification', () => {
   });
 });
 
+describe('ProductRepository.findUpdatedSince', () => {
+  afterEach(() => jest.clearAllMocks());
+
+  it('filtra por updated_at > since, ordena y pagina', async () => {
+    const rows = [
+      { id: 'p1', barcode: '111', name: 'A', brand: 'X', price: 100, image_url: null, updated_at: '2026-06-08T10:00:00Z' },
+    ];
+    mockSupabase.range.mockResolvedValueOnce({ data: rows, error: null });
+
+    const result = await productRepository.findUpdatedSince('2026-06-01T00:00:00Z', 500, 0);
+
+    expect(mockSupabase.from).toHaveBeenCalledWith('products');
+    expect(mockSupabase.gt).toHaveBeenCalledWith('updated_at', '2026-06-01T00:00:00Z');
+    expect(mockSupabase.order).toHaveBeenCalledWith('updated_at', { ascending: true });
+    expect(mockSupabase.order).toHaveBeenCalledWith('id', { ascending: true });
+    expect(mockSupabase.range).toHaveBeenCalledWith(0, 499);
+    expect(result).toEqual(rows);
+  });
+
+  it('devuelve [] cuando data es null', async () => {
+    mockSupabase.range.mockResolvedValueOnce({ data: null, error: null });
+    expect(await productRepository.findUpdatedSince('2026-06-01T00:00:00Z', 100, 200)).toEqual([]);
+    expect(mockSupabase.range).toHaveBeenCalledWith(200, 299);
+  });
+
+  it('lanza el error de supabase', async () => {
+    mockSupabase.range.mockResolvedValueOnce({ data: null, error: new Error('boom') });
+    await expect(
+      productRepository.findUpdatedSince('2026-06-01T00:00:00Z', 100, 0),
+    ).rejects.toThrow('boom');
+  });
+});
+
 describe('ProductRepository.bulkSetCategory', () => {
   afterEach(() => jest.clearAllMocks());
 

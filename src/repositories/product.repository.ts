@@ -44,6 +44,35 @@ export async function upsertByBarcode(product: {
   return { created: !existing };
 }
 
+export interface CatalogProduct {
+  id: string;
+  barcode: string;
+  name: string;
+  brand: string | null;
+  price: number;
+  image_url: string | null;
+  updated_at: string;
+}
+
+// Catálogo para el cache local del front: filas con updated_at > since,
+// ordenadas para paginar de forma estable. Supabase limita a 1000 por query.
+export async function findUpdatedSince(
+  since: string,
+  limit: number,
+  offset: number,
+): Promise<CatalogProduct[]> {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, barcode, name, brand, price, image_url, updated_at')
+    .gt('updated_at', since)
+    .order('updated_at', { ascending: true })
+    .order('id', { ascending: true })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw error;
+  return (data ?? []) as CatalogProduct[];
+}
+
 export interface ProductUpsertInput {
   barcode: string;
   name: string;
