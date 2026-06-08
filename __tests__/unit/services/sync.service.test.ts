@@ -80,11 +80,20 @@ describe('SyncService', () => {
 
   describe('startPreciosClarosSync', () => {
     it('crea job y devuelve sync_id cuando no hay running', async () => {
+      jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
+
       const result = await syncService.startPreciosClarosSync();
 
       expect(mockedJobs.findRunning).toHaveBeenCalledWith('precios_claros');
       expect(mockedJobs.create).toHaveBeenCalledWith('precios_claros');
       expect(result).toEqual({ sync_id: JOB_ID });
+
+      // el runner se dispara en background (void); drenamos para que termine
+      // con el fetch mockeado y no filtre una llamada real al afterEach siguiente
+      await new Promise((r) => setImmediate(r));
+      await new Promise((r) => setImmediate(r));
     });
 
     it('lanza ApiError 409 si ya hay un sync running', async () => {
