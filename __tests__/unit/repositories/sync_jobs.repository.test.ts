@@ -121,6 +121,40 @@ describe('SyncJobsRepository', () => {
     });
   });
 
+  describe('findLatest', () => {
+    it('ordena por created_at desc y devuelve el último job', async () => {
+      const row = buildRow({ status: 'partial', last_offset: 300 });
+      mockSupabase.maybeSingle.mockResolvedValue({ data: row, error: null });
+
+      const result = await syncJobsRepository.findLatest('precios_claros');
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('sync_jobs');
+      expect(mockSupabase.eq).toHaveBeenCalledWith('type', 'precios_claros');
+      expect(mockSupabase.order).toHaveBeenCalledWith('created_at', { ascending: false });
+      expect(mockSupabase.limit).toHaveBeenCalledWith(1);
+      expect(result).toEqual(row);
+    });
+
+    it('devuelve null cuando no hay jobs', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
+
+      const result = await syncJobsRepository.findLatest('precios_claros');
+
+      expect(result).toBeNull();
+    });
+
+    it('lanza el error de supabase', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({
+        data: null,
+        error: new Error('select failed'),
+      });
+
+      await expect(syncJobsRepository.findLatest('precios_claros')).rejects.toThrow(
+        'select failed',
+      );
+    });
+  });
+
   describe('setTotal', () => {
     it('updatea total_target', async () => {
       mockSupabase.eq.mockResolvedValue({ data: null, error: null });
@@ -177,6 +211,25 @@ describe('SyncJobsRepository', () => {
     it('lanza el error de supabase', async () => {
       mockSupabase.eq.mockResolvedValue({ data: null, error: new Error('boom') });
       await expect(syncJobsRepository.markCompleted(JOB_ID)).rejects.toThrow('boom');
+    });
+  });
+
+  describe('markPartial', () => {
+    it('setea status partial y last_offset (sin completed_at)', async () => {
+      mockSupabase.eq.mockResolvedValue({ data: null, error: null });
+
+      await syncJobsRepository.markPartial(JOB_ID, 2500);
+
+      expect(mockSupabase.update).toHaveBeenCalledWith({
+        status: 'partial',
+        last_offset: 2500,
+      });
+      expect(mockSupabase.eq).toHaveBeenCalledWith('id', JOB_ID);
+    });
+
+    it('lanza el error de supabase', async () => {
+      mockSupabase.eq.mockResolvedValue({ data: null, error: new Error('boom') });
+      await expect(syncJobsRepository.markPartial(JOB_ID, 1)).rejects.toThrow('boom');
     });
   });
 

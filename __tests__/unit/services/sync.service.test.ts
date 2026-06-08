@@ -52,6 +52,13 @@ function fetchResponse(body: unknown): Response {
   return { ok: true, json: async () => body } as unknown as Response;
 }
 
+// El runner se dispara en background (void); drenamos los microtasks para que
+// termine con el fetch mockeado y no filtre una llamada real al afterEach.
+async function drain(): Promise<void> {
+  await new Promise((r) => setImmediate(r));
+  await new Promise((r) => setImmediate(r));
+}
+
 describe('SyncService', () => {
   const originalEnv = process.env;
 
@@ -64,10 +71,12 @@ describe('SyncService', () => {
       SYNC_RETRY_BASE_MS: '0',
     };
     mockedJobs.findRunning.mockResolvedValue(null);
+    mockedJobs.findLatest.mockResolvedValue(null);
     mockedJobs.create.mockResolvedValue(buildJob());
     mockedJobs.setTotal.mockResolvedValue(undefined);
     mockedJobs.updateProgress.mockResolvedValue(undefined);
     mockedJobs.markCompleted.mockResolvedValue(undefined);
+    mockedJobs.markPartial.mockResolvedValue(undefined);
     mockedJobs.markFailed.mockResolvedValue(undefined);
     mockedProducts.upsertBatch.mockResolvedValue(undefined);
   });
@@ -92,12 +101,13 @@ describe('SyncService', () => {
 
       // el runner se dispara en background (void); drenamos para que termine
       // con el fetch mockeado y no filtre una llamada real al afterEach siguiente
-      await new Promise((r) => setImmediate(r));
-      await new Promise((r) => setImmediate(r));
+      await drain();
     });
 
-    it('lanza ApiError 409 si ya hay un sync running', async () => {
-      mockedJobs.findRunning.mockResolvedValue(buildJob());
+    it('lanza ApiError 409 si ya hay un sync running reciente', async () => {
+      mockedJobs.findRunning.mockResolvedValue(
+        buildJob({ started_at: new Date().toISOString() }),
+      );
 
       await expect(syncService.startPreciosClarosSync()).rejects.toMatchObject({
         status: 409,
@@ -106,14 +116,93 @@ describe('SyncService', () => {
       expect(mockedJobs.create).not.toHaveBeenCalled();
     });
 
+    it('recupera un running huérfano (stale): lo marca failed y arranca uno nuevo', async () => {
+      // started_at viejo (default de buildJob) => stale => huérfano por reinicio.
+      mockedJobs.findRunning.mockResolvedValue(
+        buildJob({ id: 'huerfano', started_at: '2026-05-21T00:00:00Z' }),
+      );
+      jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
+
+      const result = await syncService.startPreciosClarosSync();
+
+      expect(mockedJobs.markFailed).toHaveBeenCalledWith(
+        'huerfano',
+        expect.stringContaining('huérfano'),
+      );
+      expect(mockedJobs.create).toHaveBeenCalledWith('precios_claros');
+      expect(result).toEqual({ sync_id: JOB_ID });
+
+      await drain();
+    });
+
+    it('reanuda desde el last_offset del último job no completado', async () => {
+      mockedJobs.findLatest.mockResolvedValue(
+        buildJob({ status: 'partial', total_target: 500, last_offset: 200 }),
+      );
+      const runSpy = jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValue(fetchResponse({ total: 500, productos: [] }));
+
+      await syncService.startPreciosClarosSync();
+      await drain();
+
+      // el head se pide en offset 0, pero la primera página de datos arranca en 200
+      expect(runSpy).toHaveBeenCalledWith(
+        expect.stringContaining('offset=200'),
+        expect.anything(),
+      );
+    });
+
+    // El offset de arranque vuelve a 0 cuando no hay nada reanudable: último
+    // job completado, sin progreso, o con el total ya cubierto.
+    it.each([
+      ['el último job ya completó', 'completed' as const, 500, 500],
+      ['el último job no tiene progreso', 'failed' as const, 500, 0],
+      ['el último partial ya cubrió el total', 'partial' as const, 200, 200],
+    ])('arranca de 0 cuando %s', async (_caso, status, total_target, last_offset) => {
+      mockedJobs.findLatest.mockResolvedValue(
+        buildJob({ status, total_target, last_offset }),
+      );
+      const runSpy = jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
+
+      await syncService.startPreciosClarosSync();
+      await drain();
+
+      expect(runSpy).toHaveBeenCalledWith(
+        expect.stringContaining('offset=0'),
+        expect.anything(),
+      );
+    });
+
+    it('loguea si el runner de background rechaza sin atrapar', async () => {
+      jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
+      // total=0 dispara markFailed; si markFailed también rompe, el runner
+      // rechaza y debe caer en el .catch defensivo (no romper el proceso).
+      mockedJobs.markFailed.mockRejectedValue(new Error('db down'));
+      const errSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      await syncService.startPreciosClarosSync();
+      await drain();
+
+      expect(errSpy).toHaveBeenCalledWith(
+        '[sync] runner falló sin atrapar:',
+        expect.any(Error),
+      );
+    });
+
     it('dispara el runner en background (side-effect: el runner llega a setTotal)', async () => {
       jest
         .spyOn(global, 'fetch')
         .mockResolvedValue(fetchResponse({ total: 5, productos: [apiProduct('p-1')] }));
 
       await syncService.startPreciosClarosSync();
-      await new Promise((r) => setImmediate(r));
-      await new Promise((r) => setImmediate(r));
+      await drain();
 
       expect(mockedJobs.setTotal).toHaveBeenCalledWith(JOB_ID, 5);
     });
@@ -333,6 +422,39 @@ describe('SyncService', () => {
       await syncService.runPreciosClarosSync(JOB_ID);
 
       expect(mockedJobs.markFailed).toHaveBeenCalledWith(JOB_ID, 'string-error');
+    });
+
+    it('corta por el techo del chunk y deja el job en partial (no completed)', async () => {
+      process.env.SYNC_MAX_PAGES_PER_RUN = '1';
+      const fullPage = Array.from({ length: 100 }, (_, i) => apiProduct(`p-${i}`));
+
+      jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValueOnce(fetchResponse({ total: 500, productos: [apiProduct('head')] }))
+        .mockResolvedValueOnce(fetchResponse({ total: 500, productos: fullPage }));
+
+      await syncService.runPreciosClarosSync(JOB_ID);
+
+      expect(mockedProducts.upsertBatch).toHaveBeenCalledTimes(1);
+      expect(mockedJobs.markPartial).toHaveBeenCalledWith(JOB_ID, 100);
+      expect(mockedJobs.markCompleted).not.toHaveBeenCalled();
+    });
+
+    it('reanuda desde startOffset: la primera página de datos arranca ahí', async () => {
+      const fetchSpy = jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValueOnce(fetchResponse({ total: 202, productos: [apiProduct('head')] }))
+        .mockResolvedValueOnce(fetchResponse({ total: 202, productos: [apiProduct('p-200'), apiProduct('p-201')] }));
+
+      await syncService.runPreciosClarosSync(JOB_ID, 200);
+
+      expect(fetchSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('limit=100&offset=200'),
+        expect.any(Object),
+      );
+      expect(mockedJobs.markCompleted).toHaveBeenCalledWith(JOB_ID);
+      expect(mockedJobs.markPartial).not.toHaveBeenCalled();
     });
   });
 });

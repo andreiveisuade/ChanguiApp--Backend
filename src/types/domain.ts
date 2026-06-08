@@ -135,7 +135,7 @@ export interface Store {
   distanceKm?: number;
 }
 
-export type SyncJobStatus = 'queued' | 'running' | 'completed' | 'failed';
+export type SyncJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'partial';
 
 export interface SyncJob {
   id: string;

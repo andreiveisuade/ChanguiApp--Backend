@@ -18,60 +18,77 @@ jobs:
         run: |
           set -euo pipefail
 
-          # 1) Disparar el sync (fire-and-forget en el backend).
-          response=$(curl -sS -w "\n%{http_code}" \
-            -X POST "$BACKEND_URL/api/admin/sync-precios-claros" \
-            -H "X-Admin-Token: $ADMIN_TOKEN")
-          body=$(echo "$response" | head -n -1)
-          status=$(echo "$response" | tail -n 1)
-          echo "POST HTTP $status — $body"
+          # El sync avanza por tandas (chunks) reanudables (DEV-192): cada POST
+          # procesa un chunk y reanuda desde last_offset. Disparamos chunk tras
+          # chunk hasta que el job termine 'completed'. Cada chunk es un proceso
+          # corto que entra en el free tier de Render sin reiniciar el dyno.
+          global_deadline=$((SECONDS + 1500))   # 25 min para todo el catálogo
 
-          # 409 = ya hay un sync corriendo (otra corrida lo tomó); no es fallo.
-          if [ "$status" = "409" ]; then
-            echo "Ya hay un sync en curso, nada que hacer."
-            exit 0
-          fi
-          if [ "$status" != "202" ]; then
-            echo "::error::El POST no devolvió 202 (devolvió $status)"
-            exit 1
-          fi
-
-          sync_id=$(echo "$body" | jq -r '.sync_id')
-          if [ -z "$sync_id" ] || [ "$sync_id" = "null" ]; then
-            echo "::error::No se pudo leer sync_id de la respuesta"
-            exit 1
-          fi
-          echo "Sync encolado: $sync_id"
-
-          # 2) Poltear el estado real hasta completed/failed (timeout ~10 min).
-          #    El sync tarda ~4-5 min; Render free puede sumar cold start.
-          deadline=$((SECONDS + 600))
-          while [ "$SECONDS" -lt "$deadline" ]; do
-            sleep 20
-            job=$(curl -sS \
-              "$BACKEND_URL/api/admin/sync-precios-claros/$sync_id" \
+          while [ "$SECONDS" -lt "$global_deadline" ]; do
+            # 1) Disparar/reanudar un chunk (fire-and-forget en el backend).
+            response=$(curl -sS -w "\n%{http_code}" \
+              -X POST "$BACKEND_URL/api/admin/sync-precios-claros" \
               -H "X-Admin-Token: $ADMIN_TOKEN")
-            job_status=$(echo "$job" | jq -r '.status')
-            processed=$(echo "$job" | jq -r '.processed')
-            total=$(echo "$job" | jq -r '.total_target')
-            echo "estado=$job_status procesados=$processed/$total"
+            body=$(echo "$response" | head -n -1)
+            status=$(echo "$response" | tail -n 1)
+            echo "POST HTTP $status — $body"
 
-            case "$job_status" in
-              completed)
-                if [ "$processed" -gt 0 ]; then
-                  echo "Sync OK: $processed productos."
+            # 409 = ya hay otra corrida activa real; no es fallo.
+            if [ "$status" = "409" ]; then
+              echo "Ya hay un sync en curso, nada que hacer."
+              exit 0
+            fi
+            if [ "$status" != "202" ]; then
+              echo "::error::El POST no devolvió 202 (devolvió $status)"
+              exit 1
+            fi
+
+            sync_id=$(echo "$body" | jq -r '.sync_id')
+            if [ -z "$sync_id" ] || [ "$sync_id" = "null" ]; then
+              echo "::error::No se pudo leer sync_id de la respuesta"
+              exit 1
+            fi
+            echo "Chunk encolado: $sync_id"
+
+            # 2) Poltear este chunk hasta completed/partial/failed.
+            chunk_deadline=$((SECONDS + 480))
+            chunk_done=""
+            while [ "$SECONDS" -lt "$chunk_deadline" ]; do
+              sleep 20
+              job=$(curl -sS \
+                "$BACKEND_URL/api/admin/sync-precios-claros/$sync_id" \
+                -H "X-Admin-Token: $ADMIN_TOKEN")
+              job_status=$(echo "$job" | jq -r '.status')
+              processed=$(echo "$job" | jq -r '.processed')
+              total=$(echo "$job" | jq -r '.total_target')
+              last_offset=$(echo "$job" | jq -r '.last_offset')
+              echo "estado=$job_status procesados=$processed/$total offset=$last_offset"
+
+              case "$job_status" in
+                completed)
+                  echo "Sync completo: catálogo al día (offset=$last_offset)."
                   exit 0
-                fi
-                echo "::error::Sync completed pero con 0 productos."
-                exit 1
-                ;;
-              failed)
-                msg=$(echo "$job" | jq -r '.error_message')
-                echo "::error::Sync falló: $msg"
-                exit 1
-                ;;
-            esac
+                  ;;
+                partial)
+                  echo "Chunk OK (offset=$last_offset). Reanudando siguiente tanda…"
+                  chunk_done="partial"
+                  break
+                  ;;
+                failed)
+                  msg=$(echo "$job" | jq -r '.error_message')
+                  echo "::error::Sync falló: $msg"
+                  exit 1
+                  ;;
+              esac
+            done
+
+            # El chunk no resolvió dentro de su ventana: probable reinicio del
+            # dyno. Damos respiro y reintentamos; el próximo POST reanuda solo.
+            if [ "$chunk_done" != "partial" ]; then
+              echo "Chunk sin resolver (posible reinicio del dyno). Reintentando…"
+              sleep 15
+            fi
           done
 
-          echo "::error::Timeout esperando que el sync termine."
+          echo "::error::Timeout global esperando que el catálogo complete."
           exit 1
