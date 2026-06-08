@@ -38,9 +38,13 @@ CREATE TABLE IF NOT EXISTS products (
   brand TEXT,
   price NUMERIC(10, 2) NOT NULL,
   image_url TEXT,
-  synced_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()  -- ver migration 2026-06-08: catalogo incremental
+  synced_at TIMESTAMPTZ
 );
+
+-- DEV-190: catalogo incremental para el cache local del front. Aditivo e
+-- idempotente: ADD COLUMN IF NOT EXISTS cubre tanto una DB fresca como la prod
+-- ya existente al re-correr este bloque en el SQL Editor de Supabase.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
 CREATE INDEX IF NOT EXISTS idx_products_updated_at ON products(updated_at);
 
