@@ -42,4 +42,66 @@ describe('ProductService', () => {
         .rejects.toThrow();
     });
   });
+
+  describe('getCatalogSince', () => {
+    const row = {
+      id: 'p1', barcode: '111', name: 'A', brand: 'X',
+      price: 100, image_url: null, updated_at: '2026-06-08T10:00:00.000Z',
+    };
+
+    it('sin updated_since baja todo desde epoch, con limit/offset por defecto', async () => {
+      productRepository.findUpdatedSince.mockResolvedValue([row]);
+
+      const result = await productService.getCatalogSince();
+
+      expect(productRepository.findUpdatedSince).toHaveBeenCalledWith(
+        new Date(0).toISOString(),
+        productService.CATALOG_DEFAULT_LIMIT,
+        0,
+      );
+      expect(result).toEqual({
+        products: [row],
+        count: 1,
+        has_more: false,
+        next_cursor: '2026-06-08T10:00:00.000Z',
+      });
+    });
+
+    it('pasa el cursor normalizado a ISO y respeta limit/offset', async () => {
+      productRepository.findUpdatedSince.mockResolvedValue([]);
+
+      const result = await productService.getCatalogSince('2026-06-01T00:00:00Z', 50, 100);
+
+      expect(productRepository.findUpdatedSince).toHaveBeenCalledWith(
+        '2026-06-01T00:00:00.000Z',
+        50,
+        100,
+      );
+      expect(result).toEqual({ products: [], count: 0, has_more: false, next_cursor: null });
+    });
+
+    it('has_more=true cuando la página llena el limit', async () => {
+      productRepository.findUpdatedSince.mockResolvedValue([row, row]);
+      const result = await productService.getCatalogSince(undefined, 2, 0);
+      expect(result.has_more).toBe(true);
+    });
+
+    it('clampa limit al máximo y normaliza offset negativo a 0', async () => {
+      productRepository.findUpdatedSince.mockResolvedValue([]);
+
+      await productService.getCatalogSince(undefined, 99999, -5);
+
+      expect(productRepository.findUpdatedSince).toHaveBeenCalledWith(
+        new Date(0).toISOString(),
+        productService.CATALOG_MAX_LIMIT,
+        0,
+      );
+    });
+
+    it('lanza 400 si updated_since no es fecha válida', async () => {
+      await expect(productService.getCatalogSince('no-es-fecha'))
+        .rejects.toMatchObject({ status: 400 });
+      expect(productRepository.findUpdatedSince).not.toHaveBeenCalled();
+    });
+  });
 });

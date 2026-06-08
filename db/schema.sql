@@ -41,6 +41,36 @@ CREATE TABLE IF NOT EXISTS products (
   synced_at TIMESTAMPTZ
 );
 
+-- DEV-190: catalogo incremental para el cache local del front. Aditivo e
+-- idempotente: ADD COLUMN IF NOT EXISTS cubre tanto una DB fresca como la prod
+-- ya existente al re-correr este bloque en el SQL Editor de Supabase.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_products_updated_at ON products(updated_at);
+
+-- updated_at solo cambia cuando un campo relevante cambia de verdad (el sync
+-- re-upsertea todo el catalogo a diario; sin esto el delta seria el catalogo entero).
+CREATE OR REPLACE FUNCTION products_touch_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.name IS DISTINCT FROM OLD.name
+     OR NEW.brand IS DISTINCT FROM OLD.brand
+     OR NEW.price IS DISTINCT FROM OLD.price
+     OR NEW.image_url IS DISTINCT FROM OLD.image_url THEN
+    NEW.updated_at := NOW();
+  ELSE
+    NEW.updated_at := OLD.updated_at;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_products_touch_updated_at ON products;
+CREATE TRIGGER trg_products_touch_updated_at
+  BEFORE UPDATE ON products
+  FOR EACH ROW
+  EXECUTE FUNCTION products_touch_updated_at();
+
 -- ============================================================
 -- carts — un carrito activo por usuario
 -- ============================================================
