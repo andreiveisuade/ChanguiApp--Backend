@@ -52,6 +52,13 @@ function fetchResponse(body: unknown): Response {
   return { ok: true, json: async () => body } as unknown as Response;
 }
 
+// El runner se dispara en background (void); drenamos los microtasks para que
+// termine con el fetch mockeado y no filtre una llamada real al afterEach.
+async function drain(): Promise<void> {
+  await new Promise((r) => setImmediate(r));
+  await new Promise((r) => setImmediate(r));
+}
+
 describe('SyncService', () => {
   const originalEnv = process.env;
 
@@ -94,8 +101,7 @@ describe('SyncService', () => {
 
       // el runner se dispara en background (void); drenamos para que termine
       // con el fetch mockeado y no filtre una llamada real al afterEach siguiente
-      await new Promise((r) => setImmediate(r));
-      await new Promise((r) => setImmediate(r));
+      await drain();
     });
 
     it('lanza ApiError 409 si ya hay un sync running reciente', async () => {
@@ -128,8 +134,7 @@ describe('SyncService', () => {
       expect(mockedJobs.create).toHaveBeenCalledWith('precios_claros');
       expect(result).toEqual({ sync_id: JOB_ID });
 
-      await new Promise((r) => setImmediate(r));
-      await new Promise((r) => setImmediate(r));
+      await drain();
     });
 
     it('reanuda desde el last_offset del último job no completado', async () => {
@@ -141,8 +146,7 @@ describe('SyncService', () => {
         .mockResolvedValue(fetchResponse({ total: 500, productos: [] }));
 
       await syncService.startPreciosClarosSync();
-      await new Promise((r) => setImmediate(r));
-      await new Promise((r) => setImmediate(r));
+      await drain();
 
       // el head se pide en offset 0, pero la primera página de datos arranca en 200
       expect(runSpy).toHaveBeenCalledWith(
@@ -151,51 +155,22 @@ describe('SyncService', () => {
       );
     });
 
-    it('arranca de 0 si el último job ya completó', async () => {
+    // El offset de arranque vuelve a 0 cuando no hay nada reanudable: último
+    // job completado, sin progreso, o con el total ya cubierto.
+    it.each([
+      ['el último job ya completó', 'completed' as const, 500, 500],
+      ['el último job no tiene progreso', 'failed' as const, 500, 0],
+      ['el último partial ya cubrió el total', 'partial' as const, 200, 200],
+    ])('arranca de 0 cuando %s', async (_caso, status, total_target, last_offset) => {
       mockedJobs.findLatest.mockResolvedValue(
-        buildJob({ status: 'completed', total_target: 500, last_offset: 500 }),
+        buildJob({ status, total_target, last_offset }),
       );
       const runSpy = jest
         .spyOn(global, 'fetch')
         .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
 
       await syncService.startPreciosClarosSync();
-      await new Promise((r) => setImmediate(r));
-      await new Promise((r) => setImmediate(r));
-
-      // solo el head en offset 0; nunca pide una página de datos en otro offset
-      expect(runSpy).toHaveBeenCalledWith(
-        expect.stringContaining('offset=0'),
-        expect.anything(),
-      );
-    });
-
-    it('arranca de 0 si el último job no tiene progreso (last_offset 0)', async () => {
-      mockedJobs.findLatest.mockResolvedValue(
-        buildJob({ status: 'failed', total_target: 500, last_offset: 0 }),
-      );
-      jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
-
-      await syncService.startPreciosClarosSync();
-      await new Promise((r) => setImmediate(r));
-      await new Promise((r) => setImmediate(r));
-
-      expect(mockedJobs.create).toHaveBeenCalledWith('precios_claros');
-    });
-
-    it('arranca de 0 si el último partial ya cubrió el total estimado', async () => {
-      mockedJobs.findLatest.mockResolvedValue(
-        buildJob({ status: 'partial', total_target: 200, last_offset: 200 }),
-      );
-      const runSpy = jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
-
-      await syncService.startPreciosClarosSync();
-      await new Promise((r) => setImmediate(r));
-      await new Promise((r) => setImmediate(r));
+      await drain();
 
       expect(runSpy).toHaveBeenCalledWith(
         expect.stringContaining('offset=0'),
@@ -213,8 +188,7 @@ describe('SyncService', () => {
       const errSpy = jest.spyOn(console, 'error').mockImplementation();
 
       await syncService.startPreciosClarosSync();
-      await new Promise((r) => setImmediate(r));
-      await new Promise((r) => setImmediate(r));
+      await drain();
 
       expect(errSpy).toHaveBeenCalledWith(
         '[sync] runner falló sin atrapar:',
@@ -228,8 +202,7 @@ describe('SyncService', () => {
         .mockResolvedValue(fetchResponse({ total: 5, productos: [apiProduct('p-1')] }));
 
       await syncService.startPreciosClarosSync();
-      await new Promise((r) => setImmediate(r));
-      await new Promise((r) => setImmediate(r));
+      await drain();
 
       expect(mockedJobs.setTotal).toHaveBeenCalledWith(JOB_ID, 5);
     });
