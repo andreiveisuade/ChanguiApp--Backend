@@ -2,7 +2,8 @@ name: Cron sync Precios Claros
 
 on:
   schedule:
-    # 09:00 UTC = 06:00 Argentina (UTC-3)
+    # 09:00 UTC = 06:00 Argentina (UTC-3). GitHub puede atrasar/saltear
+    # corridas programadas bajo carga; no garantiza ejecución diaria exacta.
     - cron: '0 9 * * *'
   workflow_dispatch:
 
@@ -10,23 +11,67 @@ jobs:
   trigger-sync:
     runs-on: ubuntu-latest
     steps:
-      - name: POST /api/admin/sync-precios-claros
+      - name: Disparar y esperar el sync de Precios Claros
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
         run: |
           set -euo pipefail
+
+          # 1) Disparar el sync (fire-and-forget en el backend).
           response=$(curl -sS -w "\n%{http_code}" \
             -X POST "$BACKEND_URL/api/admin/sync-precios-claros" \
             -H "X-Admin-Token: $ADMIN_TOKEN")
-
           body=$(echo "$response" | head -n -1)
           status=$(echo "$response" | tail -n 1)
+          echo "POST HTTP $status — $body"
 
-          echo "HTTP $status"
-          echo "Response: $body"
-
-          # 202 = sync encolado OK. 409 = ya hay uno corriendo (no es fallo del cron).
-          if [ "$status" != "202" ] && [ "$status" != "409" ]; then
+          # 409 = ya hay un sync corriendo (otra corrida lo tomó); no es fallo.
+          if [ "$status" = "409" ]; then
+            echo "Ya hay un sync en curso, nada que hacer."
+            exit 0
+          fi
+          if [ "$status" != "202" ]; then
+            echo "::error::El POST no devolvió 202 (devolvió $status)"
             exit 1
           fi
+
+          sync_id=$(echo "$body" | jq -r '.sync_id')
+          if [ -z "$sync_id" ] || [ "$sync_id" = "null" ]; then
+            echo "::error::No se pudo leer sync_id de la respuesta"
+            exit 1
+          fi
+          echo "Sync encolado: $sync_id"
+
+          # 2) Poltear el estado real hasta completed/failed (timeout ~10 min).
+          #    El sync tarda ~4-5 min; Render free puede sumar cold start.
+          deadline=$((SECONDS + 600))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            sleep 20
+            job=$(curl -sS \
+              "$BACKEND_URL/api/admin/sync-precios-claros/$sync_id" \
+              -H "X-Admin-Token: $ADMIN_TOKEN")
+            job_status=$(echo "$job" | jq -r '.status')
+            processed=$(echo "$job" | jq -r '.processed')
+            total=$(echo "$job" | jq -r '.total_target')
+            echo "estado=$job_status procesados=$processed/$total"
+
+            case "$job_status" in
+              completed)
+                if [ "$processed" -gt 0 ]; then
+                  echo "Sync OK: $processed productos."
+                  exit 0
+                fi
+                echo "::error::Sync completed pero con 0 productos."
+                exit 1
+                ;;
+              failed)
+                msg=$(echo "$job" | jq -r '.error_message')
+                echo "::error::Sync falló: $msg"
+                exit 1
+                ;;
+            esac
+          done
+
+          echo "::error::Timeout esperando que el sync termine."
+          exit 1

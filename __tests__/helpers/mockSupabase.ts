@@ -6,6 +6,7 @@ const mockSupabase: any = {
   delete: jest.fn().mockReturnThis(),
   eq: jest.fn().mockReturnThis(),
   neq: jest.fn().mockReturnThis(),
+  gt: jest.fn().mockReturnThis(),
   in: jest.fn().mockReturnThis(),
   order: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
