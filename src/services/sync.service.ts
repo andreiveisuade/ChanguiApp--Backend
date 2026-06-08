@@ -35,6 +35,17 @@ function getDelayMs(): number {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 2000;
 }
 
+function getEnvInt(name: string, fallback: number): number {
+  const raw = process.env[name];
+  const parsed = raw ? parseInt(raw, 10) : NaN;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+// Precios Claros (CloudFront) rate-limitea y devuelve 403/429/5xx de forma
+// intermitente. Sin reintentos, ~2 de cada 3 syncs bajaban 0 productos. El
+// backoff exponencial (1s, 2s, 4s) recupera la mayoría de esos fallos.
+const FETCH_TIMEOUT_MS = 30000;
+
 async function fetchPage(
   baseUrl: string,
   storeId: string,
@@ -42,10 +53,38 @@ async function fetchPage(
   offset: number,
 ): Promise<PreciosClarosResponse> {
   const url = `${baseUrl}/productos?string=&limit=${limit}&offset=${offset}&id_sucursal=${storeId}`;
-  const response = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ChanguiApp/1.0)' },
-  });
-  return (await response.json()) as PreciosClarosResponse;
+  const maxRetries = getEnvInt('SYNC_MAX_RETRIES', 3);
+  const backoffBase = getEnvInt('SYNC_RETRY_BASE_MS', 1000);
+
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (attempt > 0) await sleep(backoffBase * 2 ** (attempt - 1));
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ChanguiApp/1.0)' },
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        throw new Error(`Precios Claros respondió HTTP ${response.status}`);
+      }
+      return (await response.json()) as PreciosClarosResponse;
+    } catch (err) {
+      lastError = err;
+      console.error(`[sync] fetchPage intento ${attempt + 1}/${maxRetries + 1} falló`, {
+        offset,
+        err: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`fetchPage falló tras ${maxRetries + 1} intentos`);
 }
 
 function mapProduct(p: PreciosClarosProduct): productRepository.ProductUpsertInput {
@@ -90,6 +129,17 @@ export async function runPreciosClarosSync(jobId: string): Promise<void> {
     const head = await fetchPage(baseUrl, storeId, 1, 0);
     const total = head.total ?? 0;
     await syncJobsRepository.setTotal(jobId, total);
+
+    // Un catálogo real nunca es 0. Si total=0, la API falló (rate-limit/caída)
+    // y los reintentos no alcanzaron: marcar failed en vez de completed para
+    // no enmascarar el problema ni pisar el catálogo bueno con un sync vacío.
+    if (total === 0) {
+      await syncJobsRepository.markFailed(
+        jobId,
+        'Precios Claros devolvió 0 productos (probable rate-limit o caída de la API)',
+      );
+      return;
+    }
 
     let processed = 0;
     let errors = 0;
