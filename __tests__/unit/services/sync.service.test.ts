@@ -61,6 +61,7 @@ describe('SyncService', () => {
       PRECIOS_CLAROS_URL: 'https://test.preciosclaros.gob.ar',
       MVP_STORE_PRECIOS_CLAROS_ID: 'store-42',
       SYNC_DELAY_MS: '0',
+      SYNC_RETRY_BASE_MS: '0',
     };
     mockedJobs.findRunning.mockResolvedValue(null);
     mockedJobs.create.mockResolvedValue(buildJob());
@@ -99,14 +100,13 @@ describe('SyncService', () => {
     it('dispara el runner en background (side-effect: el runner llega a setTotal)', async () => {
       jest
         .spyOn(global, 'fetch')
-        .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
+        .mockResolvedValue(fetchResponse({ total: 5, productos: [apiProduct('p-1')] }));
 
       await syncService.startPreciosClarosSync();
       await new Promise((r) => setImmediate(r));
       await new Promise((r) => setImmediate(r));
 
-      expect(mockedJobs.setTotal).toHaveBeenCalledWith(JOB_ID, 0);
-      expect(mockedJobs.markCompleted).toHaveBeenCalledWith(JOB_ID);
+      expect(mockedJobs.setTotal).toHaveBeenCalledWith(JOB_ID, 5);
     });
   });
 
@@ -172,7 +172,7 @@ describe('SyncService', () => {
       expect(mockedJobs.markFailed).not.toHaveBeenCalled();
     });
 
-    it('total=0: no fetchea productos y marca completed', async () => {
+    it('total=0: no fetchea productos y marca FAILED (no completed)', async () => {
       jest
         .spyOn(global, 'fetch')
         .mockResolvedValueOnce(fetchResponse({ total: 0, productos: [] }));
@@ -181,7 +181,11 @@ describe('SyncService', () => {
 
       expect(mockedJobs.setTotal).toHaveBeenCalledWith(JOB_ID, 0);
       expect(mockedProducts.upsertBatch).not.toHaveBeenCalled();
-      expect(mockedJobs.markCompleted).toHaveBeenCalledWith(JOB_ID);
+      expect(mockedJobs.markFailed).toHaveBeenCalledWith(
+        JOB_ID,
+        expect.stringContaining('0 productos'),
+      );
+      expect(mockedJobs.markCompleted).not.toHaveBeenCalled();
     });
 
     it('cuando upsertBatch falla, suma a errors y sigue (no aborta)', async () => {
@@ -262,10 +266,10 @@ describe('SyncService', () => {
 
       await syncService.runPreciosClarosSync(JOB_ID);
 
-      expect(mockedJobs.markCompleted).toHaveBeenCalledWith(JOB_ID);
+      expect(mockedJobs.markFailed).toHaveBeenCalled();
     });
 
-    it('si total ausente en la respuesta, usa 0 y completa sin productos', async () => {
+    it('si total ausente en la respuesta, lo trata como 0 y marca FAILED', async () => {
       jest
         .spyOn(global, 'fetch')
         .mockResolvedValueOnce(fetchResponse({ productos: [] }));
@@ -273,11 +277,48 @@ describe('SyncService', () => {
       await syncService.runPreciosClarosSync(JOB_ID);
 
       expect(mockedJobs.setTotal).toHaveBeenCalledWith(JOB_ID, 0);
+      expect(mockedJobs.markFailed).toHaveBeenCalled();
+      expect(mockedJobs.markCompleted).not.toHaveBeenCalled();
+    });
+
+    it('reintenta cuando la respuesta no es ok y se recupera (HTTP 429 → 200)', async () => {
+      const errorResponse = { ok: false, status: 429, json: async () => ({}) } as unknown as Response;
+      jest.spyOn(console, 'error').mockImplementation();
+      jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValueOnce(errorResponse)
+        .mockResolvedValueOnce(fetchResponse({ total: 1, productos: [apiProduct('p-1')] }))
+        .mockResolvedValueOnce(fetchResponse({ total: 1, productos: [apiProduct('p-1')] }));
+
+      await syncService.runPreciosClarosSync(JOB_ID);
+
+      expect(mockedJobs.setTotal).toHaveBeenCalledWith(JOB_ID, 1);
+      expect(mockedProducts.upsertBatch).toHaveBeenCalled();
       expect(mockedJobs.markCompleted).toHaveBeenCalledWith(JOB_ID);
     });
 
+    it('marca failed si la API responde no-ok en todos los reintentos', async () => {
+      process.env.SYNC_MAX_RETRIES = '2';
+      const errorResponse = { ok: false, status: 503, json: async () => ({}) } as unknown as Response;
+      jest.spyOn(console, 'error').mockImplementation();
+      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(errorResponse);
+
+      await syncService.runPreciosClarosSync(JOB_ID);
+
+      // 1 intento + 2 reintentos = 3 llamadas antes de abortar
+      expect(fetchSpy).toHaveBeenCalledTimes(3);
+      expect(mockedJobs.markFailed).toHaveBeenCalledWith(
+        JOB_ID,
+        expect.stringContaining('HTTP 503'),
+      );
+      expect(mockedJobs.markCompleted).not.toHaveBeenCalled();
+    });
+
     it('captura errores no-Error y los stringifica para markFailed', async () => {
-      jest.spyOn(global, 'fetch').mockRejectedValue('string-error');
+      jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValue(fetchResponse({ total: 5, productos: [apiProduct('p-1')] }));
+      mockedJobs.setTotal.mockRejectedValueOnce('string-error');
       jest.spyOn(console, 'error').mockImplementation();
 
       await syncService.runPreciosClarosSync(JOB_ID);
