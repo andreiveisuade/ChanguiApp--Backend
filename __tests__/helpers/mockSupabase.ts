@@ -22,6 +22,9 @@ const mockSupabase: any = {
       .fn()
       .mockResolvedValue({ data: { user: null, session: null }, error: null }),
     getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+    admin: {
+      deleteUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+    },
   },
 };
 
@@ -37,6 +40,11 @@ beforeEach(() => {
   });
   Object.values(mockSupabase.auth).forEach((fn: any) => {
     if (typeof fn?.mockClear === 'function') fn.mockClear();
+    else if (fn && typeof fn === 'object') {
+      Object.values(fn).forEach((nested: any) => {
+        if (typeof nested?.mockClear === 'function') nested.mockClear();
+      });
+    }
   });
 });
 

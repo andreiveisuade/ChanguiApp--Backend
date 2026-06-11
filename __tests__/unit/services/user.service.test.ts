@@ -98,18 +98,32 @@ describe('UserService', () => {
   });
 
   describe('deleteProfile', () => {
-    it('llama a userRepository.remove con el userId', async () => {
+    it('borra el perfil y la identidad de Supabase Auth, en ese orden', async () => {
       userRepository.remove.mockResolvedValue(undefined);
+      userRepository.removeAuthUser.mockResolvedValue(undefined);
 
       await userService.deleteProfile(validUser.id);
 
       expect(userRepository.remove).toHaveBeenCalledWith(validUser.id);
+      expect(userRepository.removeAuthUser).toHaveBeenCalledWith(validUser.id);
+      // El perfil (tabla users) se borra antes que la identidad de Auth.
+      expect(userRepository.remove.mock.invocationCallOrder[0]).toBeLessThan(
+        userRepository.removeAuthUser.mock.invocationCallOrder[0],
+      );
     });
 
-    it('propaga error de DB del repository', async () => {
+    it('si falla el borrado del perfil, no intenta borrar de Auth', async () => {
       userRepository.remove.mockRejectedValue(new Error('DB delete failed'));
 
       await expect(userService.deleteProfile(validUser.id)).rejects.toThrow('DB delete failed');
+      expect(userRepository.removeAuthUser).not.toHaveBeenCalled();
+    });
+
+    it('propaga el error si falla el borrado en Supabase Auth', async () => {
+      userRepository.remove.mockResolvedValue(undefined);
+      userRepository.removeAuthUser.mockRejectedValue(new Error('Auth delete failed'));
+
+      await expect(userService.deleteProfile(validUser.id)).rejects.toThrow('Auth delete failed');
     });
   });
 });

@@ -30,5 +30,8 @@ export async function updateProfile(
 }
 
 export async function deleteProfile(userId: string): Promise<void> {
+  // Primero el perfil (tabla users) y luego la identidad en Supabase Auth.
+  // Ese orden evita problemas de FK y deja la cuenta realmente eliminada.
   await userRepository.remove(userId);
+  await userRepository.removeAuthUser(userId);
 }
