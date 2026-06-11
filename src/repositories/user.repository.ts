@@ -33,6 +33,12 @@ export async function remove(userId: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Elimina al usuario de Supabase Auth (auth.users). Requiere service_role. */
+export async function removeAuthUser(userId: string): Promise<void> {
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+  if (error) throw error;
+}
+
 export async function createUserProfile(userId: string, email: string, name: string) {
   const { data, error } = await supabaseAdmin
     .from('users')
