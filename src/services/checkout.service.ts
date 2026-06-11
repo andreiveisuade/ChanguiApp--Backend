@@ -73,11 +73,11 @@ export async function createPreference(userId: string): Promise<CheckoutResponse
 
   // En modo prueba (default) abrimos el sandbox_init_point: el checkout corre en
   // el entorno de prueba de MP y no debita dinero real.
-  const allowRealPayments = process.env.MP_REQUIRE_TEST_USER === 'false';
-  const initPoint =
-    !allowRealPayments && response.sandbox_init_point
-      ? response.sandbox_init_point
-      : response.init_point;
+  // Siempre usamos init_point. Con credenciales de test user (validadas por
+  // assertTestCredentials), MP redirige automáticamente al entorno de prueba.
+  // El sandbox_init_point apunta al subdominio legacy sandbox.mercadopago.com.ar
+  // que tiene un bug de loop de redirección en la pantalla de login.
+  const initPoint = response.init_point;
 
   return {
     preference_id: response.id,
