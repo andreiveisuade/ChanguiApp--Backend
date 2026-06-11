@@ -22,12 +22,19 @@ export const authService = {
     };
   },
 
-  async login(email: string, password: string) {
-    try {
-      const authData = await authRepository.login(email, password);
-      return { session: authData.session, user: authData.user };
-    } catch {
+   async login(email: string, password: string) {
+    const authData = await authRepository
+      .login(email, password)
+      .catch(() => {
+        throw new ApiError('Credenciales inválidas', 401);
+      });
+
+    if (!authData.user) {
       throw new ApiError('Credenciales inválidas', 401);
     }
+
+    // El nombre vive en la tabla `users`, no en Supabase Auth (igual que en register).
+    const profile = await userRepository.findById(authData.user.id);
+    return { session: authData.session, user: profile ?? authData.user };
   },
 };
