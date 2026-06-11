@@ -135,7 +135,7 @@ describe('CheckoutService', () => {
       expect(result.init_point).toBe(validCheckoutPreference.init_point);
     });
 
-    it('en modo prueba usa el sandbox_init_point si está disponible', async () => {
+    it('siempre usa el init_point normal incluso si sandbox_init_point está disponible', async () => {
       const cartWithItems = cartWithProduct();
       checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
       mercadopagoConfig.preference.create.mockResolvedValue({
@@ -146,7 +146,7 @@ describe('CheckoutService', () => {
 
       const result = await checkoutService.createPreference(validUser.id);
 
-      expect(result.init_point).toBe('https://sandbox.mercadopago.com/test');
+      expect(result.init_point).toBe('https://www.mercadopago.com/prod');
     });
   });
 
