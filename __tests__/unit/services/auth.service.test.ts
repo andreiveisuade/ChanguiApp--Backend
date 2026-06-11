@@ -81,5 +81,22 @@ describe('AuthService', () => {
         status: 401,
       });
     });
+
+    it('devuelve el perfil de la tabla users (con full_name), no el user de Supabase Auth', async () => {
+      // Supabase Auth no guarda el nombre: viene sin full_name.
+      const authData = {
+        user: { id: validUser.id, email: validUser.email },
+        session: { access_token: 'test-token' },
+      };
+      // El full_name vive en la tabla users (perfil).
+      const profile = { id: validUser.id, email: validUser.email, full_name: 'Test User' };
+      authRepository.login.mockResolvedValue(authData);
+      userRepository.findById.mockResolvedValue(profile);
+
+      const result = await authService.login(validUser.email, validUser.password);
+
+      expect(userRepository.findById).toHaveBeenCalledWith(validUser.id);
+      expect(result.user.full_name).toBe('Test User');
+    });
   });
 });
