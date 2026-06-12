@@ -26,24 +26,6 @@ export async function findByBarcode(barcode: string): Promise<Product | null> {
   return row as unknown as Product;
 }
 
-export async function upsertByBarcode(product: {
-  barcode: string;
-  name: string;
-  brand?: string;
-  price: number;
-  image_url?: string;
-}): Promise<{ created: boolean }> {
-  const existing = await findByBarcode(product.barcode);
-
-  const { error } = await supabaseAdmin
-    .from('products')
-    .upsert(product, { onConflict: 'barcode' });
-
-  if (error) throw error;
-
-  return { created: !existing };
-}
-
 export interface CatalogProduct {
   id: string;
   barcode: string;
