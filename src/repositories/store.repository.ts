@@ -9,3 +9,12 @@ export async function findAll(): Promise<Store[]> {
   if (error) throw error;
   return (data as Store[]) ?? [];
 }
+
+export async function markSyncedByPreciosClarosId(storeId: string): Promise<void> {
+  const { error } = await supabase
+    .from('stores')
+    .update({ synced_at: new Date().toISOString() })
+    .eq('precios_claros_id', storeId);
+
+  if (error) throw error;
+}
