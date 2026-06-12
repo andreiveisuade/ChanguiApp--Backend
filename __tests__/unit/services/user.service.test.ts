@@ -32,6 +32,33 @@ describe('UserService', () => {
         status: 404,
       });
     });
+
+    it('crea el perfil desde Auth si falta (login con Google)', async () => {
+      userRepository.findById.mockResolvedValue(null);
+      const created = { id: validUser.id, email: 'g@gmail.com', full_name: 'Goog User' };
+      userRepository.createUserProfile.mockResolvedValue(created);
+
+      const result = await userService.getProfile(validUser.id, {
+        email: 'g@gmail.com',
+        user_metadata: { full_name: 'Goog User' },
+      });
+
+      expect(userRepository.createUserProfile).toHaveBeenCalledWith(
+        validUser.id,
+        'g@gmail.com',
+        'Goog User',
+      );
+      expect(result).toEqual(created);
+    });
+
+    it('404 si falta perfil y el authUser no tiene email', async () => {
+      userRepository.findById.mockResolvedValue(null);
+
+      await expect(
+        userService.getProfile(validUser.id, { user_metadata: {} }),
+      ).rejects.toMatchObject({ status: 404 });
+      expect(userRepository.createUserProfile).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateProfile', () => {

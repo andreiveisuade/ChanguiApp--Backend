@@ -3,12 +3,46 @@ import { ApiError, type User, type UserUpdate } from '../types/domain';
 
 const ALLOWED_FIELDS: (keyof UserUpdate)[] = ['full_name', 'avatar_url'];
 
-export async function getProfile(userId: string): Promise<User> {
+type AuthUserLike = {
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+};
+
+const nameFromMetadata = (metadata: Record<string, unknown> | null | undefined): string => {
+  const meta = metadata ?? {};
+  if (typeof meta.full_name === 'string') return meta.full_name;
+  if (typeof meta.name === 'string') return meta.name;
+  return '';
+};
+
+export async function getProfile(userId: string, authUser?: AuthUserLike): Promise<User> {
   const user = await userRepository.findById(userId);
-  if (!user) {
+  if (user) {
+    return user;
+  }
+
+  // Token válido pero sin fila en `users`: pasa con el login por Google, que se
+  // resuelve en el cliente (exchangeCodeForSession) y no pasa por
+  // /api/auth/register. Creamos el perfil de forma idempotente desde Auth.
+  const email = authUser?.email ?? '';
+  if (!email) {
     throw new ApiError('Perfil no encontrado', 404);
   }
-  return user;
+
+  try {
+    return (await userRepository.createUserProfile(
+      userId,
+      email,
+      nameFromMetadata(authUser?.user_metadata),
+    )) as User;
+  } catch {
+    // Carrera: otra request ya lo creó entre el findById y el insert.
+    const created = await userRepository.findById(userId);
+    if (created) {
+      return created;
+    }
+    throw new ApiError('Perfil no encontrado', 404);
+  }
 }
 
 export async function updateProfile(
