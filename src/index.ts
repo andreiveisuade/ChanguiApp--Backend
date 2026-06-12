@@ -3,6 +3,7 @@ import express, {
   type Request,
   type Response,
 } from 'express';
+import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -51,6 +52,8 @@ const authLimiter = rateLimit({
 app.use(globalLimiter);                      // aplica a toda la API
 app.use('/api/auth', authLimiter);           // aplica SOLO a login y registro
 app.use(express.json());
+// Logging de requests (se omite /health para no inundar los logs de Render)
+app.use(morgan('tiny', { skip: (req) => req.path === '/health' }));
 
 /**
  * @swagger
