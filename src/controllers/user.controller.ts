@@ -7,7 +7,7 @@ export async function getProfile(
   next: NextFunction
 ): Promise<void> {
   try {
-    const profile = await userService.getProfile(req.user!.id);
+    const profile = await userService.getProfile(req.user!.id, req.user);
     res.json(profile);
   } catch (err) {
     next(err);
