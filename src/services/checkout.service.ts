@@ -1,5 +1,6 @@
 import { preference, payment, getAccountTags } from '../config/mercadopago';
 import * as checkoutRepository from '../repositories/checkout.repository';
+import * as cartRepository from '../repositories/cart.repository';
 import {
   ApiError,
   type CheckoutResponse,
@@ -32,7 +33,7 @@ async function assertTestCredentials(): Promise<void> {
 export async function createPreference(userId: string): Promise<CheckoutResponse> {
   await assertTestCredentials();
 
-  const cart = await checkoutRepository.findActiveCartByUserId(userId);
+  const cart = await cartRepository.findActiveCartByUserId(userId);
   if (!cart || !cart.items || cart.items.length === 0) {
     throw new ApiError('No hay carrito activo con items', 400);
   }
