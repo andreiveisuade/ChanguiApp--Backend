@@ -137,7 +137,7 @@ const definition: swaggerJsdoc.SwaggerDefinition = {
           store_id: { type: 'string', format: 'uuid', nullable: true },
           status: {
             type: 'string',
-            enum: ['active', 'checked_out', 'closed'],
+            enum: ['active', 'closed', 'cancelled'],
           },
           items: {
             type: 'array',
