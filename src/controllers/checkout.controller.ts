@@ -1,5 +1,7 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response } from 'express';
 import * as checkoutService from '../services/checkout.service';
+import { ApiError } from '../types/domain';
+import { asyncHandler } from '../utils/asyncHandler';
 
 // Deep link de la app al que MP reenvia tras el pago. Constante (config), nunca
 // derivado del request: la app ya tiene el preference_id, el deep link solo
@@ -7,18 +9,10 @@ import * as checkoutService from '../services/checkout.service';
 const APP_RETURN_DEEP_LINK =
   process.env.APP_RETURN_DEEP_LINK || 'changuiapp://checkout/return';
 
-export async function create(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const result = await checkoutService.createPreference(req.user!.id);
-    res.json(result);
-  } catch (err) {
-    next(err);
-  }
-}
+export const create = asyncHandler(async (req, res) => {
+  const result = await checkoutService.createPreference(req.user!.id);
+  res.json(result);
+});
 
 /**
  * Pagina publica a la que Mercado Pago redirige tras el pago (back_url).
@@ -30,25 +24,19 @@ export function returnPage(_req: Request, res: Response): void {
   res.redirect(APP_RETURN_DEEP_LINK);
 }
 
-export async function status(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const preferenceId =
-      typeof req.query.preference_id === 'string' ? req.query.preference_id : '';
-    if (!preferenceId) {
-      res.status(400).json({ error: 'preference_id requerido' });
-      return;
-    }
-    const result = await checkoutService.getCheckoutStatus(req.user!.id, preferenceId);
-    res.json(result);
-  } catch (err) {
-    next(err);
+export const status = asyncHandler(async (req, res) => {
+  const preferenceId =
+    typeof req.query.preference_id === 'string' ? req.query.preference_id : '';
+  if (!preferenceId) {
+    throw new ApiError('preference_id requerido', 400);
   }
-}
+  const result = await checkoutService.getCheckoutStatus(req.user!.id, preferenceId);
+  res.json(result);
+});
 
+// El webhook de MP siempre debe responder 200, incluso si el procesamiento
+// falla, para que MP no lo reintente en loop. Por eso NO usa asyncHandler:
+// traga el error a proposito y loguea.
 export async function webhook(req: Request, res: Response): Promise<void> {
   try {
     await checkoutService.handleWebhook(req.body);
