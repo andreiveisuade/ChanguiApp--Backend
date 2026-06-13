@@ -56,7 +56,7 @@ describe('Purchases Endpoints', () => {
   describe('GET /api/purchases/:id', () => {
     it('con id válido devuelve 200 con detalle e items', async () => {
       const purchaseWithItems = { ...validPurchase, items: [validPurchaseItem] };
-      mockSupabase.single.mockResolvedValue({ data: purchaseWithItems, error: null });
+      mockSupabase.maybeSingle.mockResolvedValue({ data: purchaseWithItems, error: null });
 
       const res = await request(app)
         .get(`/api/purchases/${validPurchase.id}`)
@@ -68,7 +68,7 @@ describe('Purchases Endpoints', () => {
     });
 
     it('con id inexistente devuelve 404', async () => {
-      mockSupabase.single.mockResolvedValue({ data: null, error: null });
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
 
       const res = await request(app)
         .get('/api/purchases/inexistente')

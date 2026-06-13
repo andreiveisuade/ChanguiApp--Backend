@@ -1,6 +1,16 @@
 import supabase from '../config/supabase';
-import type { CartWithItems, Purchase, CartItem } from '../types/domain';
-import { DEFAULT_TAX_RATE } from '../services/pricing.service';
+import type { CartWithItems, Purchase } from '../types/domain';
+
+// Fila lista para insertar en purchase_items. La arma el service (es lógica de
+// negocio: fallbacks de nombre/barcode y la tasa de IVA); el repo solo persiste.
+export interface PurchaseItemRow {
+  purchase_id: string;
+  product_name: string;
+  barcode: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+}
 
 export async function savePreferenceId(
   cartId: string,
@@ -34,14 +44,10 @@ export async function findCartById(cartId: string): Promise<CartWithItems | null
     .from('carts')
     .select('*, items:cart_items(*, product:products(*, tax_category:tax_categories(id, name, rate)))')
     .eq('id', cartId)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw error;
-  }
-
-  return data as CartWithItems;
+  if (error) throw error;
+  return (data as CartWithItems) ?? null;
 }
 
 export async function createPurchase(
@@ -57,19 +63,7 @@ export async function createPurchase(
   return data as Purchase;
 }
 
-export async function insertPurchaseItems(
-  purchaseId: string,
-  items: CartItem[]
-): Promise<void> {
-  const rows = items.map((i) => ({
-    purchase_id: purchaseId,
-    product_name: i.product?.name || 'Producto',
-    barcode: i.product?.barcode || '',
-    quantity: i.quantity,
-    unit_price: i.unit_price,
-    tax_rate: i.product?.tax_category?.rate ?? DEFAULT_TAX_RATE,
-  }));
-
+export async function insertPurchaseItems(rows: PurchaseItemRow[]): Promise<void> {
   const { error } = await supabase.from('purchase_items').insert(rows);
   if (error) throw error;
 }

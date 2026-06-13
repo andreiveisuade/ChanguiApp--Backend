@@ -12,7 +12,7 @@ describe('POST /api/auth/register', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('con datos válidos devuelve 201 con session y user', async () => {
-    mockSupabase.single.mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } });
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
     mockSupabase.auth.signUp.mockResolvedValue({
       data: {
         user: { id: validUser.id, email: validUser.email },
@@ -39,7 +39,7 @@ describe('POST /api/auth/register', () => {
   });
 
   it('con email duplicado devuelve 409', async () => {
-    mockSupabase.single.mockResolvedValueOnce({
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
       data: { id: validUser.id, email: validUser.email },
       error: null,
     });

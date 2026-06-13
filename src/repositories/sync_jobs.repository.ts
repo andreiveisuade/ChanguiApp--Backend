@@ -20,13 +20,10 @@ export async function findById(id: string): Promise<SyncJob | null> {
     .from('sync_jobs')
     .select(COLUMNS)
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw error;
-  }
-  return data as SyncJob;
+  if (error) throw error;
+  return (data as SyncJob | null) ?? null;
 }
 
 export async function findRunning(type: string): Promise<SyncJob | null> {

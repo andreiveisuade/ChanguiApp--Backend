@@ -175,8 +175,13 @@ describe('CheckoutService', () => {
         }),
       );
       expect(checkoutRepository.insertPurchaseItems).toHaveBeenCalledWith(
-        validPurchase.id,
-        cartWithItems.items,
+        expect.arrayContaining([
+          expect.objectContaining({
+            purchase_id: validPurchase.id,
+            product_name: validProduct.name,
+            quantity: validCartItem.quantity,
+          }),
+        ]),
       );
       expect(checkoutRepository.closeCart).toHaveBeenCalledWith(validCart.id);
     });

@@ -9,7 +9,6 @@ export async function findActiveCartByUserId(userId: string): Promise<CartWithIt
     .eq('status', 'active')
     .maybeSingle();
 
-  if (error && error.code === 'PGRST116') return null;
   if (error) throw error;
   return data as CartWithItems;
 }
@@ -51,7 +50,6 @@ export async function findItemById(itemId: string): Promise<CartItem | null> {
     .eq('id', itemId)
     .maybeSingle();
 
-  if (error && error.code === 'PGRST116') return null;
   if (error) throw error;
   return data as CartItem | null;
 }

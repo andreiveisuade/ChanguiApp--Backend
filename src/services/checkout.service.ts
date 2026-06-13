@@ -1,6 +1,7 @@
 import { preference, payment, getAccountTags } from '../config/mercadopago';
 import * as checkoutRepository from '../repositories/checkout.repository';
 import * as cartRepository from '../repositories/cart.repository';
+import { DEFAULT_TAX_RATE } from './pricing.service';
 import {
   ApiError,
   type CheckoutResponse,
@@ -132,6 +133,15 @@ export async function handleWebhook(body: WebhookBody): Promise<void> {
     mp_preference_id: cart.mp_preference_id ?? null,
   });
 
-  await checkoutRepository.insertPurchaseItems(purchase.id, items);
+  const rows = items.map((i) => ({
+    purchase_id: purchase.id,
+    product_name: i.product?.name || 'Producto',
+    barcode: i.product?.barcode || '',
+    quantity: i.quantity,
+    unit_price: i.unit_price,
+    tax_rate: i.product?.tax_category?.rate ?? DEFAULT_TAX_RATE,
+  }));
+
+  await checkoutRepository.insertPurchaseItems(rows);
   await checkoutRepository.closeCart(cart.id);
 }

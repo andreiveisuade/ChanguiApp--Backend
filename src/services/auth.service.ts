@@ -1,10 +1,10 @@
-import { authRepository } from '../repositories/auth.repository';
+import * as authRepository from '../repositories/auth.repository';
 import * as userRepository from '../repositories/user.repository';
 import { ApiError } from '../types/domain';
 
 export const authService = {
   async register(email: string, password: string, name: string) {
-    const existingUser = await userRepository.getUserByEmail(email);
+    const existingUser = await userRepository.findByEmail(email);
     if (existingUser) {
       throw new ApiError('El email ya está registrado', 409);
     }
