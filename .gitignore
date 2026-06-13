@@ -28,5 +28,9 @@ build/
 # Coverage
 coverage/
 
-# Claude Code
+# Instrucciones de agente (local)
 CLAUDE.md
+
+# cq / Sonar (config local con secretos, no commitear)
+sonar-project.properties
+.cq/
