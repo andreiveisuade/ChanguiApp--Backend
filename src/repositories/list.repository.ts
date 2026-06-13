@@ -1,15 +1,15 @@
 import supabase from '../config/supabase';
 import type { ShoppingList, ShoppingListItem, ShoppingListWithItems } from '../types/domain';
 
-export async function findAllByUserId(userId: string): Promise<ShoppingList[]> {
+export async function findAllByUserId(userId: string): Promise<ShoppingListWithItems[]> {
   const { data, error } = await supabase
     .from('lists')
-    .select('*')
+    .select('*, items:list_items(*)')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return (data ?? []) as ShoppingList[];
+  return (data ?? []) as ShoppingListWithItems[];
 }
 
 export async function findByIdAndUser(

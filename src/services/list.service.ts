@@ -6,7 +6,7 @@ import {
   type ShoppingListWithItems,
 } from '../types/domain';
 
-export async function getLists(userId: string): Promise<ShoppingList[]> {
+export async function getLists(userId: string): Promise<ShoppingListWithItems[]> {
   return listRepository.findAllByUserId(userId);
 }
 
