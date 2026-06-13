@@ -53,11 +53,50 @@ describe('UserService', () => {
 
     it('404 si falta perfil y el authUser no tiene email', async () => {
       userRepository.findById.mockResolvedValue(null);
+      userRepository.getUserByEmail.mockResolvedValue(null);
 
       await expect(
         userService.getProfile(validUser.id, { user_metadata: {} }),
       ).rejects.toMatchObject({ status: 404 });
       expect(userRepository.createUserProfile).not.toHaveBeenCalled();
+    });
+
+    it('lanza 409 si ya existe un perfil con ese email bajo otro id (identidades no vinculadas)', async () => {
+      userRepository.findById.mockResolvedValue(null);
+      userRepository.getUserByEmail.mockResolvedValue({ id: 'otro-id', email: 'a@b.com' });
+
+      await expect(
+        userService.getProfile(validUser.id, { email: 'a@b.com', user_metadata: {} }),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(userRepository.createUserProfile).not.toHaveBeenCalled();
+    });
+
+    it('si el autocreate falla pero el perfil ya existe (carrera/trigger), lo devuelve', async () => {
+      const created = { id: validUser.id, email: 'g@gmail.com', full_name: 'G' };
+      userRepository.findById.mockResolvedValueOnce(null).mockResolvedValueOnce(created);
+      userRepository.getUserByEmail.mockResolvedValue(null);
+      userRepository.createUserProfile.mockRejectedValue(new Error('duplicate key'));
+
+      const result = await userService.getProfile(validUser.id, {
+        email: 'g@gmail.com',
+        user_metadata: {},
+      });
+
+      expect(result).toEqual(created);
+    });
+
+    it('loguea y lanza 500 si el autocreate falla de verdad (no 404 engañoso)', async () => {
+      userRepository.findById.mockResolvedValue(null);
+      userRepository.getUserByEmail.mockResolvedValue(null);
+      userRepository.createUserProfile.mockRejectedValue(new Error('insert failed'));
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      await expect(
+        userService.getProfile(validUser.id, { email: 'g@gmail.com', user_metadata: {} }),
+      ).rejects.toMatchObject({ status: 500 });
+      expect(spy).toHaveBeenCalled();
+
+      spy.mockRestore();
     });
   });
 
