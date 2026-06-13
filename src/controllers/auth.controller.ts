@@ -10,5 +10,5 @@ export const register = asyncHandler(async (req, res) => {
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const data = await authService.login(email, password);
-  res.status(200).json(data);
+  res.json(data);
 });

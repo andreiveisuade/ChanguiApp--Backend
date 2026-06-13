@@ -3,7 +3,7 @@ import * as cartService from '../services/cart.service';
 
 export const getCart = asyncHandler(async (req, res) => {
   const { cart, items, total, summary } = await cartService.getCart(req.user!.id);
-  res.status(200).json({ cart, items, total, summary });
+  res.json({ cart, items, total, summary });
 });
 
 export const addItem = asyncHandler(async (req, res) => {
@@ -21,18 +21,18 @@ export const updateItem = asyncHandler(async (req, res) => {
   const { quantity } = req.body as { quantity?: number };
   const result = await cartService.updateItem(req.user!.id, String(req.params.id), Number(quantity));
   if (result === null) {
-    res.status(200).json({ message: 'Item eliminado del carrito' });
+    res.json({ message: 'Item eliminado del carrito' });
     return;
   }
-  res.status(200).json(result);
+  res.json(result);
 });
 
 export const removeItem = asyncHandler(async (req, res) => {
   const item = await cartService.removeItem(req.user!.id, String(req.params.id));
-  res.status(200).json(item);
+  res.json(item);
 });
 
 export const cancelCart = asyncHandler(async (req, res) => {
   const cart = await cartService.cancelCart(req.user!.id);
-  res.status(200).json(cart);
+  res.json(cart);
 });

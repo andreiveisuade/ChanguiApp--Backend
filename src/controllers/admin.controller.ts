@@ -4,12 +4,12 @@ import * as syncJobsRepository from '../repositories/sync_jobs.repository';
 import * as classificationService from '../services/classification.service';
 import { ApiError } from '../types/domain';
 
-export const startSyncPreciosClarosHandler = asyncHandler(async (_req, res) => {
+export const startSyncPreciosClaros = asyncHandler(async (_req, res) => {
   const { sync_id } = await syncService.startPreciosClarosSync();
   res.status(202).json({ sync_id });
 });
 
-export const getSyncPreciosClarosStatusHandler = asyncHandler(async (req, res) => {
+export const getSyncPreciosClarosStatus = asyncHandler(async (req, res) => {
   const job = await syncJobsRepository.findById(String(req.params.id));
   if (!job) {
     throw new ApiError('Sync no encontrado', 404);
@@ -17,7 +17,7 @@ export const getSyncPreciosClarosStatusHandler = asyncHandler(async (req, res) =
   res.json(job);
 });
 
-export const ingestProductsHandler = asyncHandler(async (req, res) => {
+export const ingestProducts = asyncHandler(async (req, res) => {
   const productos = req.body?.productos;
   if (!Array.isArray(productos)) {
     throw new ApiError('productos debe ser un array', 400);
@@ -27,7 +27,7 @@ export const ingestProductsHandler = asyncHandler(async (req, res) => {
   res.json({ upserted });
 });
 
-export const overrideTaxCategoryHandler = asyncHandler(async (req, res) => {
+export const overrideTaxCategory = asyncHandler(async (req, res) => {
   const { barcode } = req.params;
   const categoryId = req.body?.category_id;
   if (!categoryId || typeof categoryId !== 'string') {
@@ -38,7 +38,7 @@ export const overrideTaxCategoryHandler = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
-export const reclassifyHandler = asyncHandler(async (_req, res) => {
+export const reclassify = asyncHandler(async (_req, res) => {
   const result = await classificationService.reclassifyAll();
   res.json(result);
 });
