@@ -3,6 +3,12 @@ import type { TaxBreakdown, TaxLine, TaxSummary } from '../types/domain';
 export const DEFAULT_TAX_RATE = 21;
 export const DEFAULT_TAX_CATEGORY_NAME = 'General';
 
+// Total bruto de una lista de ítems (precio unitario × cantidad, IVA incluido).
+// Único lugar que calcula el total de ítems: lo usan cart y checkout.
+export function itemsTotal(items: Array<{ unit_price: number; quantity: number }>): number {
+  return items.reduce((sum, i) => sum + Number(i.unit_price) * i.quantity, 0);
+}
+
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }

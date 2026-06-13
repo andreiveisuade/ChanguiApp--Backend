@@ -1,7 +1,7 @@
 import { preference, payment, getAccountTags } from '../config/mercadopago';
 import * as checkoutRepository from '../repositories/checkout.repository';
 import * as cartRepository from '../repositories/cart.repository';
-import { DEFAULT_TAX_RATE } from './pricing.service';
+import { DEFAULT_TAX_RATE, itemsTotal } from './pricing.service';
 import { ApiError } from '../utils/ApiError';
 import type { CheckoutResponse, CheckoutStatusResponse } from '../types/domain';
 
@@ -116,10 +116,7 @@ export async function handleWebhook(body: WebhookBody): Promise<void> {
   if (info.status !== 'approved') return;
 
   const items = cart.items || [];
-  const total = items.reduce(
-    (sum, i) => sum + Number(i.unit_price) * i.quantity,
-    0
-  );
+  const total = itemsTotal(items);
 
   const purchase = await checkoutRepository.createPurchase({
     user_id: cart.user_id,
