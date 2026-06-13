@@ -135,7 +135,9 @@ describe('admin sync endpoints', () => {
     });
 
     it('con category_id inexistente devuelve 400', async () => {
-      taxCategoriesRepository.getAll.mockResolvedValue([{ id: 'carnes' }, { id: 'general' }]);
+      classificationService.overrideTaxCategory.mockRejectedValue(
+        new ApiError('Categoría fiscal inválida', 400),
+      );
       jest.spyOn(console, 'error').mockImplementation();
       const res = await request(app)
         .post('/api/admin/products/7790/tax-category')
@@ -145,8 +147,9 @@ describe('admin sync endpoints', () => {
     });
 
     it('producto inexistente devuelve 404', async () => {
-      taxCategoriesRepository.getAll.mockResolvedValue([{ id: 'carnes' }]);
-      productRepository.updateTaxCategory.mockResolvedValue({ updated: false });
+      classificationService.overrideTaxCategory.mockRejectedValue(
+        new ApiError('Producto no encontrado', 404),
+      );
       jest.spyOn(console, 'error').mockImplementation();
       const res = await request(app)
         .post('/api/admin/products/000/tax-category')
@@ -156,15 +159,18 @@ describe('admin sync endpoints', () => {
     });
 
     it('override exitoso devuelve 200 y bloquea el producto', async () => {
-      taxCategoriesRepository.getAll.mockResolvedValue([{ id: 'carnes' }]);
-      productRepository.updateTaxCategory.mockResolvedValue({ updated: true });
+      classificationService.overrideTaxCategory.mockResolvedValue({
+        barcode: '7790',
+        tax_category_id: 'carnes',
+        tax_locked: true,
+      });
       const res = await request(app)
         .post('/api/admin/products/7790/tax-category')
         .set('x-admin-token', 'test-admin-token-secret')
         .send({ category_id: 'carnes' });
       expect(res.statusCode).toBe(200);
       expect(res.body).toEqual({ barcode: '7790', tax_category_id: 'carnes', tax_locked: true });
-      expect(productRepository.updateTaxCategory).toHaveBeenCalledWith('7790', 'carnes');
+      expect(classificationService.overrideTaxCategory).toHaveBeenCalledWith('7790', 'carnes');
     });
   });
 

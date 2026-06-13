@@ -1,5 +1,6 @@
 import supabase from '../config/supabase';
 import type { CartWithItems, Purchase, CartItem } from '../types/domain';
+import { DEFAULT_TAX_RATE } from '../services/pricing.service';
 
 export async function savePreferenceId(
   cartId: string,
@@ -26,24 +27,6 @@ export async function findPurchaseByPreferenceId(
 
   if (error) throw error;
   return (data as Purchase) || null;
-}
-
-export async function findActiveCartByUserId(
-  userId: string
-): Promise<CartWithItems | null> {
-  const { data, error } = await supabase
-    .from('carts')
-    .select('*, items:cart_items(*, product:products(*, tax_category:tax_categories(id, name, rate)))')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw error;
-  }
-
-  return data as CartWithItems;
 }
 
 export async function findCartById(cartId: string): Promise<CartWithItems | null> {
@@ -84,7 +67,7 @@ export async function insertPurchaseItems(
     barcode: i.product?.barcode || '',
     quantity: i.quantity,
     unit_price: i.unit_price,
-    tax_rate: i.product?.tax_category?.rate ?? 21,
+    tax_rate: i.product?.tax_category?.rate ?? DEFAULT_TAX_RATE,
   }));
 
   const { error } = await supabase.from('purchase_items').insert(rows);

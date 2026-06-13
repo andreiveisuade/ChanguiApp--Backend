@@ -1,6 +1,7 @@
 export {};
 
 jest.mock('../../../src/repositories/checkout.repository');
+jest.mock('../../../src/repositories/cart.repository');
 jest.mock('../../../src/config/mercadopago', () => ({
   __esModule: true,
   preference: { create: jest.fn() },
@@ -10,6 +11,7 @@ jest.mock('../../../src/config/mercadopago', () => ({
 
 const checkoutService = require('../../../src/services/checkout.service');
 const checkoutRepository = require('../../../src/repositories/checkout.repository');
+const cartRepository = require('../../../src/repositories/cart.repository');
 const mercadopagoConfig = require('../../../src/config/mercadopago');
 
 const {
@@ -38,7 +40,7 @@ describe('CheckoutService', () => {
   describe('createPreference', () => {
     it('genera preferencia MP con items del carrito activo', async () => {
       const cartWithItems = cartWithProduct();
-      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
+      cartRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
       mercadopagoConfig.preference.create.mockResolvedValue({
         id: validCheckoutPreference.preference_id,
         init_point: validCheckoutPreference.init_point,
@@ -46,7 +48,7 @@ describe('CheckoutService', () => {
 
       const result = await checkoutService.createPreference(validUser.id);
 
-      expect(checkoutRepository.findActiveCartByUserId).toHaveBeenCalledWith(validUser.id);
+      expect(cartRepository.findActiveCartByUserId).toHaveBeenCalledWith(validUser.id);
       expect(mercadopagoConfig.preference.create).toHaveBeenCalledWith(
         expect.objectContaining({
           body: expect.objectContaining({
@@ -66,7 +68,7 @@ describe('CheckoutService', () => {
     });
 
     it('lanza ApiError 400 si el carrito esta vacio', async () => {
-      checkoutRepository.findActiveCartByUserId.mockResolvedValue({ ...validCart, items: [] });
+      cartRepository.findActiveCartByUserId.mockResolvedValue({ ...validCart, items: [] });
 
       await expect(checkoutService.createPreference(validUser.id)).rejects.toMatchObject({
         status: 400,
@@ -76,7 +78,7 @@ describe('CheckoutService', () => {
     });
 
     it('lanza ApiError 400 si no hay carrito activo', async () => {
-      checkoutRepository.findActiveCartByUserId.mockResolvedValue(null);
+      cartRepository.findActiveCartByUserId.mockResolvedValue(null);
 
       await expect(checkoutService.createPreference(validUser.id)).rejects.toMatchObject({
         status: 400,
@@ -84,7 +86,7 @@ describe('CheckoutService', () => {
     });
 
     it('setea back_urls (/api/checkout/return) + auto_return y guarda el preference_id', async () => {
-      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithProduct());
+      cartRepository.findActiveCartByUserId.mockResolvedValue(cartWithProduct());
       mercadopagoConfig.preference.create.mockResolvedValue({
         id: validCheckoutPreference.preference_id,
         init_point: validCheckoutPreference.init_point,
@@ -111,7 +113,7 @@ describe('CheckoutService', () => {
     it('bloquea con 503 si el token NO es de usuario de prueba', async () => {
       mercadopagoConfig.getAccountTags.mockResolvedValue([]); // cuenta real
       const cartWithItems = cartWithProduct();
-      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
+      cartRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
 
       await expect(checkoutService.createPreference(validUser.id)).rejects.toMatchObject({
         status: 503,
@@ -123,7 +125,7 @@ describe('CheckoutService', () => {
       process.env.MP_REQUIRE_TEST_USER = 'false';
       mercadopagoConfig.getAccountTags.mockResolvedValue([]); // no se valida
       const cartWithItems = cartWithProduct();
-      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
+      cartRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
       mercadopagoConfig.preference.create.mockResolvedValue({
         id: validCheckoutPreference.preference_id,
         init_point: validCheckoutPreference.init_point,
@@ -137,7 +139,7 @@ describe('CheckoutService', () => {
 
     it('siempre usa el init_point normal incluso si sandbox_init_point está disponible', async () => {
       const cartWithItems = cartWithProduct();
-      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
+      cartRepository.findActiveCartByUserId.mockResolvedValue(cartWithItems);
       mercadopagoConfig.preference.create.mockResolvedValue({
         id: validCheckoutPreference.preference_id,
         init_point: 'https://www.mercadopago.com/prod',
@@ -286,7 +288,7 @@ describe('CheckoutService', () => {
         ...validCart,
         items: [{ ...validCartItem, product: undefined }],
       };
-      checkoutRepository.findActiveCartByUserId.mockResolvedValue(cartWithItemSinProduct);
+      cartRepository.findActiveCartByUserId.mockResolvedValue(cartWithItemSinProduct);
       mercadopagoConfig.preference.create.mockResolvedValue({
         id: validCheckoutPreference.preference_id,
         init_point: validCheckoutPreference.init_point,
