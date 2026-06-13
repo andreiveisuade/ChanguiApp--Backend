@@ -43,7 +43,9 @@ export const updateProfileValidators = [
     .trim()
     .escape(),
   body('avatar_url')
-    .optional()
+    // nullable: avatar_url = null es válido (sin avatar / borrar avatar). El
+    // .optional() pelado solo ignora undefined, no null, y haría fallar .isURL().
+    .optional({ nullable: true })
     .isURL().withMessage('avatar_url debe ser una URL valida'),
 ];
 
