@@ -23,10 +23,24 @@ export async function getProfile(userId: string, authUser?: AuthUserLike): Promi
 
   // Token válido pero sin fila en `users`: pasa con el login por Google, que se
   // resuelve en el cliente (exchangeCodeForSession) y no pasa por
-  // /api/auth/register. Creamos el perfil de forma idempotente desde Auth.
+  // /api/auth/register. Creamos el perfil desde Auth (idealmente lo crea el
+  // trigger handle_new_user; esto queda como red de seguridad).
   const email = authUser?.email ?? '';
   if (!email) {
     throw new ApiError('Perfil no encontrado', 404);
+  }
+
+  // Identidades no vinculadas: ya existe un perfil con este email bajo OTRO id
+  // (p. ej. registrado con email/password y entrando ahora por Google sin que
+  // Supabase haya linkeado las identidades). No podemos crear un segundo perfil
+  // (email es único) ni adoptar el ajeno: devolvemos un error explícito en vez
+  // de un 404 que oculta la causa real.
+  const existingByEmail = await userRepository.getUserByEmail(email);
+  if (existingByEmail && existingByEmail.id !== userId) {
+    throw new ApiError(
+      'Ya existe una cuenta con este email registrada con otro método de acceso.',
+      409,
+    );
   }
 
   try {
@@ -35,13 +49,17 @@ export async function getProfile(userId: string, authUser?: AuthUserLike): Promi
       email,
       nameFromMetadata(authUser?.user_metadata),
     )) as User;
-  } catch {
-    // Carrera: otra request ya lo creó entre el findById y el insert.
+  } catch (err) {
+    // El perfil pudo crearse entre el findById y el insert (carrera o el trigger
+    // handle_new_user). Si ya está, lo devolvemos.
     const created = await userRepository.findById(userId);
     if (created) {
       return created;
     }
-    throw new ApiError('Perfil no encontrado', 404);
+    // Falla real: la logueamos para no perder la causa (antes se tragaba el
+    // error y se devolvía un 404 engañoso).
+    console.error('[getProfile] no se pudo crear el perfil', { userId, email }, err);
+    throw new ApiError('No se pudo crear el perfil', 500);
   }
 }
 
