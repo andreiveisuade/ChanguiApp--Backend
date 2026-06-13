@@ -33,6 +33,24 @@ export async function getSyncPreciosClarosStatusHandler(
   }
 }
 
+export async function ingestProductsHandler(
+  req: Request<unknown, unknown, { productos?: syncService.PreciosClarosProduct[] }>,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const productos = req.body?.productos;
+    if (!Array.isArray(productos)) {
+      throw new ApiError('productos debe ser un array', 400);
+    }
+
+    const upserted = await syncService.ingestProductsBatch(productos);
+    res.json({ upserted });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function overrideTaxCategoryHandler(
   req: Request<{ barcode: string }, unknown, { category_id?: string }>,
   res: Response,
