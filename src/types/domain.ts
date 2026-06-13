@@ -87,6 +87,28 @@ export interface CartWithItems extends Cart {
   items?: CartItem[];
 }
 
+export interface ShoppingList {
+  id: string;
+  user_id: string;
+  name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShoppingListItem {
+  id: string;
+  list_id: string;
+  product_name: string;
+  barcode: string | null;
+  quantity: number | null;
+  purchased: boolean;
+  created_at: string;
+}
+
+export interface ShoppingListWithItems extends ShoppingList {
+  items?: ShoppingListItem[];
+}
+
 export interface Purchase {
   id: string;
   user_id: string;

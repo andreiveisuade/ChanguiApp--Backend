@@ -32,6 +32,21 @@ export const validCart = {
   status: 'active',
 };
 
+export const validList = {
+  id: 'list-uuid-1',
+  user_id: 'user-uuid-1',
+  name: 'Compras del sábado',
+};
+
+export const validListItem = {
+  id: 'list-item-uuid-1',
+  list_id: 'list-uuid-1',
+  product_name: 'Leche',
+  barcode: null,
+  quantity: 2,
+  purchased: false,
+};
+
 export const validStore = {
   id: 'store-uuid-1',
   name: 'Carrefour Express',

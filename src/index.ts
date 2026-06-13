@@ -11,6 +11,7 @@ import swaggerUi from 'swagger-ui-express';
 import 'dotenv/config';
 import { swaggerSpec } from './config/swagger';
 import cartRoutes from './routes/cart.routes';
+import listRoutes from './routes/list.routes';
 import productRoutes from './routes/product.routes';
 import userRoutes from './routes/user.routes';
 import purchaseRoutes from './routes/purchase.routes';
@@ -94,6 +95,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/purchases', purchaseRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/lists', listRoutes);
 app.use('/api/stores', storeRoutes);
 app.use('/api/admin', adminRoutes);
 
