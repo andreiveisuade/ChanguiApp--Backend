@@ -42,7 +42,7 @@ describe('Checkout Endpoints', () => {
         ...validCart,
         items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
       };
-      mockSupabase.single.mockResolvedValue({ data: cartWithItems, error: null });
+      mockSupabase.maybeSingle.mockResolvedValue({ data: cartWithItems, error: null });
       mercadopagoConfig.preference.create.mockResolvedValue({
         id: validCheckoutPreference.preference_id,
         init_point: validCheckoutPreference.init_point,
@@ -58,7 +58,7 @@ describe('Checkout Endpoints', () => {
     });
 
     it('sin carrito activo devuelve 400', async () => {
-      mockSupabase.single.mockResolvedValue({ data: null, error: null });
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
 
       const res = await request(app)
         .post('/api/checkout')
@@ -68,7 +68,7 @@ describe('Checkout Endpoints', () => {
     });
 
     it('con carrito vacío devuelve 400', async () => {
-      mockSupabase.single.mockResolvedValue({ data: { ...validCart, items: [] }, error: null });
+      mockSupabase.maybeSingle.mockResolvedValue({ data: { ...validCart, items: [] }, error: null });
 
       const res = await request(app)
         .post('/api/checkout')
@@ -85,7 +85,7 @@ describe('Checkout Endpoints', () => {
 
     it('con credenciales que no son de prueba devuelve 503 (seguro anti-cobro real)', async () => {
       mercadopagoConfig.getAccountTags.mockResolvedValue([]); // cuenta real
-      mockSupabase.single.mockResolvedValue({
+      mockSupabase.maybeSingle.mockResolvedValue({
         data: { ...validCart, items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }] },
         error: null,
       });

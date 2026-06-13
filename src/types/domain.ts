@@ -68,7 +68,7 @@ export interface Cart {
   id: string;
   user_id: string;
   store_id: string | null;
-  status: 'active' | 'checked_out' | 'closed';
+  status: 'active' | 'closed' | 'cancelled';
   created_at: string;
   updated_at: string;
   mp_preference_id?: string | null;

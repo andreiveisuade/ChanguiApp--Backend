@@ -3,8 +3,8 @@ import * as cartService from '../services/cart.service';
 
 export async function getCart(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { cart, items, total } = await cartService.getCart(req.user!.id);
-    res.status(200).json({ cart, items, total });
+    const { cart, items, total, summary } = await cartService.getCart(req.user!.id);
+    res.status(200).json({ cart, items, total, summary });
   } catch (err) {
     next(err);
   }
@@ -18,15 +18,7 @@ export async function addItem(req: Request, res: Response, next: NextFunction): 
       store_id?: string;
       quantity?: number;
     };
-    if (!product_id) {
-      res.status(400).json({ error: 'product_id es requerido' });
-      return;
-    }
-    if (unit_price === undefined) {
-      res.status(400).json({ error: 'unit_price es requerido' });
-      return;
-    }
-    const item = await cartService.addItem(req.user!.id, store_id, product_id, quantity, unit_price);
+    const item = await cartService.addItem(req.user!.id, store_id, product_id!, quantity, unit_price!);
     res.status(201).json(item);
   } catch (err) {
     next(err);
@@ -36,10 +28,6 @@ export async function addItem(req: Request, res: Response, next: NextFunction): 
 export async function updateItem(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { quantity } = req.body as { quantity?: number };
-    if (quantity === undefined) {
-      res.status(400).json({ error: 'quantity es requerido' });
-      return;
-    }
     const result = await cartService.updateItem(req.user!.id, String(req.params.id), Number(quantity));
     if (result === null) {
       res.status(200).json({ message: 'Item eliminado del carrito' });

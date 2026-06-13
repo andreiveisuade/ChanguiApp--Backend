@@ -1,5 +1,5 @@
 import * as cartRepository from '../repositories/cart.repository';
-import { summarizeByRate } from './pricing.service';
+import { summarizeByRate, DEFAULT_TAX_RATE } from './pricing.service';
 import { ApiError, type Cart, type CartItem, type CartWithItems, type TaxSummary } from '../types/domain';
 
 export async function getCart(userId: string): Promise<{
@@ -17,7 +17,7 @@ export async function getCart(userId: string): Promise<{
   const summary = summarizeByRate(
     items.map((i) => ({
       lineTotal: i.unit_price * i.quantity,
-      rate: i.product?.tax_category?.rate ?? 21,
+      rate: i.product?.tax_category?.rate ?? DEFAULT_TAX_RATE,
     }))
   );
   return { cart, items, total, summary };

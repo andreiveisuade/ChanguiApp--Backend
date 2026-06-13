@@ -1,5 +1,8 @@
 import type { TaxBreakdown, TaxLine, TaxSummary } from '../types/domain';
 
+export const DEFAULT_TAX_RATE = 21;
+export const DEFAULT_TAX_CATEGORY_NAME = 'General';
+
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }

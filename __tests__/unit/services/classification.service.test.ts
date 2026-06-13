@@ -1,6 +1,10 @@
 import * as productRepository from '../../../src/repositories/product.repository';
 import * as taxCategoriesRepository from '../../../src/repositories/tax_categories.repository';
-import { classifyProduct, reclassifyAll } from '../../../src/services/classification.service';
+import {
+  classifyProduct,
+  reclassifyAll,
+  overrideTaxCategory,
+} from '../../../src/services/classification.service';
 import { validTaxCategories } from '../../helpers/testData';
 
 jest.mock('../../../src/repositories/product.repository');
@@ -57,6 +61,34 @@ describe('classification.service', () => {
 
       expect(result.classified).toBe(0);
       expect(mockProductRepo.bulkSetCategory).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('overrideTaxCategory', () => {
+    it('lanza 400 si la categoría no existe y no toca el producto', async () => {
+      mockTaxRepo.getAll.mockResolvedValue([{ id: 'carnes' }] as never);
+
+      await expect(overrideTaxCategory('7790', 'inexistente')).rejects.toMatchObject({
+        status: 400,
+      });
+      expect(mockProductRepo.updateTaxCategory).not.toHaveBeenCalled();
+    });
+
+    it('lanza 404 si el producto no existe (updated=false)', async () => {
+      mockTaxRepo.getAll.mockResolvedValue([{ id: 'carnes' }] as never);
+      mockProductRepo.updateTaxCategory.mockResolvedValue({ updated: false } as never);
+
+      await expect(overrideTaxCategory('000', 'carnes')).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('override exitoso valida la categoría, actualiza y devuelve el producto bloqueado', async () => {
+      mockTaxRepo.getAll.mockResolvedValue([{ id: 'carnes' }] as never);
+      mockProductRepo.updateTaxCategory.mockResolvedValue({ updated: true } as never);
+
+      const result = await overrideTaxCategory('7790', 'carnes');
+
+      expect(result).toEqual({ barcode: '7790', tax_category_id: 'carnes', tax_locked: true });
+      expect(mockProductRepo.updateTaxCategory).toHaveBeenCalledWith('7790', 'carnes');
     });
   });
 });
