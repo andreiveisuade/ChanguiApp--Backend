@@ -32,6 +32,7 @@
     "@supabase/supabase-js": "^2.105.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^25.6.0",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
@@ -49,7 +50,6 @@
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
-    "@types/morgan": "^1.9.10",
     "@types/supertest": "^7.2.0",
     "jest": "^30.3.0",
     "supertest": "^7.2.2",
