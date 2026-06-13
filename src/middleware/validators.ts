@@ -63,37 +63,3 @@ export const cartItemUpdateValidators = [
   body('quantity')
     .isInt({ min: 1 }).withMessage('La cantidad debe ser un numero entero mayor a 0'),
 ];
-
-// Validaciones para crear/renombrar una lista de compras (name es opcional)
-export const createListValidators = [
-  body('name')
-    .optional({ nullable: true })
-    .isString().withMessage('El nombre debe ser texto')
-    .isLength({ max: 100 }).withMessage('El nombre no puede superar 100 caracteres')
-    .trim(),
-];
-
-// Validaciones para agregar un item a una lista (texto libre, sin FK a productos)
-export const listItemValidators = [
-  body('product_name')
-    .notEmpty().withMessage('product_name es requerido')
-    .isString()
-    .isLength({ max: 200 }).withMessage('El nombre del producto no puede superar 200 caracteres')
-    .trim(),
-  body('barcode')
-    .optional({ nullable: true })
-    .isString().trim(),
-  body('quantity')
-    .optional({ nullable: true })
-    .isInt({ min: 1 }).withMessage('La cantidad debe ser un numero entero mayor a 0'),
-];
-
-// Validaciones para actualizar un item de lista (cantidad y/o tachado)
-export const listItemUpdateValidators = [
-  body('quantity')
-    .optional()
-    .isInt({ min: 1 }).withMessage('La cantidad debe ser un numero entero mayor a 0'),
-  body('purchased')
-    .optional()
-    .isBoolean().withMessage('purchased debe ser booleano'),
-];
