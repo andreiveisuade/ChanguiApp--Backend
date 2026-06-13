@@ -1,6 +1,6 @@
 import { asyncHandler } from '../utils/asyncHandler';
 import * as storeService from '../services/store.service';
-import { ApiError } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
 
 export const list = asyncHandler(async (req, res) => {
   const { lat, lng } = req.query;

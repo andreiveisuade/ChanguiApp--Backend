@@ -2,7 +2,7 @@ import * as productRepository from '../repositories/product.repository';
 import * as syncJobsRepository from '../repositories/sync_jobs.repository';
 import * as storeRepository from '../repositories/store.repository';
 import * as classificationService from './classification.service';
-import { ApiError } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
 import type { SyncJob } from '../types/domain';
 
 export const SYNC_TYPE_PRECIOS_CLAROS = 'precios_claros';

@@ -1,6 +1,7 @@
 import * as cartRepository from '../repositories/cart.repository';
 import { summarizeByRate, DEFAULT_TAX_RATE } from './pricing.service';
-import { ApiError, type Cart, type CartItem, type CartWithItems, type TaxSummary } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
+import type { Cart, CartItem, CartWithItems, TaxSummary } from '../types/domain';
 
 export async function getCart(userId: string): Promise<{
   cart: CartWithItems | null;

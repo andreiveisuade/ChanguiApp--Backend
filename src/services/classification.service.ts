@@ -1,6 +1,7 @@
 import * as productRepository from '../repositories/product.repository';
 import * as taxCategoriesRepository from '../repositories/tax_categories.repository';
-import { ApiError, type TaxCategory } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
+import type { TaxCategory } from '../types/domain';
 
 // Match por tokens: la keyword matchea si TODAS sus palabras están en el
 // nombre, en cualquier orden. Así "leche entera" matchea "Leche La

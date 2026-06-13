@@ -1,5 +1,5 @@
 import type { ErrorRequestHandler } from 'express';
-import { ApiError } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
 
 // Error handler global. Mapea errores comunes a respuestas amigables.
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {

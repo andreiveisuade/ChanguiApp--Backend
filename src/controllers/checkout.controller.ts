@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import * as checkoutService from '../services/checkout.service';
-import { ApiError } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
 
 // Deep link de la app al que MP reenvia tras el pago. Constante (config), nunca

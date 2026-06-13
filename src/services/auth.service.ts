@@ -1,6 +1,6 @@
 import * as authRepository from '../repositories/auth.repository';
 import * as userRepository from '../repositories/user.repository';
-import { ApiError } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
 
 export const authService = {
   async register(email: string, password: string, name: string) {

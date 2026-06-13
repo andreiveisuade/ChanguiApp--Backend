@@ -1,5 +1,6 @@
 import * as userRepository from '../repositories/user.repository';
-import { ApiError, type User, type UserUpdate } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
+import type { User, UserUpdate } from '../types/domain';
 
 const ALLOWED_FIELDS: (keyof UserUpdate)[] = ['full_name', 'avatar_url'];
 

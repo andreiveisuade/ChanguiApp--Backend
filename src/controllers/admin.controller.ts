@@ -2,7 +2,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import * as syncService from '../services/sync.service';
 import * as syncJobsRepository from '../repositories/sync_jobs.repository';
 import * as classificationService from '../services/classification.service';
-import { ApiError } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
 
 export const startSyncPreciosClaros = asyncHandler(async (_req, res) => {
   const { sync_id } = await syncService.startPreciosClarosSync();

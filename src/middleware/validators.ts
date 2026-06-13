@@ -21,7 +21,8 @@ export const registerValidators = [
     .trim(),
   body('name')
     .trim()
-    .notEmpty().withMessage('El nombre es requerido'),
+    .notEmpty().withMessage('El nombre es requerido')
+    .escape(),
 ];
 
 // Validaciones para login: email valido + password requerida (supabase rechaza

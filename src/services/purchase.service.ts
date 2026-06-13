@@ -1,6 +1,7 @@
 import * as purchaseRepository from '../repositories/purchase.repository';
 import { summarizeByRate } from './pricing.service';
-import { ApiError, type Purchase, type PurchaseDetail } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
+import type { Purchase, PurchaseDetail } from '../types/domain';
 
 export async function list(userId: string, status?: string): Promise<Purchase[]> {
   return purchaseRepository.findByUserId(userId, status);

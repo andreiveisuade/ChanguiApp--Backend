@@ -2,11 +2,8 @@ import { preference, payment, getAccountTags } from '../config/mercadopago';
 import * as checkoutRepository from '../repositories/checkout.repository';
 import * as cartRepository from '../repositories/cart.repository';
 import { DEFAULT_TAX_RATE } from './pricing.service';
-import {
-  ApiError,
-  type CheckoutResponse,
-  type CheckoutStatusResponse,
-} from '../types/domain';
+import { ApiError } from '../utils/ApiError';
+import type { CheckoutResponse, CheckoutStatusResponse } from '../types/domain';
 
 const STATUS_MAP: Record<string, 'completed' | 'failed' | 'pending'> = {
   approved: 'completed',

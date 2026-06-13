@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { errorHandler } from '../../../src/middleware/errorHandler';
-import { ApiError } from '../../../src/types/domain';
+import { ApiError } from '../../../src/utils/ApiError';
 
 describe('errorHandler', () => {
   const ORIGINAL_ENV = process.env.NODE_ENV;

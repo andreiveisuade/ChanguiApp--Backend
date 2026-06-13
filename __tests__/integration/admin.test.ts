@@ -16,7 +16,7 @@ const syncJobsRepository = require('../../src/repositories/sync_jobs.repository'
 const productRepository = require('../../src/repositories/product.repository');
 const taxCategoriesRepository = require('../../src/repositories/tax_categories.repository');
 const classificationService = require('../../src/services/classification.service');
-const { ApiError } = require('../../src/types/domain');
+const { ApiError } = require('../../src/utils/ApiError');
 
 describe('admin sync endpoints', () => {
   afterEach(() => jest.clearAllMocks());
