@@ -8,87 +8,85 @@ on:
   workflow_dispatch:
 
 jobs:
-  trigger-sync:
+  sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Disparar y esperar el sync de Precios Claros
+      # El runner baja el catálogo de Precios Claros y lo postea al backend en
+      # lotes. El fetch al CDN se hace acá y NO desde Render porque la IP
+      # saliente compartida del free tier de Render está filtrada por el CDN de
+      # Precios Claros y recibe 200 con catálogo vacío (total 0). La IP del
+      # runner está limpia. El backend solo upsertea lo que le mandamos.
+      - name: Sincronizar catálogo Precios Claros -> backend
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          PRECIOS_CLAROS_URL: ${{ vars.PRECIOS_CLAROS_URL }}
+          STORE_ID: ${{ vars.MVP_STORE_PRECIOS_CLAROS_ID }}
         run: |
           set -euo pipefail
 
-          # El sync avanza por tandas (chunks) reanudables (DEV-192): cada POST
-          # procesa un chunk y reanuda desde last_offset. Disparamos chunk tras
-          # chunk hasta que el job termine 'completed'. Cada chunk es un proceso
-          # corto que entra en el free tier de Render sin reiniciar el dyno.
-          global_deadline=$((SECONDS + 1500))   # 25 min para todo el catálogo
+          UA="Mozilla/5.0 (compatible; ChanguiApp/1.0)"
+          LIMIT=100
 
-          while [ "$SECONDS" -lt "$global_deadline" ]; do
-            # 1) Disparar/reanudar un chunk (fire-and-forget en el backend).
-            response=$(curl -sS -w "\n%{http_code}" \
-              -X POST "$BACKEND_URL/api/admin/sync-precios-claros" \
-              -H "X-Admin-Token: $ADMIN_TOKEN")
-            body=$(echo "$response" | head -n -1)
-            status=$(echo "$response" | tail -n 1)
-            echo "POST HTTP $status — $body"
+          # 1) total del catálogo de la sucursal.
+          head=$(curl -sS -m 30 -H "User-Agent: $UA" \
+            "$PRECIOS_CLAROS_URL/productos?string=&limit=1&offset=0&id_sucursal=$STORE_ID")
+          total=$(echo "$head" | jq -r '.total // 0')
+          echo "Catálogo: total=$total productos"
 
-            # 409 = ya hay otra corrida activa real; no es fallo.
-            if [ "$status" = "409" ]; then
-              echo "Ya hay un sync en curso, nada que hacer."
-              exit 0
+          # Un catálogo real nunca es 0. Si lo es, la API está caída de verdad
+          # (no la IP): cortamos sin pisar el catálogo bueno con un sync vacío.
+          if [ "$total" -eq 0 ]; then
+            echo "::error::Precios Claros devolvió total 0 desde el runner (API caída, no IP)."
+            exit 1
+          fi
+
+          # 2) Paginar y postear cada página al backend.
+          offset=0
+          upserted_total=0
+          while [ "$offset" -lt "$total" ]; do
+            page=$(curl -sS -m 30 -H "User-Agent: $UA" \
+              "$PRECIOS_CLAROS_URL/productos?string=&limit=$LIMIT&offset=$offset&id_sucursal=$STORE_ID")
+
+            count=$(echo "$page" | jq -r '.productos | length')
+            if [ "$count" -eq 0 ]; then
+              echo "Página vacía en offset=$offset: fin del catálogo."
+              break
             fi
-            if [ "$status" != "202" ]; then
-              echo "::error::El POST no devolvió 202 (devolvió $status)"
+
+            resp=$(echo "$page" | jq -c '{productos: .productos}' | curl -sS -m 60 \
+              -w "\n%{http_code}" \
+              -X POST "$BACKEND_URL/api/admin/products/bulk" \
+              -H "X-Admin-Token: $ADMIN_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data-binary @-)
+            body=$(echo "$resp" | head -n -1)
+            status=$(echo "$resp" | tail -n 1)
+            if [ "$status" != "200" ]; then
+              echo "::error::bulk devolvió $status — $body"
               exit 1
             fi
 
-            sync_id=$(echo "$body" | jq -r '.sync_id')
-            if [ -z "$sync_id" ] || [ "$sync_id" = "null" ]; then
-              echo "::error::No se pudo leer sync_id de la respuesta"
-              exit 1
-            fi
-            echo "Chunk encolado: $sync_id"
+            upserted=$(echo "$body" | jq -r '.upserted // 0')
+            upserted_total=$((upserted_total + upserted))
+            offset=$((offset + count))
+            echo "offset=$offset/$total (upserteados acumulados=$upserted_total)"
 
-            # 2) Poltear este chunk hasta completed/partial/failed.
-            chunk_deadline=$((SECONDS + 480))
-            chunk_done=""
-            while [ "$SECONDS" -lt "$chunk_deadline" ]; do
-              sleep 20
-              job=$(curl -sS \
-                "$BACKEND_URL/api/admin/sync-precios-claros/$sync_id" \
-                -H "X-Admin-Token: $ADMIN_TOKEN")
-              job_status=$(echo "$job" | jq -r '.status')
-              processed=$(echo "$job" | jq -r '.processed')
-              total=$(echo "$job" | jq -r '.total_target')
-              last_offset=$(echo "$job" | jq -r '.last_offset')
-              echo "estado=$job_status procesados=$processed/$total offset=$last_offset"
-
-              case "$job_status" in
-                completed)
-                  echo "Sync completo: catálogo al día (offset=$last_offset)."
-                  exit 0
-                  ;;
-                partial)
-                  echo "Chunk OK (offset=$last_offset). Reanudando siguiente tanda…"
-                  chunk_done="partial"
-                  break
-                  ;;
-                failed)
-                  msg=$(echo "$job" | jq -r '.error_message')
-                  echo "::error::Sync falló: $msg"
-                  exit 1
-                  ;;
-              esac
-            done
-
-            # El chunk no resolvió dentro de su ventana: probable reinicio del
-            # dyno. Damos respiro y reintentamos; el próximo POST reanuda solo.
-            if [ "$chunk_done" != "partial" ]; then
-              echo "Chunk sin resolver (posible reinicio del dyno). Reintentando…"
-              sleep 15
-            fi
+            # Respiro entre requests al CDN para no autoinducir rate-limit.
+            sleep 1
           done
 
-          echo "::error::Timeout global esperando que el catálogo complete."
-          exit 1
+          echo "Ingesta completa: $upserted_total productos upserteados."
+
+          # 3) Reclasificación fiscal de los productos no bloqueados.
+          echo "Disparando reclasificación fiscal…"
+          resp=$(curl -sS -m 300 -w "\n%{http_code}" \
+            -X POST "$BACKEND_URL/api/admin/reclassify" \
+            -H "X-Admin-Token: $ADMIN_TOKEN")
+          body=$(echo "$resp" | head -n -1)
+          status=$(echo "$resp" | tail -n 1)
+          if [ "$status" != "200" ]; then
+            echo "::error::reclassify devolvió $status — $body"
+            exit 1
+          fi
+          echo "Reclasificación OK: $body"

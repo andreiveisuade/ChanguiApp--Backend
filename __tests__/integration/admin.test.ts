@@ -117,6 +117,39 @@ describe('admin sync endpoints', () => {
     });
   });
 
+  describe('POST /api/admin/products/bulk', () => {
+    it('sin header x-admin-token devuelve 401', async () => {
+      const res = await request(app)
+        .post('/api/admin/products/bulk')
+        .send({ productos: [] });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('sin productos array devuelve 400', async () => {
+      jest.spyOn(console, 'error').mockImplementation();
+      const res = await request(app)
+        .post('/api/admin/products/bulk')
+        .set('x-admin-token', 'test-admin-token-secret')
+        .send({});
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('con productos devuelve 200 + upserted', async () => {
+      syncService.ingestProductsBatch.mockResolvedValue(2);
+      const productos = [
+        { id: '779-1', nombre: 'Leche', marca: 'La Serenísima', precioMax: '1000' },
+        { id: '779-2', nombre: 'Pan', marca: 'Bimbo', precio: '500' },
+      ];
+      const res = await request(app)
+        .post('/api/admin/products/bulk')
+        .set('x-admin-token', 'test-admin-token-secret')
+        .send({ productos });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ upserted: 2 });
+      expect(syncService.ingestProductsBatch).toHaveBeenCalledWith(productos);
+    });
+  });
+
   describe('POST /api/admin/products/:barcode/tax-category', () => {
     it('sin header x-admin-token devuelve 401', async () => {
       const res = await request(app)
