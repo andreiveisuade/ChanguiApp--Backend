@@ -88,6 +88,17 @@ describe('Security', () => {
     });
   });
 
+  // TEST 2.5: 404 en endpoint inexistente (notFoundHandler).
+  describe('Rutas no encontradas', () => {
+    it('GET a un endpoint inexistente devuelve 404', async () => {
+      const res = await request(app).get('/api/no-existe');
+      expect(res.statusCode).toBe(404);
+      expect(res.body).toEqual(
+        expect.objectContaining({ error: 'Endpoint no encontrado' }),
+      );
+    });
+  });
+
   // TEST 3: 429 en rate limit. Va ultimo porque consume el budget de /api/auth.
   describe('Rate limiting', () => {
     it('mas de 10 requests a /api/auth devuelve 429', async () => {
