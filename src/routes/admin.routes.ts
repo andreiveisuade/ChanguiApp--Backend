@@ -60,6 +60,45 @@ router.get('/sync-precios-claros/:id', adminController.getSyncPreciosClarosStatu
 
 /**
  * @swagger
+ * /api/admin/products/bulk:
+ *   post:
+ *     tags: [admin]
+ *     security: [{ adminAuth: [] }]
+ *     summary: Ingestar un lote de productos crudos de Precios Claros
+ *     description: |
+ *       Recibe un lote de productos en el formato crudo de Precios Claros (tal
+ *       como los baja el runner de CI) y los upsertea por `barcode`. El backend
+ *       no llama a Precios Claros: el fetch al CDN lo hace el runner porque la
+ *       IP saliente del free tier de Render está filtrada por el CDN. Idempotente.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [productos]
+ *             properties:
+ *               productos:
+ *                 type: array
+ *                 items: { type: object }
+ *     responses:
+ *       '200':
+ *         description: Cantidad de productos upserteados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 upserted: { type: integer, example: 100 }
+ *       '400':
+ *         description: productos faltante o no es un array
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.post('/products/bulk', adminController.ingestProductsHandler);
+
+/**
+ * @swagger
  * /api/admin/products/{barcode}/tax-category:
  *   post:
  *     tags: [admin]

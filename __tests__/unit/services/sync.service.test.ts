@@ -449,4 +449,41 @@ describe('SyncService', () => {
       expect(mockedJobs.markPartial).not.toHaveBeenCalled();
     });
   });
+
+  describe('ingestProductsBatch', () => {
+    it('mapea los productos crudos y los upsertea, devolviendo la cantidad', async () => {
+      const productos = [apiProduct('779-1'), apiProduct('779-2')];
+
+      const count = await syncService.ingestProductsBatch(productos);
+
+      expect(count).toBe(2);
+      expect(mockedProducts.upsertBatch).toHaveBeenCalledWith([
+        {
+          barcode: '779-1',
+          name: 'Prod 779-1',
+          brand: 'Marca',
+          price: 100.5,
+          image_url: 'https://img.example.com/p.jpg',
+        },
+        {
+          barcode: '779-2',
+          name: 'Prod 779-2',
+          brand: 'Marca',
+          price: 100.5,
+          image_url: 'https://img.example.com/p.jpg',
+        },
+      ]);
+    });
+
+    it('descarta entradas sin id antes de upsertear', async () => {
+      const productos = [apiProduct('ok'), { nombre: 'sin id', marca: 'X' } as never];
+
+      const count = await syncService.ingestProductsBatch(productos);
+
+      expect(count).toBe(1);
+      expect(mockedProducts.upsertBatch).toHaveBeenCalledWith([
+        expect.objectContaining({ barcode: 'ok' }),
+      ]);
+    });
+  });
 });

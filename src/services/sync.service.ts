@@ -8,7 +8,7 @@ import type { SyncJob } from '../types/domain';
 export const SYNC_TYPE_PRECIOS_CLAROS = 'precios_claros';
 export const PAGE_LIMIT = 100;
 
-interface PreciosClarosProduct {
+export interface PreciosClarosProduct {
   id: string;
   nombre: string;
   marca: string;
@@ -96,6 +96,17 @@ function mapProduct(p: PreciosClarosProduct): productRepository.ProductUpsertInp
     price: parseFloat(p.precioMax || p.precio || '0'),
     image_url: p.imagen ?? undefined,
   };
+}
+
+// Ingesta de un lote de productos crudos de Precios Claros que ya bajó el
+// runner de CI (DEV-XXX). El fetch al CDN se hace desde la IP limpia del
+// runner porque la IP saliente compartida del free tier de Render está
+// filtrada por el CDN y recibe 200 con catálogo vacío. El backend acá solo
+// mapea y upsertea: nunca toca Precios Claros.
+export async function ingestProductsBatch(productos: PreciosClarosProduct[]): Promise<number> {
+  const mapped = productos.filter((p) => p && p.id).map(mapProduct);
+  await productRepository.upsertBatch(mapped);
+  return mapped.length;
 }
 
 // El free tier de Render reinicia el dyno a mitad de un sync largo y deja el job
