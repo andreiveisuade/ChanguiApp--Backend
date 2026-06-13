@@ -87,6 +87,16 @@ const definition: swaggerJsdoc.SwaggerDefinition = {
           image_url: { type: 'string', nullable: true },
           tax_category_id: { type: 'string', example: 'leche' },
           tax_locked: { type: 'boolean', description: 'Override manual: el sync no lo reclasifica' },
+          tax_category: {
+            type: 'object',
+            nullable: true,
+            description: 'Categoría fiscal embebida (id, nombre, alícuota)',
+            properties: {
+              id: { type: 'string', example: 'leche' },
+              name: { type: 'string', example: 'Leche fluida' },
+              rate: { type: 'number', example: 0 },
+            },
+          },
           tax: {
             type: 'object',
             description: 'Desglose calculado en runtime según la alícuota de la categoría',
@@ -139,6 +149,9 @@ const definition: swaggerJsdoc.SwaggerDefinition = {
             type: 'string',
             enum: ['active', 'closed', 'cancelled'],
           },
+          created_at: { type: 'string', format: 'date-time' },
+          updated_at: { type: 'string', format: 'date-time' },
+          mp_preference_id: { type: 'string', nullable: true },
           items: {
             type: 'array',
             items: { $ref: '#/components/schemas/CartItem' },
@@ -164,6 +177,8 @@ const definition: swaggerJsdoc.SwaggerDefinition = {
           },
           created_at: { type: 'string', format: 'date-time' },
           store_id: { type: 'string', format: 'uuid', nullable: true },
+          store_name: { type: 'string', nullable: true },
+          mp_preference_id: { type: 'string', nullable: true },
         },
       },
       PurchaseItem: {
@@ -175,6 +190,7 @@ const definition: swaggerJsdoc.SwaggerDefinition = {
           barcode: { type: 'string' },
           quantity: { type: 'integer' },
           unit_price: { type: 'number' },
+          tax_rate: { type: 'number', description: 'Alícuota de IVA aplicada (%)' },
         },
       },
       PurchaseDetail: {
@@ -216,7 +232,7 @@ const definition: swaggerJsdoc.SwaggerDefinition = {
           type: { type: 'string', example: 'precios_claros' },
           status: {
             type: 'string',
-            enum: ['queued', 'running', 'completed', 'failed'],
+            enum: ['queued', 'running', 'completed', 'failed', 'partial'],
           },
           total_target: { type: 'integer', nullable: true },
           processed: { type: 'integer' },
