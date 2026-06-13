@@ -22,7 +22,7 @@ export const authService = {
     };
   },
 
-   async login(email: string, password: string) {
+  async login(email: string, password: string) {
     const authData = await authRepository
       .login(email, password)
       .catch(() => {
