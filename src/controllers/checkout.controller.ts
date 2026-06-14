@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import type { Request, Response } from 'express';
 import * as checkoutService from '../services/checkout.service';
 import { ApiError } from '../utils/ApiError';
@@ -35,10 +36,57 @@ export const status = asyncHandler<AuthedRequest>(async (req, res) => {
   res.json(result);
 });
 
-// El webhook de MP siempre debe responder 200, incluso si el procesamiento
-// falla, para que MP no lo reintente en loop. Por eso NO usa asyncHandler:
-// traga el error a proposito y loguea.
+// Verifica la firma del webhook de MP (header "x-signature: ts=...,v1=...").
+// Manifest oficial: id:<data.id>;request-id:<x-request-id>;ts:<ts>; firmado con
+// HMAC-SHA256 y MP_WEBHOOK_SECRET (clave secreta de la integración en el panel MP).
+// Sin secret: en producción falla cerrado; en dev/test bypassa con warning
+// (mismo criterio "falla cerrado" que assertTestCredentials del service).
+function verifyMpSignature(req: Request): boolean {
+  const secret = process.env.MP_WEBHOOK_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') return false;
+    console.warn('MP_WEBHOOK_SECRET no seteado: firma del webhook NO verificada (modo dev)');
+    return true;
+  }
+
+  const xSignature = req.header('x-signature');
+  if (!xSignature) return false;
+  const xRequestId = req.header('x-request-id');
+  // data.id viene en el query string de la URL de notificación (?data.id=...).
+  const dataId =
+    typeof req.query['data.id'] === 'string' ? (req.query['data.id'] as string) : undefined;
+
+  // x-signature = "ts=<unix>,v1=<hmac_hex>"
+  let ts: string | undefined;
+  let v1: string | undefined;
+  for (const part of xSignature.split(',')) {
+    const [key, value] = part.split('=');
+    if (key?.trim() === 'ts') ts = value?.trim();
+    else if (key?.trim() === 'v1') v1 = value?.trim();
+  }
+  if (!ts || !v1) return false;
+
+  // Manifest: se omite el segmento de los valores ausentes; data.id en minúscula.
+  let manifest = '';
+  if (dataId) manifest += `id:${dataId.toLowerCase()};`;
+  if (xRequestId) manifest += `request-id:${xRequestId};`;
+  manifest += `ts:${ts};`;
+
+  const expected = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+  const expectedBuf = Buffer.from(expected, 'hex');
+  const receivedBuf = Buffer.from(v1, 'hex');
+  if (expectedBuf.length !== receivedBuf.length) return false;
+  return crypto.timingSafeEqual(expectedBuf, receivedBuf);
+}
+
+// El webhook responde 200 ante errores de PROCESAMIENTO (para que MP no reintente
+// en loop). La firma se valida antes: si es inválida o ausente → 401 y no procesa.
 export async function webhook(req: Request, res: Response): Promise<void> {
+  if (!verifyMpSignature(req)) {
+    console.warn('Webhook MP: firma inválida o ausente, ignorado');
+    res.status(401).json({ error: 'invalid signature' });
+    return;
+  }
   try {
     await checkoutService.handleWebhook(req.body);
   } catch (err) {
