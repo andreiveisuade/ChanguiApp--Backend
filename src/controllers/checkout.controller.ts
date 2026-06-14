@@ -39,13 +39,13 @@ export const status = asyncHandler<AuthedRequest>(async (req, res) => {
 // Verifica la firma del webhook de MP (header "x-signature: ts=...,v1=...").
 // Manifest oficial: id:<data.id>;request-id:<x-request-id>;ts:<ts>; firmado con
 // HMAC-SHA256 y MP_WEBHOOK_SECRET (clave secreta de la integración en el panel MP).
-// Sin secret: en producción falla cerrado; en dev/test bypassa con warning
-// (mismo criterio "falla cerrado" que assertTestCredentials del service).
+// Si MP_WEBHOOK_SECRET no está seteado, el webhook se procesa igual con un warning:
+// la verificación queda lista y se activa al configurar el secret. Decisión de MVP
+// para no romper el webhook en prod antes de tener el secret configurado.
 function verifyMpSignature(req: Request): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
   if (!secret) {
-    if (process.env.NODE_ENV === 'production') return false;
-    console.warn('MP_WEBHOOK_SECRET no seteado: firma del webhook NO verificada (modo dev)');
+    console.warn('MP_WEBHOOK_SECRET no seteado: webhook procesado SIN verificar firma');
     return true;
   }
 
