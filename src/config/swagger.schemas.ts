@@ -155,18 +155,6 @@ export const schemas = {
       },
     ],
   },
-  Store: {
-    type: 'object',
-    properties: {
-      id: { type: 'string', format: 'uuid' },
-      name: { type: 'string', example: 'Carrefour Express - Recoleta' },
-      chain: { type: 'string', nullable: true, example: 'Carrefour' },
-      address: { type: 'string', nullable: true },
-      lat: { type: 'number', format: 'float' },
-      lng: { type: 'number', format: 'float' },
-      distanceKm: { type: 'number', format: 'float', nullable: true },
-    },
-  },
   SyncAccepted: {
     type: 'object',
     properties: {

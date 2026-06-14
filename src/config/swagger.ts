@@ -36,7 +36,6 @@ const definition: swaggerJsdoc.SwaggerDefinition = {
     { name: 'cart' },
     { name: 'checkout' },
     { name: 'purchases' },
-    { name: 'stores' },
     { name: 'admin' },
   ],
   components: {

@@ -125,16 +125,6 @@ export interface CheckoutStatusResponse {
   status: CheckoutPaymentStatus;
 }
 
-export interface Store {
-  id: string;
-  name: string;
-  chain: string | null;
-  address: string | null;
-  lat: number;
-  lng: number;
-  distanceKm?: number;
-}
-
 export type SyncJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'partial';
 
 export interface SyncJob {

@@ -7,7 +7,6 @@ import userRoutes from './user.routes';
 import purchaseRoutes from './purchase.routes';
 import checkoutRoutes from './checkout.routes';
 import cartRoutes from './cart.routes';
-import storeRoutes from './store.routes';
 import adminRoutes from './admin.routes';
 
 // Monta healthcheck, Swagger UI y todos los routers del MVP sobre la app.
@@ -51,6 +50,5 @@ export function registerRoutes(app: Express): void {
   app.use('/api/purchases', purchaseRoutes);
   app.use('/api/checkout', checkoutRoutes);
   app.use('/api/cart', cartRoutes);
-  app.use('/api/stores', storeRoutes);
   app.use('/api/admin', adminRoutes);
 }
