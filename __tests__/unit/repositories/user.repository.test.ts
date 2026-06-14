@@ -135,5 +135,11 @@ describe('UserRepository', () => {
 
       expect(result).toBeNull();
     });
+
+    it('propaga el error de la base', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: new Error('x') });
+
+      await expect(userRepository.findByEmail(validUser.email)).rejects.toThrow('x');
+    });
   });
 });

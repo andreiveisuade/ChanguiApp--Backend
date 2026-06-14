@@ -78,5 +78,15 @@ describe('PurchaseService', () => {
         service.getById(validUser.id, validPurchase.id),
       ).rejects.toThrow('DB connection lost');
     });
+
+    it('devuelve summary vacio si la compra no tiene items (undefined)', async () => {
+      const purchaseSinItems = { ...validPurchase, items: undefined };
+      repo.findByIdAndUser.mockResolvedValue(purchaseSinItems);
+
+      const result = await service.getById(validUser.id, validPurchase.id);
+
+      expect(result.summary!.taxes).toEqual([]);
+      expect(result.summary!.total).toBe(0);
+    });
   });
 });
