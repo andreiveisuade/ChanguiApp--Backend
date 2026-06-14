@@ -14,7 +14,9 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:unit": "jest __tests__/unit",
-    "test:integration": "jest __tests__/integration"
+    "test:integration": "jest __tests__/integration",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "repository": {
     "type": "git",
@@ -49,11 +51,15 @@
     "typescript": "^6.0.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
     "@types/supertest": "^7.2.0",
+    "eslint": "^10.5.0",
+    "globals": "^17.6.0",
     "jest": "^30.3.0",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.9",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "typescript-eslint": "^8.61.0"
   }
 }

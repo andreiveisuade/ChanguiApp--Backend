@@ -6,7 +6,7 @@ const app = require('../../src/index');
 jest.mock('../../src/config/supabase', () => require('../helpers/mockSupabase'));
 
 const mockSupabase = require('../helpers/mockSupabase');
-const { validProduct, validUser } = require('../helpers/testData');
+const { validProduct } = require('../helpers/testData');
 
 const authHeader = { Authorization: 'Bearer test-token' };
 

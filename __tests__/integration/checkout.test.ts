@@ -7,7 +7,7 @@ const app = require('../../src/index');
 jest.mock('../../src/config/supabase', () => require('../helpers/mockSupabase'));
 
 const mockSupabase = require('../helpers/mockSupabase');
-const { validUser, validCart, validCartItem, validProduct, validCheckoutPreference } = require('../helpers/testData');
+const { validCart, validCartItem, validProduct, validCheckoutPreference } = require('../helpers/testData');
 
 const authHeader = { Authorization: 'Bearer test-token' };
 
