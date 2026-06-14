@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import * as checkoutService from '../services/checkout.service';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
+import type { AuthedRequest } from '../types/http';
 
 // Deep link de la app al que MP reenvia tras el pago. Constante (config), nunca
 // derivado del request: la app ya tiene el preference_id, el deep link solo
@@ -9,8 +10,8 @@ import { asyncHandler } from '../utils/asyncHandler';
 const APP_RETURN_DEEP_LINK =
   process.env.APP_RETURN_DEEP_LINK || 'changuiapp://checkout/return';
 
-export const create = asyncHandler(async (req, res) => {
-  const result = await checkoutService.createPreference(req.user!.id);
+export const create = asyncHandler<AuthedRequest>(async (req, res) => {
+  const result = await checkoutService.createPreference(req.user.id);
   res.json(result);
 });
 
@@ -24,13 +25,13 @@ export function returnPage(_req: Request, res: Response): void {
   res.redirect(APP_RETURN_DEEP_LINK);
 }
 
-export const status = asyncHandler(async (req, res) => {
+export const status = asyncHandler<AuthedRequest>(async (req, res) => {
   const preferenceId =
     typeof req.query.preference_id === 'string' ? req.query.preference_id : '';
   if (!preferenceId) {
     throw new ApiError('preference_id requerido', 400);
   }
-  const result = await checkoutService.getCheckoutStatus(req.user!.id, preferenceId);
+  const result = await checkoutService.getCheckoutStatus(req.user.id, preferenceId);
   res.json(result);
 });
 
