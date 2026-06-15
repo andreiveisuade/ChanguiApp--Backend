@@ -11,15 +11,13 @@ export const addItem = asyncHandler<AuthedRequest>(async (req, res) => {
   const {
     product_id,
     unit_price,
-    store_id,
     quantity = 1,
   } = req.body as {
     product_id?: string;
     unit_price?: number;
-    store_id?: string;
     quantity?: number;
   };
-  const item = await cartService.addItem(req.user.id, store_id, product_id!, quantity, unit_price!);
+  const item = await cartService.addItem(req.user.id, product_id!, quantity, unit_price!);
   res.status(201).json(item);
 });
 

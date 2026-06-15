@@ -51,8 +51,7 @@ router.get('/', authMiddleware, cartController.getCart);
  *     summary: Agregar un item al carrito activo (lo crea si no existe)
  *     description: |
  *       Si el usuario ya tiene un carrito activo, agrega el item a ese carrito.
- *       Si no tiene, crea uno nuevo en `store_id` (en ese caso `store_id` es obligatorio).
- *       Una vez creado el carrito, los items siguientes no necesitan `store_id`.
+ *       Si no tiene, crea uno nuevo automáticamente.
  *     requestBody:
  *       required: true
  *       content:
@@ -64,11 +63,6 @@ router.get('/', authMiddleware, cartController.getCart);
  *               product_id: { type: string, format: uuid, example: "02b8eddd-532c-4234-b947-94f29a303931" }
  *               unit_price: { type: number, format: float, example: 4999.99 }
  *               quantity: { type: integer, minimum: 1, example: 1 }
- *               store_id:
- *                 type: string
- *                 format: uuid
- *                 description: "Solo requerido si el usuario no tiene carrito activo (se usa para crear uno nuevo)."
- *                 example: "702ca20d-7ac7-45f6-8e0a-5b1f67235a15"
  *     responses:
  *       '201':
  *         description: Item agregado
@@ -76,7 +70,7 @@ router.get('/', authMiddleware, cartController.getCart);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/CartItem' }
  *       '400':
- *         description: product_id o unit_price faltante, o store_id requerido para crear carrito nuevo
+ *         description: product_id o unit_price faltante
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }

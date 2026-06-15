@@ -41,12 +41,11 @@ describe('CartRepository', () => {
     it('crea un carrito nuevo con status active', async () => {
       mockSupabase.single.mockResolvedValue({ data: validCart, error: null });
 
-      const result = await cartRepository.createCart(validCart.user_id, validCart.store_id);
+      const result = await cartRepository.createCart(validCart.user_id);
 
       expect(mockSupabase.from).toHaveBeenCalledWith('carts');
       expect(mockSupabase.insert).toHaveBeenCalledWith({
         user_id: validCart.user_id,
-        store_id: validCart.store_id,
         status: 'active',
       });
       expect(result).toEqual(validCart);
@@ -56,7 +55,7 @@ describe('CartRepository', () => {
       mockSupabase.single.mockResolvedValue({ data: null, error: new Error('boom') });
 
       await expect(
-        cartRepository.createCart(validCart.user_id, validCart.store_id),
+        cartRepository.createCart(validCart.user_id),
       ).rejects.toThrow('boom');
     });
   });

@@ -4,7 +4,7 @@ import type { Purchase, PurchaseDetail } from '../types/domain';
 export async function findByUserId(userId: string, status?: string): Promise<Purchase[]> {
   let query = supabase
     .from('purchases')
-    .select('id, total, payment_id, payment_status, created_at, store_id')
+    .select('id, total, payment_id, payment_status, created_at')
     .eq('user_id', userId);
 
   if (status) query = query.eq('payment_status', status);

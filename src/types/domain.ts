@@ -67,7 +67,6 @@ export interface ProductWithTax extends Product {
 export interface Cart {
   id: string;
   user_id: string;
-  store_id: string | null;
   status: 'active' | 'closed' | 'cancelled';
   created_at: string;
   updated_at: string;
@@ -90,12 +89,10 @@ export interface CartWithItems extends Cart {
 export interface Purchase {
   id: string;
   user_id: string;
-  store_id: string | null;
   total: number;
   payment_id: string;
   payment_status: 'pending' | 'completed' | 'failed';
   created_at: string;
-  store_name?: string | null;
   mp_preference_id?: string | null;
 }
 
