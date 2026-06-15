@@ -453,14 +453,12 @@ describe('SyncService', () => {
           name: 'Prod 779-1',
           brand: 'Marca',
           price: 100.5,
-          image_url: 'https://img.example.com/p.jpg',
         },
         {
           barcode: '779-2',
           name: 'Prod 779-2',
           brand: 'Marca',
           price: 100.5,
-          image_url: 'https://img.example.com/p.jpg',
         },
       ]);
     });
@@ -496,14 +494,13 @@ describe('SyncService', () => {
       ]);
     });
 
-    it('mapProduct: sin imagen deja image_url undefined', async () => {
+    it('mapProduct: no incluye image_url', async () => {
       const productos = [{ id: 'p-1', nombre: 'Prod', marca: 'Marca', precioMax: '10' }];
 
       await syncService.ingestProductsBatch(productos);
 
-      expect(mockedProducts.upsertBatch).toHaveBeenCalledWith([
-        expect.objectContaining({ barcode: 'p-1', image_url: undefined }),
-      ]);
+      const calledWith = mockedProducts.upsertBatch.mock.calls[0][0];
+      expect(calledWith[0]).not.toHaveProperty('image_url');
     });
   });
 });
