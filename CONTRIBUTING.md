@@ -17,6 +17,13 @@ El backend está **migrando a TypeScript** (ver issue `DEV-160`). A partir de es
 
 Hasta que el PR de DEV-160 esté mergeado, conviven archivos `.js` y `.ts`. No es un problema mientras ninguna feature nueva entre en `.js`.
 
+### Formato y linting
+
+El código se formatea con **Prettier** y se lintea con **ESLint** (mismo `.prettierrc` que el frontend, para mantener un estilo consistente entre repos). Antes de abrir un PR:
+
+- `npm run format` — aplica el formato estándar.
+- `npm run lint` — no debe reportar **errores**; los _warnings_ son deuda conocida (ej. `any` de la migración a TS) que se va limpiando de a poco.
+
 ---
 
 ## Cheatsheet — Lo mínimo necesario
@@ -92,13 +99,13 @@ feature/xxx  ──PR──►  dev  ──PR──►  test  ──PR──► 
 
 ### Convención de nombres de ramas
 
-| Prefijo | Cuándo usarlo | Ejemplo |
-|---------|--------------|---------|
-| `feature/` | Nueva funcionalidad | `feature/DEV-21-escaneo-barcode` |
-| `fix/` | Corrección de bug | `fix/DEV-35-precio-nulo-api` |
-| `chore/` | Configuración, docs, deps | `chore/DEV-03-setup-supabase` |
-| `test/` | Agregar o mejorar tests | `test/DEV-136-tests-auth` |
-| `hotfix/` | Fix crítico directo en test | `hotfix/crash-checkout` |
+| Prefijo    | Cuándo usarlo               | Ejemplo                          |
+| ---------- | --------------------------- | -------------------------------- |
+| `feature/` | Nueva funcionalidad         | `feature/DEV-21-escaneo-barcode` |
+| `fix/`     | Corrección de bug           | `fix/DEV-35-precio-nulo-api`     |
+| `chore/`   | Configuración, docs, deps   | `chore/DEV-03-setup-supabase`    |
+| `test/`    | Agregar o mejorar tests     | `test/DEV-136-tests-auth`        |
+| `hotfix/`  | Fix crítico directo en test | `hotfix/crash-checkout`          |
 
 ---
 
@@ -126,6 +133,7 @@ git checkout -b feature/DEV-XX-nombre-del-feature
 - Si el commit cierra un issue, agregar `DEV-XX` en el mensaje
 
 **Ejemplo completo:**
+
 ```
 feat(cart): agregar endpoint POST /api/cart/items
 
@@ -153,7 +161,7 @@ git push origin feature/DEV-XX-el-feature
 Después de pushear la branch, ir a GitHub y crear el PR:
 
 1. **Entrar al repositorio en GitHub** (ej: github.com/andreiveisuade/ChanguiApp--Backend)
-2. GitHub muestra un banner amarillo que dice *"feature/DEV-XX-... had recent pushes — Compare & pull request"*. Hacer click en ese botón.
+2. GitHub muestra un banner amarillo que dice _"feature/DEV-XX-... had recent pushes — Compare & pull request"_. Hacer click en ese botón.
    - Si no aparece el banner: ir a la pestaña **Pull requests** → **New pull request**
 3. **Verificar las ramas:**
    - `base: dev` ← acá van los cambios (rama destino)
@@ -200,17 +208,18 @@ Cuando se asigna un PR para review, el proceso es:
 
 ### Aprobaciones requeridas por rama
 
-| Rama destino | Aprobaciones | Quién puede mergear |
-|-------------|-------------|---------------------|
-| `dev` | Mínimo **1 aprobación** (SM) | SM (Andrei) |
-| `test` | Mínimo **1 aprobación** (SM) | SM (Andrei) |
-| `main` | Mínimo **1 aprobación** (SM) | SM (Andrei) |
+| Rama destino | Aprobaciones                 | Quién puede mergear |
+| ------------ | ---------------------------- | ------------------- |
+| `dev`        | Mínimo **1 aprobación** (SM) | SM (Andrei)         |
+| `test`       | Mínimo **1 aprobación** (SM) | SM (Andrei)         |
+| `main`       | Mínimo **1 aprobación** (SM) | SM (Andrei)         |
 
 ### Qué tiene que tener un PR para ser válido
 
 **Título:** `[TIPO] DEV-XXX: Descripción breve` → ejemplo: `[FEATURE] DEV-30: Escaneo de barcode con cámara`
 
 **Descripción (template):**
+
 ```
 ## ¿Qué hace este PR?
 Descripción breve de los cambios.
@@ -225,6 +234,7 @@ Closes DEV-<número>
 
 ## Checklist
 - [ ] El código compila sin errores (`npm run build` — TypeScript)
+- [ ] Código formateado y sin errores de lint (`npm run format` && `npm run lint`)
 - [ ] Probado en emulador / dispositivo físico
 - [ ] No hay console.log / prints de debug innecesarios
 - [ ] Documentación actualizada si corresponde
@@ -236,10 +246,10 @@ Closes DEV-<número>
 
 ### Tiempos de revisión
 
-| Acción | Tiempo máximo |
-|--------|--------------|
-| Revisar un PR asignado | 48 horas hábiles |
-| Responder a cambios pedidos | 24 horas hábiles |
+| Acción                            | Tiempo máximo                   |
+| --------------------------------- | ------------------------------- |
+| Revisar un PR asignado            | 48 horas hábiles                |
+| Responder a cambios pedidos       | 24 horas hábiles                |
 | Si no hay respuesta en ese tiempo | El SM puede reasignar el review |
 
 ---
@@ -267,6 +277,7 @@ No es un code review de producción profesional. El objetivo es que el equipo ap
 En **Settings → Branches** del repositorio:
 
 **Rama `main`:**
+
 - Require a pull request before merging
 - Required approvals: 1
 - Dismiss stale reviews
@@ -274,11 +285,13 @@ En **Settings → Branches** del repositorio:
 - Include administrators
 
 **Rama `test`:**
+
 - Require a pull request before merging
 - Required approvals: 1
 - Dismiss stale reviews
 
 **Rama `dev`:**
+
 - Require a pull request before merging
 - Required approvals: 1
 - Dismiss stale reviews
@@ -287,12 +300,12 @@ En **Settings → Branches** del repositorio:
 
 ## Sprints y releases
 
-| Evento | Acción en Git |
-|--------|--------------|
-| Fin de sprint | PR de `dev` → `test`, validar, luego PR de `test` → `main` con tag `sprint-N` |
-| Entrega 1 | PR `dev` → `test` → `main`, tag `v1.0-entrega1` |
-| Entrega 2 | PR `dev` → `test` → `main`, tag `v2.0-final` |
-| Hotfix en test | Crear `hotfix/xxx` desde `test`, mergear a `test` y bajar a `dev` |
+| Evento         | Acción en Git                                                                 |
+| -------------- | ----------------------------------------------------------------------------- |
+| Fin de sprint  | PR de `dev` → `test`, validar, luego PR de `test` → `main` con tag `sprint-N` |
+| Entrega 1      | PR `dev` → `test` → `main`, tag `v1.0-entrega1`                               |
+| Entrega 2      | PR `dev` → `test` → `main`, tag `v2.0-final`                                  |
+| Hotfix en test | Crear `hotfix/xxx` desde `test`, mergear a `test` y bajar a `dev`             |
 
 ---
 
@@ -300,13 +313,13 @@ En **Settings → Branches** del repositorio:
 
 ### Prefijos de ramas
 
-| Prefijo | Cuándo | Ejemplo |
-|---------|--------|---------|
-| `feature/` | Nueva funcionalidad o endpoint | `feature/DEV-20-crud-cart-items` |
-| `fix/` | Corrección de un bug | `fix/DEV-35-precio-nulo-api` |
-| `chore/` | Config, docs, deps, infra | `chore/DEV-109-setup-jest` |
-| `test/` | Agregar o mejorar tests | `test/DEV-34-cobertura-services` |
-| `hotfix/` | Fix crítico directo en test/main | `hotfix/crash-checkout` |
+| Prefijo    | Cuándo                           | Ejemplo                          |
+| ---------- | -------------------------------- | -------------------------------- |
+| `feature/` | Nueva funcionalidad o endpoint   | `feature/DEV-20-crud-cart-items` |
+| `fix/`     | Corrección de un bug             | `fix/DEV-35-precio-nulo-api`     |
+| `chore/`   | Config, docs, deps, infra        | `chore/DEV-109-setup-jest`       |
+| `test/`    | Agregar o mejorar tests          | `test/DEV-34-cobertura-services` |
+| `hotfix/`  | Fix crítico directo en test/main | `hotfix/crash-checkout`          |
 
 **Formato obligatorio:** `prefijo/DEV-XXX-descripcion-corta`
 
@@ -316,15 +329,15 @@ En **Settings → Branches** del repositorio:
 
 ### Tipos de commit (Conventional Commits)
 
-| Tipo | Cuándo usarlo | Ejemplo |
-|------|--------------|---------|
-| `feat` | Nueva funcionalidad | `feat(auth): implementar registro con Supabase Auth` |
-| `fix` | Corrección de bug | `fix(cart): manejar carrito vacío al intentar pagar` |
-| `docs` | Documentación | `docs(swagger): agregar endpoint GET /api/stores` |
-| `test` | Agregar o modificar tests | `test(cart): agregar tests del service de carrito` |
+| Tipo       | Cuándo usarlo                   | Ejemplo                                                |
+| ---------- | ------------------------------- | ------------------------------------------------------ |
+| `feat`     | Nueva funcionalidad             | `feat(auth): implementar registro con Supabase Auth`   |
+| `fix`      | Corrección de bug               | `fix(cart): manejar carrito vacío al intentar pagar`   |
+| `docs`     | Documentación                   | `docs(swagger): agregar endpoint GET /api/stores`      |
+| `test`     | Agregar o modificar tests       | `test(cart): agregar tests del service de carrito`     |
 | `refactor` | Refactoreo sin cambio funcional | `refactor(products): extraer lógica de sync a service` |
-| `chore` | Config, deps, CI/CD | `chore: actualizar dependencias de express` |
-| `style` | Formato, espacios, punto y coma | `style: correr linter en controllers/` |
+| `chore`    | Config, deps, CI/CD             | `chore: actualizar dependencias de express`            |
+| `style`    | Formato, espacios, punto y coma | `style: correr linter en controllers/`                 |
 
 **Formato:** `tipo(scope): descripción en imperativo`
 
@@ -337,13 +350,13 @@ En **Settings → Branches** del repositorio:
 
 **Formato:** `[TIPO] DEV-XXX: Descripción breve`
 
-| Tipo | Ejemplo |
-|------|---------|
-| `[FEATURE]` | `[FEATURE] DEV-20: CRUD de items de carrito` |
-| `[FIX]` | `[FIX] DEV-35: Manejar errores de conectividad` |
-| `[CHORE]` | `[CHORE] DEV-109: Configurar Jest + primer test` |
-| `[TEST]` | `[TEST] DEV-34: Tests unitarios de cart service` |
-| `[DOCS]` | `[DOCS] DEV-23: Documentar endpoints en Swagger` |
+| Tipo        | Ejemplo                                          |
+| ----------- | ------------------------------------------------ |
+| `[FEATURE]` | `[FEATURE] DEV-20: CRUD de items de carrito`     |
+| `[FIX]`     | `[FIX] DEV-35: Manejar errores de conectividad`  |
+| `[CHORE]`   | `[CHORE] DEV-109: Configurar Jest + primer test` |
+| `[TEST]`    | `[TEST] DEV-34: Tests unitarios de cart service` |
+| `[DOCS]`    | `[DOCS] DEV-23: Documentar endpoints en Swagger` |
 
 ---
 
@@ -377,4 +390,4 @@ En **Settings → Branches** del repositorio:
 
 ---
 
-*Documento mantenido por el Scrum Master. Última actualización: 20 Abril 2026 — anuncio de migración a TypeScript (DEV-160).*
+_Documento mantenido por el Scrum Master. Última actualización: 15 Junio 2026 — tooling de formato y linting (ESLint + Prettier)._
