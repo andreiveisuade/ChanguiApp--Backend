@@ -1,9 +1,16 @@
 export {};
 
-jest.mock('../../../src/services/checkout.service');
+jest.mock('../../../src/services/checkout.service', () => ({
+  __esModule: true,
+  checkoutService: {
+    createPreference: jest.fn(),
+    getCheckoutStatus: jest.fn(),
+    handleWebhook: jest.fn(),
+  },
+}));
 
 const checkoutController = require('../../../src/controllers/checkout.controller');
-const checkoutService = require('../../../src/services/checkout.service');
+const { checkoutService } = require('../../../src/services/checkout.service');
 
 // req fake: la firma se bypassa porque MP_WEBHOOK_SECRET está ausente y
 // NODE_ENV='test' (no production). verifyMpSignature usa req.header y req.query.

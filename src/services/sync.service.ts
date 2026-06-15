@@ -3,7 +3,7 @@ import * as syncJobsRepository from '../repositories/sync_jobs.repository';
 import * as storeRepository from '../repositories/store.repository';
 import * as classificationService from './classification.service';
 import { fetchPage, type PreciosClarosProduct } from './precios-claros.client';
-import { getEnvInt } from '../utils/env';
+import { getEnvInt, getEnvString } from '../utils/env';
 import { sleep } from '../utils/sleep';
 import { ApiError } from '../utils/ApiError';
 import type { SyncJob } from '../types/domain';
@@ -73,8 +73,8 @@ export async function startPreciosClarosSync(): Promise<{ sync_id: string }> {
 }
 
 export async function runPreciosClarosSync(jobId: string, startOffset = 0): Promise<void> {
-  const baseUrl = process.env.PRECIOS_CLAROS_URL;
-  const storeId = process.env.MVP_STORE_PRECIOS_CLAROS_ID;
+  const baseUrl = getEnvString('PRECIOS_CLAROS_URL');
+  const storeId = getEnvString('MVP_STORE_PRECIOS_CLAROS_ID');
   // 2000ms default — alivia presión sobre Render free tier (CPU/memoria
   // compartidas). Con 300ms el server respondía 503 a /health durante el sync.
   const delayMs = getEnvInt('SYNC_DELAY_MS', 2000);

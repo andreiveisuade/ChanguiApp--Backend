@@ -1,4 +1,3 @@
-import supabase from '../config/supabase';
 import { supabaseAdmin } from '../config/supabase';
 import type { Product } from '../types/domain';
 
@@ -10,7 +9,7 @@ function unwrapTaxCategory(row: Record<string, unknown>): void {
 }
 
 export async function findByBarcode(barcode: string): Promise<Product | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('products')
     .select(
       'id, barcode, name, brand, price, image_url, tax_category_id, tax_locked, tax_category:tax_categories(id, name, rate)',
@@ -45,7 +44,7 @@ export async function findUpdatedSince(
   limit: number,
   offset: number,
 ): Promise<CatalogProduct[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('products')
     .select(
       'id, barcode, name, brand, price, image_url, updated_at, tax_category:tax_categories(name, rate)',
@@ -89,7 +88,7 @@ export async function getAllForClassification(): Promise<Array<{ id: string; nam
   const all: Array<{ id: string; name: string }> = [];
 
   for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('products')
       .select('id, name')
       .eq('tax_locked', false)

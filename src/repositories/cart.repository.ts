@@ -1,8 +1,8 @@
-import supabase from '../config/supabase';
+import { supabaseAdmin } from '../config/supabase';
 import type { Cart, CartItem, CartWithItems } from '../types/domain';
 
 export async function findActiveCartByUserId(userId: string): Promise<CartWithItems | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('carts')
     .select(
       '*, items:cart_items(*, product:products(*, tax_category:tax_categories(id, name, rate)))',
@@ -16,7 +16,7 @@ export async function findActiveCartByUserId(userId: string): Promise<CartWithIt
 }
 
 export async function createCart(userId: string): Promise<Cart> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('carts')
     .insert({ user_id: userId, status: 'active' })
     .select()
@@ -32,7 +32,7 @@ export async function addOrUpdateItem(
   quantity: number,
   unitPrice: number,
 ): Promise<CartItem> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('cart_items')
     .upsert(
       { cart_id: cartId, product_id: productId, quantity, unit_price: unitPrice },
@@ -46,7 +46,7 @@ export async function addOrUpdateItem(
 }
 
 export async function findItemById(itemId: string): Promise<CartItem | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('cart_items')
     .select('*')
     .eq('id', itemId)
@@ -57,7 +57,7 @@ export async function findItemById(itemId: string): Promise<CartItem | null> {
 }
 
 export async function updateItemQuantity(itemId: string, quantity: number): Promise<CartItem> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('cart_items')
     .update({ quantity })
     .eq('id', itemId)
@@ -69,7 +69,7 @@ export async function updateItemQuantity(itemId: string, quantity: number): Prom
 }
 
 export async function removeItem(itemId: string): Promise<CartItem> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('cart_items')
     .delete()
     .eq('id', itemId)
@@ -81,7 +81,7 @@ export async function removeItem(itemId: string): Promise<CartItem> {
 }
 
 export async function cancelCart(cartId: string): Promise<Cart> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('carts')
     .update({ status: 'cancelled' })
     .eq('id', cartId)
