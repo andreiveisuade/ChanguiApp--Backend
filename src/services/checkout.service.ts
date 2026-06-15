@@ -2,6 +2,7 @@ import { preference, payment, getAccountTags } from '../config/mercadopago';
 import * as checkoutRepository from '../repositories/checkout.repository';
 import * as cartRepository from '../repositories/cart.repository';
 import { DEFAULT_TAX_RATE, itemsTotal } from './pricing.service';
+import { getEnvString } from '../utils/env';
 import { ApiError } from '../utils/ApiError';
 import type { CheckoutResponse, CheckoutStatusResponse } from '../types/domain';
 
@@ -17,7 +18,7 @@ const STATUS_MAP: Record<string, 'completed' | 'failed' | 'pending'> = {
  * Falla cerrado: ante la duda, bloquea en vez de cobrar de verdad.
  */
 async function assertTestCredentials(): Promise<void> {
-  if (process.env.MP_REQUIRE_TEST_USER === 'false') return;
+  if (getEnvString('MP_REQUIRE_TEST_USER') === 'false') return;
   const tags = await getAccountTags();
   if (!tags.includes('test_user')) {
     throw new ApiError(
@@ -46,7 +47,7 @@ export async function createPreference(userId: string): Promise<CheckoutResponse
 
   // Webhook publico para que Mercado Pago notifique aprobacion/rechazo del pago.
   // Se setea por preferencia (mas robusto que la config global del panel MP).
-  const baseUrl = process.env.PUBLIC_BASE_URL || 'https://changuiapp-backend.onrender.com';
+  const baseUrl = getEnvString('PUBLIC_BASE_URL', 'https://changuiapp-backend.onrender.com');
 
   // back_url al que MP redirige tras el pago. La pagina /return reenvia al deep
   // link de la app. auto_return hace el retorno automatico en approved.
