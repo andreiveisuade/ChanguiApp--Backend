@@ -26,17 +26,13 @@ export async function getCart(userId: string): Promise<{
 
 export async function addItem(
   userId: string,
-  storeId: string | undefined,
   productId: string,
   quantity: number,
   unitPrice: number,
 ): Promise<CartItem> {
   let cart = await cartRepository.findActiveCartByUserId(userId);
-  if (!cart && !storeId) {
-    throw new ApiError('storeId es requerido para crear un nuevo carrito', 400);
-  }
   if (!cart) {
-    cart = await cartRepository.createCart(userId, storeId!);
+    cart = await cartRepository.createCart(userId);
   }
   return cartRepository.addOrUpdateItem(cart.id, productId, quantity, unitPrice);
 }

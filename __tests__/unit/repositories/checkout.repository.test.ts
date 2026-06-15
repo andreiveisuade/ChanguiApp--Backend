@@ -89,7 +89,6 @@ describe('CheckoutRepository.createPurchase', () => {
 
     const input = {
       user_id: 'user-uuid-1',
-      store_id: 'store-uuid-1',
       total: 3000,
       payment_id: 'MP-123456',
       payment_status: 'approved',

@@ -15,10 +15,10 @@ export async function findActiveCartByUserId(userId: string): Promise<CartWithIt
   return data as CartWithItems;
 }
 
-export async function createCart(userId: string, storeId: string): Promise<Cart> {
+export async function createCart(userId: string): Promise<Cart> {
   const { data, error } = await supabase
     .from('carts')
-    .insert({ user_id: userId, store_id: storeId, status: 'active' })
+    .insert({ user_id: userId, status: 'active' })
     .select()
     .single();
 
