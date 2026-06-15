@@ -116,7 +116,6 @@ export class CheckoutService {
 
     const purchase = await checkoutRepository.createPurchase({
       user_id: cart.user_id,
-      store_id: cart.store_id,
       total,
       payment_id: String(info.id),
       payment_status: STATUS_MAP[info.status] || 'pending',

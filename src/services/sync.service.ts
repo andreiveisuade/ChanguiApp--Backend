@@ -17,7 +17,6 @@ function mapProduct(p: PreciosClarosProduct): productRepository.ProductUpsertInp
     name: p.nombre,
     brand: p.marca,
     price: parseFloat(p.precioMax || p.precio || '0'),
-    image_url: p.imagen ?? undefined,
   };
 }
 
