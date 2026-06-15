@@ -36,7 +36,7 @@ export async function getProfile(userId: string, authUser?: AuthUserLike): Promi
   // Supabase haya linkeado las identidades). No podemos crear un segundo perfil
   // (email es único) ni adoptar el ajeno: devolvemos un error explícito en vez
   // de un 404 que oculta la causa real.
-  const existingByEmail = await userRepository.getUserByEmail(email);
+  const existingByEmail = await userRepository.findByEmail(email);
   if (existingByEmail && existingByEmail.id !== userId) {
     throw new ApiError(
       'Ya existe una cuenta con este email registrada con otro método de acceso.',
