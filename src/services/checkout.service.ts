@@ -1,9 +1,10 @@
-import { preference, payment, getAccountTags } from '../config/mercadopago';
 import * as checkoutRepository from '../repositories/checkout.repository';
 import * as cartRepository from '../repositories/cart.repository';
+import { mercadopagoGateway } from '../config/mercadopago';
 import { DEFAULT_TAX_RATE, itemsTotal } from './pricing.service';
 import { getEnvString } from '../utils/env';
 import { ApiError } from '../utils/ApiError';
+import type { PaymentGateway } from './paymentGateway';
 import type { CheckoutResponse, CheckoutStatusResponse } from '../types/domain';
 
 const STATUS_MAP: Record<string, 'completed' | 'failed' | 'pending'> = {
@@ -12,131 +13,130 @@ const STATUS_MAP: Record<string, 'completed' | 'failed' | 'pending'> = {
   pending: 'pending',
 };
 
-/**
- * Seguro anti-cobro real: salvo MP_REQUIRE_TEST_USER='false', el checkout solo
- * corre si el MP_ACCESS_TOKEN es de un usuario de prueba (tag 'test_user').
- * Falla cerrado: ante la duda, bloquea en vez de cobrar de verdad.
- */
-async function assertTestCredentials(): Promise<void> {
-  if (getEnvString('MP_REQUIRE_TEST_USER') === 'false') return;
-  const tags = await getAccountTags();
-  if (!tags.includes('test_user')) {
-    throw new ApiError(
-      'Pagos deshabilitados: se requieren credenciales de prueba de Mercado Pago (usuario de prueba). ' +
-        'Configurá un MP_ACCESS_TOKEN de test user o seteá MP_REQUIRE_TEST_USER=false para habilitar cobros reales.',
-      503,
-    );
-  }
-}
-
-export async function createPreference(userId: string): Promise<CheckoutResponse> {
-  await assertTestCredentials();
-
-  const cart = await cartRepository.findActiveCartByUserId(userId);
-  if (!cart || !cart.items || cart.items.length === 0) {
-    throw new ApiError('No hay carrito activo con items', 400);
-  }
-
-  const mpItems = cart.items.map((item) => ({
-    id: item.product?.id || item.id,
-    title: item.product?.name || 'Producto',
-    quantity: item.quantity,
-    unit_price: Number(item.unit_price),
-    currency_id: 'ARS',
-  }));
-
-  // Webhook publico para que Mercado Pago notifique aprobacion/rechazo del pago.
-  // Se setea por preferencia (mas robusto que la config global del panel MP).
-  const baseUrl = getEnvString('PUBLIC_BASE_URL', 'https://changuiapp-backend.onrender.com');
-
-  // back_url al que MP redirige tras el pago. La pagina /return reenvia al deep
-  // link de la app. auto_return hace el retorno automatico en approved.
-  const backUrl = `${baseUrl}/api/checkout/return`;
-
-  const response = await preference.create({
-    body: {
-      items: mpItems,
-      external_reference: cart.id,
-      notification_url: `${baseUrl}/api/checkout/webhook`,
-      back_urls: { success: backUrl, pending: backUrl, failure: backUrl },
-      auto_return: 'approved',
-    },
-  });
-
-  if (!response.id || !response.init_point) {
-    throw new ApiError('Error al crear preferencia de pago', 500);
-  }
-
-  // Linkea la preferencia al carrito para correlacionar la compra (creada por el
-  // webhook) con este checkout y poder consultar su estado de forma deterministica.
-  await checkoutRepository.savePreferenceId(cart.id, response.id);
-
-  // En modo prueba (default) abrimos el sandbox_init_point: el checkout corre en
-  // el entorno de prueba de MP y no debita dinero real.
-  // Siempre usamos init_point. Con credenciales de test user (validadas por
-  // assertTestCredentials), MP redirige automáticamente al entorno de prueba.
-  // El sandbox_init_point apunta al subdominio legacy sandbox.mercadopago.com.ar
-  // que tiene un bug de loop de redirección en la pantalla de login.
-  const initPoint = response.init_point;
-
-  return {
-    preference_id: response.id,
-    init_point: initPoint,
-  };
-}
-
-export async function getCheckoutStatus(
-  userId: string,
-  preferenceId: string,
-): Promise<CheckoutStatusResponse> {
-  const purchase = await checkoutRepository.findPurchaseByPreferenceId(userId, preferenceId);
-  if (!purchase) {
-    // El webhook aun no proceso el pago, o fue rechazado (no crea purchase).
-    return { status: 'not_found' };
-  }
-  return { status: purchase.payment_status };
-}
-
 interface WebhookBody {
   type?: string;
   data?: { id?: string | number };
 }
 
-export async function handleWebhook(body: WebhookBody): Promise<void> {
-  if (body.type !== 'payment' || !body.data?.id) return;
+// DIP: CheckoutService depende del puerto PaymentGateway, no del SDK de Mercado
+// Pago. La instancia default (checkoutService) se cablea con el adapter real; los
+// tests inyectan un fake sin tocar la red. Mismo patrón que PurchaseService.
+export class CheckoutService {
+  constructor(private readonly gateway: PaymentGateway) {}
 
-  const info = await payment.get({ id: String(body.data.id) });
-  if (!info) return;
+  /**
+   * Seguro anti-cobro real: salvo MP_REQUIRE_TEST_USER='false', el checkout solo
+   * corre si el token es de un usuario de prueba (tag 'test_user'). Falla
+   * cerrado: ante la duda, bloquea en vez de cobrar de verdad.
+   */
+  private async assertTestCredentials(): Promise<void> {
+    if (getEnvString('MP_REQUIRE_TEST_USER') === 'false') return;
+    const tags = await this.gateway.getAccountTags();
+    if (!tags.includes('test_user')) {
+      throw new ApiError(
+        'Pagos deshabilitados: se requieren credenciales de prueba de Mercado Pago (usuario de prueba). ' +
+          'Configurá un MP_ACCESS_TOKEN de test user o seteá MP_REQUIRE_TEST_USER=false para habilitar cobros reales.',
+        503,
+      );
+    }
+  }
 
-  const cartId = info.external_reference;
-  if (!cartId) return;
+  async createPreference(userId: string): Promise<CheckoutResponse> {
+    await this.assertTestCredentials();
 
-  const cart = await checkoutRepository.findCartById(cartId);
-  if (!cart) return;
+    const cart = await cartRepository.findActiveCartByUserId(userId);
+    if (!cart || !cart.items || cart.items.length === 0) {
+      throw new ApiError('No hay carrito activo con items', 400);
+    }
 
-  if (info.status !== 'approved') return;
+    const items = cart.items.map((item) => ({
+      id: item.product?.id || item.id,
+      title: item.product?.name || 'Producto',
+      quantity: item.quantity,
+      unit_price: Number(item.unit_price),
+      currency_id: 'ARS',
+    }));
 
-  const items = cart.items || [];
-  const total = itemsTotal(items);
+    // back_url al que MP redirige tras el pago; la pagina /return reenvia al deep
+    // link de la app. El webhook notifica aprobacion/rechazo (se setea por
+    // preferencia, mas robusto que la config global del panel MP). El detalle del
+    // formato MP (back_urls, auto_return) vive en el adapter del gateway.
+    const baseUrl = getEnvString('PUBLIC_BASE_URL', 'https://changuiapp-backend.onrender.com');
+    const backUrl = `${baseUrl}/api/checkout/return`;
 
-  const purchase = await checkoutRepository.createPurchase({
-    user_id: cart.user_id,
-    store_id: cart.store_id,
-    total,
-    payment_id: String(info.id),
-    payment_status: STATUS_MAP[info.status] || 'pending',
-    mp_preference_id: cart.mp_preference_id ?? null,
-  });
+    const preference = await this.gateway.createPreference({
+      items,
+      externalReference: cart.id,
+      notificationUrl: `${baseUrl}/api/checkout/webhook`,
+      backUrl,
+    });
 
-  const rows = items.map((i) => ({
-    purchase_id: purchase.id,
-    product_name: i.product?.name || 'Producto',
-    barcode: i.product?.barcode || '',
-    quantity: i.quantity,
-    unit_price: i.unit_price,
-    tax_rate: i.product?.tax_category?.rate ?? DEFAULT_TAX_RATE,
-  }));
+    if (!preference.id || !preference.init_point) {
+      throw new ApiError('Error al crear preferencia de pago', 500);
+    }
 
-  await checkoutRepository.insertPurchaseItems(rows);
-  await checkoutRepository.closeCart(cart.id);
+    // Linkea la preferencia al carrito para correlacionar la compra (creada por el
+    // webhook) con este checkout y poder consultar su estado de forma deterministica.
+    await checkoutRepository.savePreferenceId(cart.id, preference.id);
+
+    return {
+      preference_id: preference.id,
+      init_point: preference.init_point,
+    };
+  }
+
+  async getCheckoutStatus(
+    userId: string,
+    preferenceId: string,
+  ): Promise<CheckoutStatusResponse> {
+    const purchase = await checkoutRepository.findPurchaseByPreferenceId(userId, preferenceId);
+    if (!purchase) {
+      // El webhook aun no proceso el pago, o fue rechazado (no crea purchase).
+      return { status: 'not_found' };
+    }
+    return { status: purchase.payment_status };
+  }
+
+  async handleWebhook(body: WebhookBody): Promise<void> {
+    if (body.type !== 'payment' || !body.data?.id) return;
+
+    const info = await this.gateway.getPayment(String(body.data.id));
+    if (!info) return;
+
+    const cartId = info.external_reference;
+    if (!cartId) return;
+
+    const cart = await checkoutRepository.findCartById(cartId);
+    if (!cart) return;
+
+    if (info.status !== 'approved') return;
+
+    const items = cart.items || [];
+    const total = itemsTotal(items);
+
+    const purchase = await checkoutRepository.createPurchase({
+      user_id: cart.user_id,
+      store_id: cart.store_id,
+      total,
+      payment_id: String(info.id),
+      payment_status: STATUS_MAP[info.status] || 'pending',
+      mp_preference_id: cart.mp_preference_id ?? null,
+    });
+
+    const rows = items.map((i) => ({
+      purchase_id: purchase.id,
+      product_name: i.product?.name || 'Producto',
+      barcode: i.product?.barcode || '',
+      quantity: i.quantity,
+      unit_price: i.unit_price,
+      tax_rate: i.product?.tax_category?.rate ?? DEFAULT_TAX_RATE,
+    }));
+
+    await checkoutRepository.insertPurchaseItems(rows);
+    await checkoutRepository.closeCart(cart.id);
+  }
 }
+
+// Composition root: instancia default cableada con el adapter de Mercado Pago.
+// Los controllers usan esta instancia; los tests inyectan un fake gateway.
+export const checkoutService = new CheckoutService(mercadopagoGateway);
