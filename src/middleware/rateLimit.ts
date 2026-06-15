@@ -9,6 +9,10 @@ export const globalLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: GLOBAL_MAX,
   message: 'Demasiadas solicitudes, intenta mas tarde.',
+  // /health lo pingean el health check de Render y el keep-warm de forma
+  // frecuente; no debe contar para el rate limit ni devolver 429, o Render
+  // marca la instancia como failed y tira el backend.
+  skip: (req) => req.path === '/health',
 });
 
 // Rate limiting estricto - solo para login y registro

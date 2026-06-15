@@ -247,3 +247,32 @@ CREATE TRIGGER trg_carts_updated_at BEFORE UPDATE ON carts
 DROP TRIGGER IF EXISTS trg_lists_updated_at ON lists;
 CREATE TRIGGER trg_lists_updated_at BEFORE UPDATE ON lists
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ============================================================
+-- crea el perfil en public.users al nacer un usuario en auth.users
+-- (cualquier método: email/password, Google, etc.). Patrón oficial de Supabase
+-- para perfiles; reemplaza el autocreate lazy del GET /api/users/profile.
+-- Ver db/migrations/2026-06-13-handle-new-user-trigger.sql
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  INSERT INTO public.users (id, email, full_name)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', '')
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
