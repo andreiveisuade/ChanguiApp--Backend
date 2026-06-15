@@ -1,92 +1,15 @@
 import * as productRepository from '../repositories/product.repository';
 import * as syncJobsRepository from '../repositories/sync_jobs.repository';
+import * as storeRepository from '../repositories/store.repository';
 import * as classificationService from './classification.service';
-import { supabase } from '../config/supabase';
-import { ApiError } from '../types/domain';
+import { fetchPage, type PreciosClarosProduct } from './precios-claros.client';
+import { getEnvInt } from '../utils/env';
+import { sleep } from '../utils/sleep';
+import { ApiError } from '../utils/ApiError';
 import type { SyncJob } from '../types/domain';
 
 export const SYNC_TYPE_PRECIOS_CLAROS = 'precios_claros';
 export const PAGE_LIMIT = 100;
-
-interface PreciosClarosProduct {
-  id: string;
-  nombre: string;
-  marca: string;
-  precioMax?: string;
-  precio?: string;
-  imagen?: string;
-}
-
-interface PreciosClarosResponse {
-  total: number;
-  productos: PreciosClarosProduct[];
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function getDelayMs(): number {
-  const raw = process.env.SYNC_DELAY_MS;
-  const parsed = raw ? parseInt(raw, 10) : NaN;
-  // 2000ms default — alivia presión sobre Render free tier (CPU/memoria
-  // compartidas con otras requests). Con 300ms el server respondía 503
-  // a /health durante el sync. 2000ms hace el sync ~5 min en lugar de
-  // ~1.5 min pero deja al event loop atender otras requests.
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 2000;
-}
-
-function getEnvInt(name: string, fallback: number): number {
-  const raw = process.env[name];
-  const parsed = raw ? parseInt(raw, 10) : NaN;
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
-}
-
-// Precios Claros (CloudFront) rate-limitea y devuelve 403/429/5xx de forma
-// intermitente. Sin reintentos, ~2 de cada 3 syncs bajaban 0 productos. El
-// backoff exponencial (1s, 2s, 4s) recupera la mayoría de esos fallos.
-const FETCH_TIMEOUT_MS = 30000;
-
-async function fetchPage(
-  baseUrl: string,
-  storeId: string,
-  limit: number,
-  offset: number,
-): Promise<PreciosClarosResponse> {
-  const url = `${baseUrl}/productos?string=&limit=${limit}&offset=${offset}&id_sucursal=${storeId}`;
-  const maxRetries = getEnvInt('SYNC_MAX_RETRIES', 3);
-  const backoffBase = getEnvInt('SYNC_RETRY_BASE_MS', 1000);
-
-  let lastError: unknown;
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    if (attempt > 0) await sleep(backoffBase * 2 ** (attempt - 1));
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    try {
-      const response = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ChanguiApp/1.0)' },
-        signal: controller.signal,
-      });
-      if (!response.ok) {
-        throw new Error(`Precios Claros respondió HTTP ${response.status}`);
-      }
-      return (await response.json()) as PreciosClarosResponse;
-    } catch (err) {
-      lastError = err;
-      console.error(`[sync] fetchPage intento ${attempt + 1}/${maxRetries + 1} falló`, {
-        offset,
-        err: err instanceof Error ? err.message : String(err),
-      });
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  throw lastError instanceof Error
-    ? lastError
-    : new Error(`fetchPage falló tras ${maxRetries + 1} intentos`);
-}
 
 function mapProduct(p: PreciosClarosProduct): productRepository.ProductUpsertInput {
   return {
@@ -98,15 +21,23 @@ function mapProduct(p: PreciosClarosProduct): productRepository.ProductUpsertInp
   };
 }
 
-// El free tier de Render reinicia el dyno a mitad de un sync largo y deja el job
-// huérfano en 'running' para siempre, bloqueando el cron con 409. Si un 'running'
-// lleva más de este umbral, lo tratamos como muerto y seguimos.
-function getStaleMs(): number {
-  return getEnvInt('SYNC_STALE_MS', 15 * 60 * 1000);
+// Ingesta de un lote de productos crudos de Precios Claros que ya bajó el
+// runner de CI (DEV-XXX). El fetch al CDN se hace desde la IP limpia del
+// runner porque la IP saliente compartida del free tier de Render está
+// filtrada por el CDN y recibe 200 con catálogo vacío. El backend acá solo
+// mapea y upsertea: nunca toca Precios Claros.
+export async function ingestProductsBatch(productos: PreciosClarosProduct[]): Promise<number> {
+  const mapped = productos.filter((p) => p && p.id).map(mapProduct);
+  await productRepository.upsertBatch(mapped);
+  return mapped.length;
 }
 
+// El free tier de Render reinicia el dyno a mitad de un sync largo y deja el job
+// huérfano en 'running' para siempre, bloqueando el cron con 409. Si un 'running'
+// lleva más del umbral, lo tratamos como muerto y seguimos.
 function isStale(job: SyncJob): boolean {
-  return Date.now() - Date.parse(job.started_at) > getStaleMs();
+  const staleMs = getEnvInt('SYNC_STALE_MS', 15 * 60 * 1000);
+  return Date.now() - Date.parse(job.started_at) > staleMs;
 }
 
 // Offset de arranque: si el último job quedó a medias (partial, o failed/huérfano
@@ -145,7 +76,9 @@ export async function startPreciosClarosSync(): Promise<{ sync_id: string }> {
 export async function runPreciosClarosSync(jobId: string, startOffset = 0): Promise<void> {
   const baseUrl = process.env.PRECIOS_CLAROS_URL;
   const storeId = process.env.MVP_STORE_PRECIOS_CLAROS_ID;
-  const delayMs = getDelayMs();
+  // 2000ms default — alivia presión sobre Render free tier (CPU/memoria
+  // compartidas). Con 300ms el server respondía 503 a /health durante el sync.
+  const delayMs = getEnvInt('SYNC_DELAY_MS', 2000);
 
   if (!baseUrl || !storeId) {
     await syncJobsRepository.markFailed(
@@ -219,10 +152,7 @@ export async function runPreciosClarosSync(jobId: string, startOffset = 0): Prom
       return;
     }
 
-    await supabase
-      .from('stores')
-      .update({ synced_at: new Date().toISOString() })
-      .eq('precios_claros_id', storeId);
+    await storeRepository.markSyncedByPreciosClarosId(storeId);
 
     // Clasificación fiscal de los productos nuevos/no bloqueados. Un fallo acá
     // no invalida el sync de datos: los productos quedan en 'general' (21%).

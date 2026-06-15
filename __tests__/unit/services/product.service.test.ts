@@ -27,26 +27,43 @@ describe('ProductService', () => {
       });
     });
 
+    it('producto sin tax_category cae al 21% (General) por defecto', async () => {
+      productRepository.findByBarcode.mockResolvedValue({ ...validProduct, tax_category: null });
+
+      const result = await productService.getByBarcode(validProduct.barcode);
+
+      expect(result.tax).toEqual({
+        category: 'General',
+        rate: 21,
+        net_price: 1239.67,
+        tax_amount: 260.33,
+      });
+    });
+
     it('lanza error 404 si el barcode no está en el catálogo', async () => {
       productRepository.findByBarcode.mockResolvedValue(null);
 
-      await expect(productService.getByBarcode('0000000000000'))
-        .rejects.toMatchObject({ status: 404 });
+      await expect(productService.getByBarcode('0000000000000')).rejects.toMatchObject({
+        status: 404,
+      });
     });
 
     it('lanza error si barcode vacío o inválido', async () => {
-      await expect(productService.getByBarcode(null))
-        .rejects.toThrow();
+      await expect(productService.getByBarcode(null)).rejects.toThrow();
 
-      await expect(productService.getByBarcode(''))
-        .rejects.toThrow();
+      await expect(productService.getByBarcode('')).rejects.toThrow();
     });
   });
 
   describe('getCatalogSince', () => {
     const row = {
-      id: 'p1', barcode: '111', name: 'A', brand: 'X',
-      price: 121, image_url: null, updated_at: '2026-06-08T10:00:00.000Z',
+      id: 'p1',
+      barcode: '111',
+      name: 'A',
+      brand: 'X',
+      price: 121,
+      image_url: null,
+      updated_at: '2026-06-08T10:00:00.000Z',
       tax_category: { name: 'General', rate: 21 },
     };
 
@@ -64,8 +81,13 @@ describe('ProductService', () => {
       expect(result.has_more).toBe(false);
       expect(result.next_cursor).toBe('2026-06-08T10:00:00.000Z');
       expect(result.products[0]).toEqual({
-        id: 'p1', barcode: '111', name: 'A', brand: 'X',
-        price: 121, image_url: null, updated_at: '2026-06-08T10:00:00.000Z',
+        id: 'p1',
+        barcode: '111',
+        name: 'A',
+        brand: 'X',
+        price: 121,
+        image_url: null,
+        updated_at: '2026-06-08T10:00:00.000Z',
         tax: { category: 'General', rate: 21, net_price: 100, tax_amount: 21 },
       });
     });
@@ -76,7 +98,10 @@ describe('ProductService', () => {
       const result = await productService.getCatalogSince();
 
       expect(result.products[0].tax).toEqual({
-        category: 'General', rate: 21, net_price: 100, tax_amount: 21,
+        category: 'General',
+        rate: 21,
+        net_price: 100,
+        tax_amount: 21,
       });
     });
 
@@ -112,8 +137,9 @@ describe('ProductService', () => {
     });
 
     it('lanza 400 si updated_since no es fecha válida', async () => {
-      await expect(productService.getCatalogSince('no-es-fecha'))
-        .rejects.toMatchObject({ status: 400 });
+      await expect(productService.getCatalogSince('no-es-fecha')).rejects.toMatchObject({
+        status: 400,
+      });
       expect(productRepository.findUpdatedSince).not.toHaveBeenCalled();
     });
   });

@@ -1,7 +1,8 @@
 import * as productRepository from '../repositories/product.repository';
 import type { CatalogProduct } from '../repositories/product.repository';
-import { calculatePricing } from './pricing.service';
-import { ApiError, type ProductWithTax } from '../types/domain';
+import { calculatePricing, DEFAULT_TAX_RATE, DEFAULT_TAX_CATEGORY_NAME } from './pricing.service';
+import { ApiError } from '../utils/ApiError';
+import type { ProductWithTax } from '../types/domain';
 
 export const CATALOG_DEFAULT_LIMIT = 500;
 export const CATALOG_MAX_LIMIT = 1000;
@@ -28,7 +29,7 @@ export interface CatalogPage {
 }
 
 function toCatalogItem(p: CatalogProduct): CatalogItem {
-  const rate = p.tax_category?.rate ?? 21;
+  const rate = p.tax_category?.rate ?? DEFAULT_TAX_RATE;
   const pricing = calculatePricing(p.price, rate);
   return {
     id: p.id,
@@ -39,7 +40,7 @@ function toCatalogItem(p: CatalogProduct): CatalogItem {
     image_url: p.image_url,
     updated_at: p.updated_at,
     tax: {
-      category: p.tax_category?.name ?? 'General',
+      category: p.tax_category?.name ?? DEFAULT_TAX_CATEGORY_NAME,
       rate: pricing.rate,
       net_price: pricing.net_price,
       tax_amount: pricing.tax_amount,
@@ -96,13 +97,13 @@ export async function getByBarcode(barcode: string): Promise<ProductWithTax> {
     throw new ApiError('Producto no encontrado', 404);
   }
 
-  const rate = product.tax_category?.rate ?? 21;
+  const rate = product.tax_category?.rate ?? DEFAULT_TAX_RATE;
   const pricing = calculatePricing(product.price, rate);
 
   return {
     ...product,
     tax: {
-      category: product.tax_category?.name ?? 'General',
+      category: product.tax_category?.name ?? DEFAULT_TAX_CATEGORY_NAME,
       rate: pricing.rate,
       net_price: pricing.net_price,
       tax_amount: pricing.tax_amount,

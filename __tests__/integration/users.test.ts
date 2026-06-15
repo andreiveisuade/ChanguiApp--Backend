@@ -56,10 +56,21 @@ describe('PUT /api/users/profile', () => {
     expect(res.body.full_name).toBe('Nuevo Nombre');
   });
 
-  it('sin token devuelve 401', async () => {
+  it('acepta avatar_url null (sin avatar) al actualizar el nombre', async () => {
+    const updated = { ...userProfile, full_name: 'Nuevo Nombre', avatar_url: null };
+    mockSupabase.single.mockResolvedValue({ data: updated, error: null });
+
     const res = await request(app)
       .put('/api/users/profile')
-      .send({ full_name: 'Nuevo Nombre' });
+      .set('Authorization', 'Bearer test-token')
+      .send({ full_name: 'Nuevo Nombre', avatar_url: null });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.full_name).toBe('Nuevo Nombre');
+  });
+
+  it('sin token devuelve 401', async () => {
+    const res = await request(app).put('/api/users/profile').send({ full_name: 'Nuevo Nombre' });
 
     expect(res.statusCode).toBe(401);
   });

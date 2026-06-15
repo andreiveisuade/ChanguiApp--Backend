@@ -2,6 +2,13 @@ import supabase from '../config/supabase';
 import { supabaseAdmin } from '../config/supabase';
 import type { Product } from '../types/domain';
 
+// Supabase tipa el embed to-one como array; en runtime es un objeto único.
+// Normaliza `tax_category` a objeto (o null) sobre la fila recibida.
+function unwrapTaxCategory(row: Record<string, unknown>): void {
+  const raw = row.tax_category;
+  row.tax_category = Array.isArray(raw) ? (raw[0] ?? null) : (raw ?? null);
+}
+
 export async function findByBarcode(barcode: string): Promise<Product | null> {
   const { data, error } = await supabase
     .from('products')
@@ -9,39 +16,14 @@ export async function findByBarcode(barcode: string): Promise<Product | null> {
       'id, barcode, name, brand, price, image_url, tax_category_id, tax_locked, tax_category:tax_categories(id, name, rate)',
     )
     .eq('barcode', barcode)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw error;
-  }
-
-  if (!data) return null;
-
-  // Supabase tipa el embed to-one como array; en runtime es un objeto único.
-  const row = data as Record<string, unknown>;
-  const rawCategory = row.tax_category;
-  row.tax_category = Array.isArray(rawCategory) ? rawCategory[0] ?? null : rawCategory ?? null;
-
-  return row as unknown as Product;
-}
-
-export async function upsertByBarcode(product: {
-  barcode: string;
-  name: string;
-  brand?: string;
-  price: number;
-  image_url?: string;
-}): Promise<{ created: boolean }> {
-  const existing = await findByBarcode(product.barcode);
-
-  const { error } = await supabaseAdmin
-    .from('products')
-    .upsert(product, { onConflict: 'barcode' });
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) return null;
 
-  return { created: !existing };
+  const row = data as Record<string, unknown>;
+  unwrapTaxCategory(row);
+  return row as unknown as Product;
 }
 
 export interface CatalogProduct {
@@ -75,11 +57,9 @@ export async function findUpdatedSince(
 
   if (error) throw error;
 
-  // Supabase tipa el embed to-one como array; en runtime es un objeto único.
   return (data ?? []).map((row) => {
     const r = row as Record<string, unknown>;
-    const raw = r.tax_category;
-    r.tax_category = Array.isArray(raw) ? raw[0] ?? null : raw ?? null;
+    unwrapTaxCategory(r);
     return r as unknown as CatalogProduct;
   });
 }

@@ -59,6 +59,15 @@ async function drain(): Promise<void> {
   await new Promise((r) => setImmediate(r));
 }
 
+// fetch es un binding nativo en Node 20+ (no spyable con jest.spyOn). Lo mockeamos
+// por asignacion directa a global.fetch y restauramos el original en afterEach.
+const realFetch = global.fetch;
+function mockFetch(): jest.MockedFunction<typeof fetch> {
+  const fn = jest.fn() as unknown as jest.MockedFunction<typeof fetch>;
+  (global as { fetch: typeof fetch }).fetch = fn;
+  return fn;
+}
+
 describe('SyncService', () => {
   const originalEnv = process.env;
 
@@ -85,13 +94,12 @@ describe('SyncService', () => {
     process.env = originalEnv;
     jest.clearAllMocks();
     jest.restoreAllMocks();
+    (global as { fetch: typeof fetch }).fetch = realFetch;
   });
 
   describe('startPreciosClarosSync', () => {
     it('crea job y devuelve sync_id cuando no hay running', async () => {
-      jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
+      mockFetch().mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
 
       const result = await syncService.startPreciosClarosSync();
 
@@ -105,9 +113,7 @@ describe('SyncService', () => {
     });
 
     it('lanza ApiError 409 si ya hay un sync running reciente', async () => {
-      mockedJobs.findRunning.mockResolvedValue(
-        buildJob({ started_at: new Date().toISOString() }),
-      );
+      mockedJobs.findRunning.mockResolvedValue(buildJob({ started_at: new Date().toISOString() }));
 
       await expect(syncService.startPreciosClarosSync()).rejects.toMatchObject({
         status: 409,
@@ -121,9 +127,7 @@ describe('SyncService', () => {
       mockedJobs.findRunning.mockResolvedValue(
         buildJob({ id: 'huerfano', started_at: '2026-05-21T00:00:00Z' }),
       );
-      jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
+      mockFetch().mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
 
       const result = await syncService.startPreciosClarosSync();
 
@@ -141,18 +145,13 @@ describe('SyncService', () => {
       mockedJobs.findLatest.mockResolvedValue(
         buildJob({ status: 'partial', total_target: 500, last_offset: 200 }),
       );
-      const runSpy = jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValue(fetchResponse({ total: 500, productos: [] }));
+      const runSpy = mockFetch().mockResolvedValue(fetchResponse({ total: 500, productos: [] }));
 
       await syncService.startPreciosClarosSync();
       await drain();
 
       // el head se pide en offset 0, pero la primera página de datos arranca en 200
-      expect(runSpy).toHaveBeenCalledWith(
-        expect.stringContaining('offset=200'),
-        expect.anything(),
-      );
+      expect(runSpy).toHaveBeenCalledWith(expect.stringContaining('offset=200'), expect.anything());
     });
 
     // El offset de arranque vuelve a 0 cuando no hay nada reanudable: último
@@ -162,26 +161,17 @@ describe('SyncService', () => {
       ['el último job no tiene progreso', 'failed' as const, 500, 0],
       ['el último partial ya cubrió el total', 'partial' as const, 200, 200],
     ])('arranca de 0 cuando %s', async (_caso, status, total_target, last_offset) => {
-      mockedJobs.findLatest.mockResolvedValue(
-        buildJob({ status, total_target, last_offset }),
-      );
-      const runSpy = jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
+      mockedJobs.findLatest.mockResolvedValue(buildJob({ status, total_target, last_offset }));
+      const runSpy = mockFetch().mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
 
       await syncService.startPreciosClarosSync();
       await drain();
 
-      expect(runSpy).toHaveBeenCalledWith(
-        expect.stringContaining('offset=0'),
-        expect.anything(),
-      );
+      expect(runSpy).toHaveBeenCalledWith(expect.stringContaining('offset=0'), expect.anything());
     });
 
     it('loguea si el runner de background rechaza sin atrapar', async () => {
-      jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
+      mockFetch().mockResolvedValue(fetchResponse({ total: 0, productos: [] }));
       // total=0 dispara markFailed; si markFailed también rompe, el runner
       // rechaza y debe caer en el .catch defensivo (no romper el proceso).
       mockedJobs.markFailed.mockRejectedValue(new Error('db down'));
@@ -190,16 +180,11 @@ describe('SyncService', () => {
       await syncService.startPreciosClarosSync();
       await drain();
 
-      expect(errSpy).toHaveBeenCalledWith(
-        '[sync] runner falló sin atrapar:',
-        expect.any(Error),
-      );
+      expect(errSpy).toHaveBeenCalledWith('[sync] runner falló sin atrapar:', expect.any(Error));
     });
 
     it('dispara el runner en background (side-effect: el runner llega a setTotal)', async () => {
-      jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValue(fetchResponse({ total: 5, productos: [apiProduct('p-1')] }));
+      mockFetch().mockResolvedValue(fetchResponse({ total: 5, productos: [apiProduct('p-1')] }));
 
       await syncService.startPreciosClarosSync();
       await drain();
@@ -235,8 +220,7 @@ describe('SyncService', () => {
       const fullPage = Array.from({ length: 100 }, (_, i) => apiProduct(`p-${i}`));
       const tailPage = [apiProduct('p-100'), apiProduct('p-101')];
 
-      const fetchSpy = jest
-        .spyOn(global, 'fetch')
+      const fetchSpy = mockFetch()
         .mockResolvedValueOnce(fetchResponse({ total: 102, productos: [apiProduct('head')] }))
         .mockResolvedValueOnce(fetchResponse({ total: 102, productos: fullPage }))
         .mockResolvedValueOnce(fetchResponse({ total: 102, productos: tailPage }));
@@ -261,9 +245,12 @@ describe('SyncService', () => {
       );
 
       expect(mockedProducts.upsertBatch).toHaveBeenCalledTimes(2);
-      expect(mockedProducts.upsertBatch).toHaveBeenNthCalledWith(1, expect.arrayContaining([
-        expect.objectContaining({ barcode: 'p-0', name: 'Prod p-0', price: 100.5 }),
-      ]));
+      expect(mockedProducts.upsertBatch).toHaveBeenNthCalledWith(
+        1,
+        expect.arrayContaining([
+          expect.objectContaining({ barcode: 'p-0', name: 'Prod p-0', price: 100.5 }),
+        ]),
+      );
 
       expect(mockedJobs.updateProgress).toHaveBeenLastCalledWith(JOB_ID, 102, 102, 0);
       expect(mockedJobs.markCompleted).toHaveBeenCalledWith(JOB_ID);
@@ -271,9 +258,7 @@ describe('SyncService', () => {
     });
 
     it('total=0: no fetchea productos y marca FAILED (no completed)', async () => {
-      jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValueOnce(fetchResponse({ total: 0, productos: [] }));
+      mockFetch().mockResolvedValueOnce(fetchResponse({ total: 0, productos: [] }));
 
       await syncService.runPreciosClarosSync(JOB_ID);
 
@@ -289,8 +274,7 @@ describe('SyncService', () => {
     it('cuando upsertBatch falla, suma a errors y sigue (no aborta)', async () => {
       const page = [apiProduct('p-1'), apiProduct('p-2')];
 
-      jest
-        .spyOn(global, 'fetch')
+      mockFetch()
         .mockResolvedValueOnce(fetchResponse({ total: 2, productos: [apiProduct('head')] }))
         .mockResolvedValueOnce(fetchResponse({ total: 2, productos: page }));
 
@@ -304,7 +288,7 @@ describe('SyncService', () => {
     });
 
     it('marca failed si el primer fetch tira', async () => {
-      jest.spyOn(global, 'fetch').mockRejectedValue(new Error('SEPA down'));
+      mockFetch().mockRejectedValue(new Error('SEPA down'));
       jest.spyOn(console, 'error').mockImplementation();
 
       await syncService.runPreciosClarosSync(JOB_ID);
@@ -314,8 +298,7 @@ describe('SyncService', () => {
     });
 
     it('para temprano si la página devuelve menos del PAGE_LIMIT', async () => {
-      jest
-        .spyOn(global, 'fetch')
+      mockFetch()
         .mockResolvedValueOnce(fetchResponse({ total: 500, productos: [apiProduct('head')] }))
         .mockResolvedValueOnce(fetchResponse({ total: 500, productos: [apiProduct('p-1')] }));
 
@@ -326,8 +309,7 @@ describe('SyncService', () => {
     });
 
     it('para si la página devuelve productos vacíos antes del total', async () => {
-      jest
-        .spyOn(global, 'fetch')
+      mockFetch()
         .mockResolvedValueOnce(fetchResponse({ total: 500, productos: [apiProduct('head')] }))
         .mockResolvedValueOnce(fetchResponse({ total: 500, productos: [] }));
 
@@ -341,8 +323,7 @@ describe('SyncService', () => {
       process.env.SYNC_DELAY_MS = '5';
       const fullPage = Array.from({ length: 100 }, (_, i) => apiProduct(`p-${i}`));
 
-      jest
-        .spyOn(global, 'fetch')
+      mockFetch()
         .mockResolvedValueOnce(fetchResponse({ total: 200, productos: [apiProduct('head')] }))
         .mockResolvedValueOnce(fetchResponse({ total: 200, productos: fullPage }))
         .mockResolvedValueOnce(fetchResponse({ total: 200, productos: fullPage }));
@@ -358,9 +339,7 @@ describe('SyncService', () => {
     it('cae al default de 2000ms si SYNC_DELAY_MS es inválido (no afecta cuando total=0)', async () => {
       process.env.SYNC_DELAY_MS = 'no-es-numero';
 
-      jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValueOnce(fetchResponse({ total: 0, productos: [] }));
+      mockFetch().mockResolvedValueOnce(fetchResponse({ total: 0, productos: [] }));
 
       await syncService.runPreciosClarosSync(JOB_ID);
 
@@ -368,9 +347,7 @@ describe('SyncService', () => {
     });
 
     it('si total ausente en la respuesta, lo trata como 0 y marca FAILED', async () => {
-      jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValueOnce(fetchResponse({ productos: [] }));
+      mockFetch().mockResolvedValueOnce(fetchResponse({ productos: [] }));
 
       await syncService.runPreciosClarosSync(JOB_ID);
 
@@ -380,10 +357,13 @@ describe('SyncService', () => {
     });
 
     it('reintenta cuando la respuesta no es ok y se recupera (HTTP 429 → 200)', async () => {
-      const errorResponse = { ok: false, status: 429, json: async () => ({}) } as unknown as Response;
+      const errorResponse = {
+        ok: false,
+        status: 429,
+        json: async () => ({}),
+      } as unknown as Response;
       jest.spyOn(console, 'error').mockImplementation();
-      jest
-        .spyOn(global, 'fetch')
+      mockFetch()
         .mockResolvedValueOnce(errorResponse)
         .mockResolvedValueOnce(fetchResponse({ total: 1, productos: [apiProduct('p-1')] }))
         .mockResolvedValueOnce(fetchResponse({ total: 1, productos: [apiProduct('p-1')] }));
@@ -397,9 +377,13 @@ describe('SyncService', () => {
 
     it('marca failed si la API responde no-ok en todos los reintentos', async () => {
       process.env.SYNC_MAX_RETRIES = '2';
-      const errorResponse = { ok: false, status: 503, json: async () => ({}) } as unknown as Response;
+      const errorResponse = {
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+      } as unknown as Response;
       jest.spyOn(console, 'error').mockImplementation();
-      const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(errorResponse);
+      const fetchSpy = mockFetch().mockResolvedValue(errorResponse);
 
       await syncService.runPreciosClarosSync(JOB_ID);
 
@@ -413,9 +397,7 @@ describe('SyncService', () => {
     });
 
     it('captura errores no-Error y los stringifica para markFailed', async () => {
-      jest
-        .spyOn(global, 'fetch')
-        .mockResolvedValue(fetchResponse({ total: 5, productos: [apiProduct('p-1')] }));
+      mockFetch().mockResolvedValue(fetchResponse({ total: 5, productos: [apiProduct('p-1')] }));
       mockedJobs.setTotal.mockRejectedValueOnce('string-error');
       jest.spyOn(console, 'error').mockImplementation();
 
@@ -428,8 +410,7 @@ describe('SyncService', () => {
       process.env.SYNC_MAX_PAGES_PER_RUN = '1';
       const fullPage = Array.from({ length: 100 }, (_, i) => apiProduct(`p-${i}`));
 
-      jest
-        .spyOn(global, 'fetch')
+      mockFetch()
         .mockResolvedValueOnce(fetchResponse({ total: 500, productos: [apiProduct('head')] }))
         .mockResolvedValueOnce(fetchResponse({ total: 500, productos: fullPage }));
 
@@ -441,10 +422,11 @@ describe('SyncService', () => {
     });
 
     it('reanuda desde startOffset: la primera página de datos arranca ahí', async () => {
-      const fetchSpy = jest
-        .spyOn(global, 'fetch')
+      const fetchSpy = mockFetch()
         .mockResolvedValueOnce(fetchResponse({ total: 202, productos: [apiProduct('head')] }))
-        .mockResolvedValueOnce(fetchResponse({ total: 202, productos: [apiProduct('p-200'), apiProduct('p-201')] }));
+        .mockResolvedValueOnce(
+          fetchResponse({ total: 202, productos: [apiProduct('p-200'), apiProduct('p-201')] }),
+        );
 
       await syncService.runPreciosClarosSync(JOB_ID, 200);
 
@@ -455,6 +437,73 @@ describe('SyncService', () => {
       );
       expect(mockedJobs.markCompleted).toHaveBeenCalledWith(JOB_ID);
       expect(mockedJobs.markPartial).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('ingestProductsBatch', () => {
+    it('mapea los productos crudos y los upsertea, devolviendo la cantidad', async () => {
+      const productos = [apiProduct('779-1'), apiProduct('779-2')];
+
+      const count = await syncService.ingestProductsBatch(productos);
+
+      expect(count).toBe(2);
+      expect(mockedProducts.upsertBatch).toHaveBeenCalledWith([
+        {
+          barcode: '779-1',
+          name: 'Prod 779-1',
+          brand: 'Marca',
+          price: 100.5,
+          image_url: 'https://img.example.com/p.jpg',
+        },
+        {
+          barcode: '779-2',
+          name: 'Prod 779-2',
+          brand: 'Marca',
+          price: 100.5,
+          image_url: 'https://img.example.com/p.jpg',
+        },
+      ]);
+    });
+
+    it('descarta entradas sin id antes de upsertear', async () => {
+      const productos = [apiProduct('ok'), { nombre: 'sin id', marca: 'X' } as never];
+
+      const count = await syncService.ingestProductsBatch(productos);
+
+      expect(count).toBe(1);
+      expect(mockedProducts.upsertBatch).toHaveBeenCalledWith([
+        expect.objectContaining({ barcode: 'ok' }),
+      ]);
+    });
+
+    it('mapProduct: sin precioMax usa precio como price', async () => {
+      const productos = [{ id: 'p-1', nombre: 'Prod', marca: 'Marca', precio: '50.5' }];
+
+      await syncService.ingestProductsBatch(productos);
+
+      expect(mockedProducts.upsertBatch).toHaveBeenCalledWith([
+        expect.objectContaining({ barcode: 'p-1', price: 50.5 }),
+      ]);
+    });
+
+    it('mapProduct: sin precioMax ni precio price cae a 0', async () => {
+      const productos = [{ id: 'p-1', nombre: 'Prod', marca: 'Marca' }];
+
+      await syncService.ingestProductsBatch(productos);
+
+      expect(mockedProducts.upsertBatch).toHaveBeenCalledWith([
+        expect.objectContaining({ barcode: 'p-1', price: 0 }),
+      ]);
+    });
+
+    it('mapProduct: sin imagen deja image_url undefined', async () => {
+      const productos = [{ id: 'p-1', nombre: 'Prod', marca: 'Marca', precioMax: '10' }];
+
+      await syncService.ingestProductsBatch(productos);
+
+      expect(mockedProducts.upsertBatch).toHaveBeenCalledWith([
+        expect.objectContaining({ barcode: 'p-1', image_url: undefined }),
+      ]);
     });
   });
 });

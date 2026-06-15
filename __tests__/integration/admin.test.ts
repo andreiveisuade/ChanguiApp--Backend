@@ -13,10 +13,8 @@ jest.mock('../../src/services/classification.service');
 const app = require('../../src/index');
 const syncService = require('../../src/services/sync.service');
 const syncJobsRepository = require('../../src/repositories/sync_jobs.repository');
-const productRepository = require('../../src/repositories/product.repository');
-const taxCategoriesRepository = require('../../src/repositories/tax_categories.repository');
 const classificationService = require('../../src/services/classification.service');
-const { ApiError } = require('../../src/types/domain');
+const { ApiError } = require('../../src/utils/ApiError');
 
 describe('admin sync endpoints', () => {
   afterEach(() => jest.clearAllMocks());
@@ -117,6 +115,37 @@ describe('admin sync endpoints', () => {
     });
   });
 
+  describe('POST /api/admin/products/bulk', () => {
+    it('sin header x-admin-token devuelve 401', async () => {
+      const res = await request(app).post('/api/admin/products/bulk').send({ productos: [] });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it('sin productos array devuelve 400', async () => {
+      jest.spyOn(console, 'error').mockImplementation();
+      const res = await request(app)
+        .post('/api/admin/products/bulk')
+        .set('x-admin-token', 'test-admin-token-secret')
+        .send({});
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('con productos devuelve 200 + upserted', async () => {
+      syncService.ingestProductsBatch.mockResolvedValue(2);
+      const productos = [
+        { id: '779-1', nombre: 'Leche', marca: 'La Serenísima', precioMax: '1000' },
+        { id: '779-2', nombre: 'Pan', marca: 'Bimbo', precio: '500' },
+      ];
+      const res = await request(app)
+        .post('/api/admin/products/bulk')
+        .set('x-admin-token', 'test-admin-token-secret')
+        .send({ productos });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ upserted: 2 });
+      expect(syncService.ingestProductsBatch).toHaveBeenCalledWith(productos);
+    });
+  });
+
   describe('POST /api/admin/products/:barcode/tax-category', () => {
     it('sin header x-admin-token devuelve 401', async () => {
       const res = await request(app)
@@ -135,7 +164,9 @@ describe('admin sync endpoints', () => {
     });
 
     it('con category_id inexistente devuelve 400', async () => {
-      taxCategoriesRepository.getAll.mockResolvedValue([{ id: 'carnes' }, { id: 'general' }]);
+      classificationService.overrideTaxCategory.mockRejectedValue(
+        new ApiError('Categoría fiscal inválida', 400),
+      );
       jest.spyOn(console, 'error').mockImplementation();
       const res = await request(app)
         .post('/api/admin/products/7790/tax-category')
@@ -145,8 +176,9 @@ describe('admin sync endpoints', () => {
     });
 
     it('producto inexistente devuelve 404', async () => {
-      taxCategoriesRepository.getAll.mockResolvedValue([{ id: 'carnes' }]);
-      productRepository.updateTaxCategory.mockResolvedValue({ updated: false });
+      classificationService.overrideTaxCategory.mockRejectedValue(
+        new ApiError('Producto no encontrado', 404),
+      );
       jest.spyOn(console, 'error').mockImplementation();
       const res = await request(app)
         .post('/api/admin/products/000/tax-category')
@@ -156,15 +188,18 @@ describe('admin sync endpoints', () => {
     });
 
     it('override exitoso devuelve 200 y bloquea el producto', async () => {
-      taxCategoriesRepository.getAll.mockResolvedValue([{ id: 'carnes' }]);
-      productRepository.updateTaxCategory.mockResolvedValue({ updated: true });
+      classificationService.overrideTaxCategory.mockResolvedValue({
+        barcode: '7790',
+        tax_category_id: 'carnes',
+        tax_locked: true,
+      });
       const res = await request(app)
         .post('/api/admin/products/7790/tax-category')
         .set('x-admin-token', 'test-admin-token-secret')
         .send({ category_id: 'carnes' });
       expect(res.statusCode).toBe(200);
       expect(res.body).toEqual({ barcode: '7790', tax_category_id: 'carnes', tax_locked: true });
-      expect(productRepository.updateTaxCategory).toHaveBeenCalledWith('7790', 'carnes');
+      expect(classificationService.overrideTaxCategory).toHaveBeenCalledWith('7790', 'carnes');
     });
   });
 

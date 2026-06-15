@@ -49,7 +49,7 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"demo@changuiapp.com\",\n  \"password\": \"DemoPass123\",\n  \"name\": \"Demo User\"\n}"
@@ -84,7 +84,7 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"demo@changuiapp.com\",\n  \"password\": \"DemoPass123\"\n}"
@@ -107,7 +107,7 @@
           "name": "GET /api/users/profile",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/users/profile",
               "host": ["{{base_url}}"],
@@ -122,8 +122,8 @@
           "request": {
             "method": "PUT",
             "header": [
-              {"key": "Authorization", "value": "Bearer {{access_token}}"},
-              {"key": "Content-Type", "value": "application/json"}
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
@@ -142,7 +142,7 @@
           "name": "DELETE /api/users/profile",
           "request": {
             "method": "DELETE",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/users/profile",
               "host": ["{{base_url}}"],
@@ -161,7 +161,7 @@
           "name": "GET /api/products/barcode/:code",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/products/barcode/7790895000782",
               "host": ["{{base_url}}"],
@@ -180,7 +180,7 @@
           "name": "GET /api/cart",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/cart",
               "host": ["{{base_url}}"],
@@ -195,8 +195,8 @@
           "request": {
             "method": "POST",
             "header": [
-              {"key": "Authorization", "value": "Bearer {{access_token}}"},
-              {"key": "Content-Type", "value": "application/json"}
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
@@ -216,8 +216,8 @@
           "request": {
             "method": "PUT",
             "header": [
-              {"key": "Authorization", "value": "Bearer {{access_token}}"},
-              {"key": "Content-Type", "value": "application/json"}
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
@@ -236,7 +236,7 @@
           "name": "DELETE /api/cart/items/:id",
           "request": {
             "method": "DELETE",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/cart/items/cart-item-uuid-1",
               "host": ["{{base_url}}"],
@@ -250,7 +250,7 @@
           "name": "DELETE /api/cart (cancel)",
           "request": {
             "method": "DELETE",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/cart",
               "host": ["{{base_url}}"],
@@ -269,7 +269,7 @@
           "name": "GET /api/stores",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/stores",
               "host": ["{{base_url}}"],
@@ -288,7 +288,7 @@
           "name": "POST /api/checkout",
           "request": {
             "method": "POST",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/checkout",
               "host": ["{{base_url}}"],
@@ -302,7 +302,7 @@
           "name": "POST /api/checkout/webhook",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"type\": \"payment\",\n  \"data\": { \"id\": \"MP-PAYMENT-ID\" }\n}"
@@ -325,12 +325,12 @@
           "name": "GET /api/purchases",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/purchases",
               "host": ["{{base_url}}"],
               "path": ["api", "purchases"],
-              "query": [{"key": "status", "value": "completed", "disabled": true}]
+              "query": [{ "key": "status", "value": "completed", "disabled": true }]
             },
             "description": "Lista las compras del usuario autenticado.\n\nQuery opcional: `?status=completed|failed|pending`"
           },
@@ -340,7 +340,7 @@
           "name": "GET /api/purchases/:id",
           "request": {
             "method": "GET",
-            "header": [{"key": "Authorization", "value": "Bearer {{access_token}}"}],
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/purchases/purchase-uuid-1",
               "host": ["{{base_url}}"],
@@ -359,7 +359,7 @@
           "name": "POST /api/admin/sync-precios-claros",
           "request": {
             "method": "POST",
-            "header": [{"key": "x-admin-token", "value": "{{admin_token}}"}],
+            "header": [{ "key": "x-admin-token", "value": "{{admin_token}}" }],
             "url": {
               "raw": "{{base_url}}/api/admin/sync-precios-claros",
               "host": ["{{base_url}}"],
@@ -373,8 +373,8 @@
     }
   ],
   "variable": [
-    {"key": "base_url", "value": "https://changuiapp-backend.onrender.com"},
-    {"key": "access_token", "value": ""},
-    {"key": "admin_token", "value": ""}
+    { "key": "base_url", "value": "https://changuiapp-backend.onrender.com" },
+    { "key": "access_token", "value": "" },
+    { "key": "admin_token", "value": "" }
   ]
 }

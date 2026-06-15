@@ -9,13 +9,15 @@ services:
   - type: web
     name: changuiapp-backend
     runtime: node
-    plan: free
+    plan: starter
     region: oregon
     branch: main
     autoDeploy: true
 
-    # Build: instala deps + compila TypeScript a dist/
-    buildCommand: npm install && npm run build
+    # Build: instala deps + devDeps (los @types que necesita tsc) + compila a
+    # dist/. --include=dev fuerza instalar devDependencies pese a
+    # NODE_ENV=production; sin eso tsc no encuentra los @types y el build falla.
+    buildCommand: npm install --include=dev && npm run build
 
     # Start: ejecuta el codigo compilado
     startCommand: npm start

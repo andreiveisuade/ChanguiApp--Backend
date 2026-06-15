@@ -83,8 +83,9 @@ describe('CartService', () => {
     it('lanza error si no hay carrito activo', async () => {
       cartRepository.findActiveByUserId.mockResolvedValue(null);
 
-      await expect(cartService.getCart('user-inexistente'))
-        .rejects.toThrow('No hay carrito activo');
+      await expect(cartService.getCart('user-inexistente')).rejects.toThrow(
+        'No hay carrito activo',
+      );
     });
   });
 
@@ -103,6 +104,7 @@ describe('CartService', () => {
 ```
 
 **Qué muestra este ejemplo:**
+
 - `jest.mock(...)` reemplaza el repository real por mocks automáticos
 - Cada test setea el comportamiento del mock con `mockResolvedValue`
 - Se verifica que el service llame al repository con los args correctos
@@ -134,9 +136,7 @@ describe('GET /api/cart', () => {
       error: null,
     });
 
-    const res = await request(app)
-      .get('/api/cart')
-      .set('Authorization', 'Bearer test-token');
+    const res = await request(app).get('/api/cart').set('Authorization', 'Bearer test-token');
 
     expect(res.statusCode).toBe(200);
     expect(res.body.id).toBe(validCart.id);
@@ -152,6 +152,7 @@ describe('GET /api/cart', () => {
 ```
 
 **Qué muestra este ejemplo:**
+
 - `jest.mock(...)` reemplaza el Supabase real por el mock compartido
 - Supertest hace requests HTTP contra `app` (sin levantar servidor)
 - Se testea el flujo completo: request → middleware → controller → service → response
@@ -231,4 +232,4 @@ describe('CartRepository', () => {
 
 ---
 
-*Documento mantenido por el equipo. Referencia rápida: copiá el patrón que necesites y adaptalo a tu caso.*
+_Documento mantenido por el equipo. Referencia rápida: copiá el patrón que necesites y adaptalo a tu caso._

@@ -68,7 +68,7 @@ export interface Cart {
   id: string;
   user_id: string;
   store_id: string | null;
-  status: 'active' | 'checked_out' | 'closed';
+  status: 'active' | 'closed' | 'cancelled';
   created_at: string;
   updated_at: string;
   mp_preference_id?: string | null;
@@ -125,16 +125,6 @@ export interface CheckoutStatusResponse {
   status: CheckoutPaymentStatus;
 }
 
-export interface Store {
-  id: string;
-  name: string;
-  chain: string | null;
-  address: string | null;
-  lat: number;
-  lng: number;
-  distanceKm?: number;
-}
-
 export type SyncJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'partial';
 
 export interface SyncJob {
@@ -149,14 +139,4 @@ export interface SyncJob {
   started_at: string;
   completed_at: string | null;
   created_at: string;
-}
-
-export class ApiError extends Error {
-  status: number;
-
-  constructor(message: string, status = 500) {
-    super(message);
-    this.status = status;
-    this.name = 'ApiError';
-  }
 }

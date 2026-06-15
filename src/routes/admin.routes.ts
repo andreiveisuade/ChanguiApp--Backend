@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller';
-import { requireAdminToken } from '../config/adminAuth';
+import { requireAdminToken } from '../middleware/adminAuth';
 
 const router = Router();
 
@@ -31,7 +31,7 @@ router.use(requireAdminToken);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
  */
-router.post('/sync-precios-claros', adminController.startSyncPreciosClarosHandler);
+router.post('/sync-precios-claros', adminController.startSyncPreciosClaros);
 
 /**
  * @swagger
@@ -56,7 +56,46 @@ router.post('/sync-precios-claros', adminController.startSyncPreciosClarosHandle
  *       '404':
  *         $ref: '#/components/responses/NotFound'
  */
-router.get('/sync-precios-claros/:id', adminController.getSyncPreciosClarosStatusHandler);
+router.get('/sync-precios-claros/:id', adminController.getSyncPreciosClarosStatus);
+
+/**
+ * @swagger
+ * /api/admin/products/bulk:
+ *   post:
+ *     tags: [admin]
+ *     security: [{ adminAuth: [] }]
+ *     summary: Ingestar un lote de productos crudos de Precios Claros
+ *     description: |
+ *       Recibe un lote de productos en el formato crudo de Precios Claros (tal
+ *       como los baja el runner de CI) y los upsertea por `barcode`. El backend
+ *       no llama a Precios Claros: el fetch al CDN lo hace el runner porque la
+ *       IP saliente del free tier de Render está filtrada por el CDN. Idempotente.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [productos]
+ *             properties:
+ *               productos:
+ *                 type: array
+ *                 items: { type: object }
+ *     responses:
+ *       '200':
+ *         description: Cantidad de productos upserteados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 upserted: { type: integer, example: 100 }
+ *       '400':
+ *         description: productos faltante o no es un array
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.post('/products/bulk', adminController.ingestProducts);
 
 /**
  * @swagger
@@ -93,7 +132,7 @@ router.get('/sync-precios-claros/:id', adminController.getSyncPreciosClarosStatu
  *       '404':
  *         $ref: '#/components/responses/NotFound'
  */
-router.post('/products/:barcode/tax-category', adminController.overrideTaxCategoryHandler);
+router.post('/products/:barcode/tax-category', adminController.overrideTaxCategory);
 
 /**
  * @swagger
@@ -119,6 +158,6 @@ router.post('/products/:barcode/tax-category', adminController.overrideTaxCatego
  *       '401':
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.post('/reclassify', adminController.reclassifyHandler);
+router.post('/reclassify', adminController.reclassify);
 
 export default router;
