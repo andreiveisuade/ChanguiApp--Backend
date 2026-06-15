@@ -25,17 +25,17 @@ https://changuiapp-backend.onrender.com — auto-deploy desde `main` via Render.
 
 ## Stack
 
-| Capa | Tecnologia |
-|------|-----------|
-| Lenguaje | **TypeScript** (migrando desde JavaScript, ver DEV-160) |
-| Runtime | Node.js + Express |
-| Base de datos | Supabase (PostgreSQL, region sa-east-1) |
-| Auth | Supabase Auth (email/password) |
-| Pagos | Mercado Pago SDK (modo sandbox) |
-| Precios | Precios Claros / SEPA → cron sync hacia Supabase |
-| Deploy | Render |
-| Docs API | OpenAPI 3.0 + swagger-ui-express |
-| Testing | Jest + Supertest + ts-jest |
+| Capa          | Tecnologia                                              |
+| ------------- | ------------------------------------------------------- |
+| Lenguaje      | **TypeScript** (migrando desde JavaScript, ver DEV-160) |
+| Runtime       | Node.js + Express                                       |
+| Base de datos | Supabase (PostgreSQL, region sa-east-1)                 |
+| Auth          | Supabase Auth (email/password)                          |
+| Pagos         | Mercado Pago SDK (modo sandbox)                         |
+| Precios       | Precios Claros / SEPA → cron sync hacia Supabase        |
+| Deploy        | Render                                                  |
+| Docs API      | OpenAPI 3.0 + swagger-ui-express                        |
+| Testing       | Jest + Supertest + ts-jest                              |
 
 ## Mercado Pago
 
@@ -84,29 +84,29 @@ Post-migracion a TS, la extension de todos los archivos en `src/` y `__tests__/`
 
 ## Endpoints
 
-| Metodo | Ruta | Descripcion |
-|--------|------|-------------|
-| GET | `/health` | Healthcheck |
-| GET | `/api/docs` | Swagger UI (OpenAPI 3.0) |
-| POST | `/api/auth/register` | Registro con email |
-| POST | `/api/auth/login` | Inicio de sesion |
-| GET | `/api/users/profile` | Obtener perfil del usuario |
-| PUT | `/api/users/profile` | Editar perfil |
-| DELETE | `/api/users/profile` | Eliminar cuenta |
-| GET | `/api/products/barcode/:code` | Buscar producto por codigo de barras |
-| GET | `/api/cart` | Ver carrito |
-| POST | `/api/cart/items` | Agregar producto al carrito |
-| PUT | `/api/cart/items/:id` | Modificar cantidad |
-| DELETE | `/api/cart/items/:id` | Eliminar producto del carrito |
-| POST | `/api/checkout` | Crear preferencia de pago (Mercado Pago) |
-| POST | `/api/checkout/webhook` | Webhook de notificacion de pago |
-| GET | `/api/purchases` | Historial de compras |
-| GET | `/api/purchases/:id` | Detalle de una compra (con desglose de IVA congelado) |
-| POST | `/api/admin/sync-precios-claros` | Disparar sync del catálogo (admin) |
-| POST | `/api/admin/reclassify` | Reclasificar productos por categoría fiscal (admin) |
-| POST | `/api/admin/products/:barcode/tax-category` | Override manual de categoría fiscal (admin) |
-| GET | `/api/stores` | Listar supermercados (pospuesto post-MVP, DEV-112) |
-| GET | `/api/lists` | Listas de compras (pospuesto post-MVP) |
+| Metodo | Ruta                                        | Descripcion                                           |
+| ------ | ------------------------------------------- | ----------------------------------------------------- |
+| GET    | `/health`                                   | Healthcheck                                           |
+| GET    | `/api/docs`                                 | Swagger UI (OpenAPI 3.0)                              |
+| POST   | `/api/auth/register`                        | Registro con email                                    |
+| POST   | `/api/auth/login`                           | Inicio de sesion                                      |
+| GET    | `/api/users/profile`                        | Obtener perfil del usuario                            |
+| PUT    | `/api/users/profile`                        | Editar perfil                                         |
+| DELETE | `/api/users/profile`                        | Eliminar cuenta                                       |
+| GET    | `/api/products/barcode/:code`               | Buscar producto por codigo de barras                  |
+| GET    | `/api/cart`                                 | Ver carrito                                           |
+| POST   | `/api/cart/items`                           | Agregar producto al carrito                           |
+| PUT    | `/api/cart/items/:id`                       | Modificar cantidad                                    |
+| DELETE | `/api/cart/items/:id`                       | Eliminar producto del carrito                         |
+| POST   | `/api/checkout`                             | Crear preferencia de pago (Mercado Pago)              |
+| POST   | `/api/checkout/webhook`                     | Webhook de notificacion de pago                       |
+| GET    | `/api/purchases`                            | Historial de compras                                  |
+| GET    | `/api/purchases/:id`                        | Detalle de una compra (con desglose de IVA congelado) |
+| POST   | `/api/admin/sync-precios-claros`            | Disparar sync del catálogo (admin)                    |
+| POST   | `/api/admin/reclassify`                     | Reclasificar productos por categoría fiscal (admin)   |
+| POST   | `/api/admin/products/:barcode/tax-category` | Override manual de categoría fiscal (admin)           |
+| GET    | `/api/stores`                               | Listar supermercados (pospuesto post-MVP, DEV-112)    |
+| GET    | `/api/lists`                                | Listas de compras (pospuesto post-MVP)                |
 
 Spec completa interactiva en http://localhost:3000/api/docs (tras `npm run dev`).
 
@@ -114,9 +114,9 @@ Spec completa interactiva en http://localhost:3000/api/docs (tras `npm run dev`)
 
 El backend maneja dos clientes de Supabase con permisos diferenciados:
 
-| Cliente | Key | Uso |
-|---------|-----|-----|
-| `supabase` | `SUPABASE_ANON_KEY` | Validar JWTs de usuarios. Respeta RLS. Uso general en repositories. |
+| Cliente         | Key                         | Uso                                                                              |
+| --------------- | --------------------------- | -------------------------------------------------------------------------------- |
+| `supabase`      | `SUPABASE_ANON_KEY`         | Validar JWTs de usuarios. Respeta RLS. Uso general en repositories.              |
 | `supabaseAdmin` | `SUPABASE_SERVICE_ROLE_KEY` | Operaciones administrativas (sync de catálogo, seeds, migraciones). Bypassa RLS. |
 
 **Regla:** importar `supabaseAdmin` solo en repositories de operaciones admin. Nunca en endpoints de usuario.
@@ -154,15 +154,15 @@ npm run test:coverage    # reporte de cobertura
 
 ### Protecciones implementadas
 
-| Medida | Libreria | Descripcion |
-|--------|----------|-------------|
-| Headers HTTP seguros | `helmet` | Agrega headers de seguridad en todas las respuestas |
-| CORS restringido | `cors` | Solo acepta requests de origins autorizados |
-| Rate limiting global | `express-rate-limit` | Max 100 requests por IP cada 15 minutos |
-| Rate limiting auth | `express-rate-limit` | Max 10 intentos en `/api/auth` cada 15 minutos |
-| Validacion de inputs | `express-validator` | Valida y sanitiza inputs en endpoints que reciben datos |
-| Autenticacion | `middleware/auth.ts` | Valida token Supabase en todos los endpoints protegidos |
-| Manejo de errores | `index.ts` | No expone stack traces ni informacion interna |
+| Medida               | Libreria             | Descripcion                                             |
+| -------------------- | -------------------- | ------------------------------------------------------- |
+| Headers HTTP seguros | `helmet`             | Agrega headers de seguridad en todas las respuestas     |
+| CORS restringido     | `cors`               | Solo acepta requests de origins autorizados             |
+| Rate limiting global | `express-rate-limit` | Max 100 requests por IP cada 15 minutos                 |
+| Rate limiting auth   | `express-rate-limit` | Max 10 intentos en `/api/auth` cada 15 minutos          |
+| Validacion de inputs | `express-validator`  | Valida y sanitiza inputs en endpoints que reciben datos |
+| Autenticacion        | `middleware/auth.ts` | Valida token Supabase en todos los endpoints protegidos |
+| Manejo de errores    | `index.ts`           | No expone stack traces ni informacion interna           |
 
 ### Variables de entorno requeridas
 

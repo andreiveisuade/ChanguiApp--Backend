@@ -8,7 +8,12 @@ export const getCart = asyncHandler<AuthedRequest>(async (req, res) => {
 });
 
 export const addItem = asyncHandler<AuthedRequest>(async (req, res) => {
-  const { product_id, unit_price, store_id, quantity = 1 } = req.body as {
+  const {
+    product_id,
+    unit_price,
+    store_id,
+    quantity = 1,
+  } = req.body as {
     product_id?: string;
     unit_price?: number;
     store_id?: string;

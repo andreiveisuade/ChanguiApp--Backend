@@ -30,7 +30,7 @@ export class PurchaseService {
     const items = purchase.items ?? [];
     // Desglose con la alícuota congelada en el ticket, no la categoría actual.
     const summary = summarizeByRate(
-      items.map((i) => ({ lineTotal: i.unit_price * i.quantity, rate: i.tax_rate }))
+      items.map((i) => ({ lineTotal: i.unit_price * i.quantity, rate: i.tax_rate })),
     );
 
     return { ...purchase, summary };

@@ -19,9 +19,9 @@ describe('CheckoutRepository.savePreferenceId', () => {
 
   it('lanza el error de supabase', async () => {
     mockSupabase.eq.mockResolvedValueOnce({ data: null, error: new Error('boom') });
-    await expect(
-      checkoutRepository.savePreferenceId('cart-uuid-1', 'pref-uuid-1'),
-    ).rejects.toThrow('boom');
+    await expect(checkoutRepository.savePreferenceId('cart-uuid-1', 'pref-uuid-1')).rejects.toThrow(
+      'boom',
+    );
   });
 });
 

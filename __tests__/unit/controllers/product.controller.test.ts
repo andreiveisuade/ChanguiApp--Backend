@@ -13,8 +13,7 @@ const makeRes = () => {
   return res;
 };
 
-const makeReq = (query: Record<string, unknown>) =>
-  ({ query } as unknown as Request);
+const makeReq = (query: Record<string, unknown>) => ({ query }) as unknown as Request;
 
 const next = jest.fn();
 
@@ -30,17 +29,11 @@ describe('product.controller getCatalog', () => {
     const req = makeReq({});
     const res = makeRes();
 
-    await (getCatalog as unknown as (
-      req: Request,
-      res: Response,
-      next: jest.Mock,
-    ) => Promise<void>)(req, res, next);
+    await (
+      getCatalog as unknown as (req: Request, res: Response, next: jest.Mock) => Promise<void>
+    )(req, res, next);
 
-    expect(mockedService.getCatalogSince).toHaveBeenCalledWith(
-      undefined,
-      undefined,
-      undefined,
-    );
+    expect(mockedService.getCatalogSince).toHaveBeenCalledWith(undefined, undefined, undefined);
     expect(res.json).toHaveBeenCalledWith(page);
   });
 
@@ -55,17 +48,11 @@ describe('product.controller getCatalog', () => {
     });
     const res = makeRes();
 
-    await (getCatalog as unknown as (
-      req: Request,
-      res: Response,
-      next: jest.Mock,
-    ) => Promise<void>)(req, res, next);
+    await (
+      getCatalog as unknown as (req: Request, res: Response, next: jest.Mock) => Promise<void>
+    )(req, res, next);
 
-    expect(mockedService.getCatalogSince).toHaveBeenCalledWith(
-      '2026-01-01T00:00:00Z',
-      50,
-      10,
-    );
+    expect(mockedService.getCatalogSince).toHaveBeenCalledWith('2026-01-01T00:00:00Z', 50, 10);
     expect(res.json).toHaveBeenCalledWith(page);
   });
 });

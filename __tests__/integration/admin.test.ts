@@ -117,9 +117,7 @@ describe('admin sync endpoints', () => {
 
   describe('POST /api/admin/products/bulk', () => {
     it('sin header x-admin-token devuelve 401', async () => {
-      const res = await request(app)
-        .post('/api/admin/products/bulk')
-        .send({ productos: [] });
+      const res = await request(app).post('/api/admin/products/bulk').send({ productos: [] });
       expect(res.statusCode).toBe(401);
     });
 

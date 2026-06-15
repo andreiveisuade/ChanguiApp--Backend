@@ -4,15 +4,15 @@
 
 ## 1. Informacion General del Proyecto
 
-| Campo | Detalle |
-|-------|---------|
-| **Nombre del proyecto** | ChanguiApp |
-| **Materia** | Desarrollo de Aplicaciones I — UADE FAIN |
-| **Equipo del proyecto** | Ezequiel Lupis · Ignacio Melinc · Ignacio Rodriguez · Andrei Veis · Maximo Vendramini |
-| **Fecha estimada de finalizacion** | 18 de Junio de 2026 (Entrega 2 / Segundo Parcial) |
-| **Repositorio Frontend** | [github.com/andreiveisuade/ChanguiApp--Frontend](https://github.com/andreiveisuade/ChanguiApp--Frontend) |
-| **Repositorio Backend** | [github.com/andreiveisuade/ChanguiApp--Backend](https://github.com/andreiveisuade/ChanguiApp--Backend) |
-| **Tablero Jira** | [andreiveis360.atlassian.net/jira/software/projects/DEV/boards/1](https://andreiveis360.atlassian.net/jira/software/projects/DEV/boards/1) |
+| Campo                              | Detalle                                                                                                                                    |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Nombre del proyecto**            | ChanguiApp                                                                                                                                 |
+| **Materia**                        | Desarrollo de Aplicaciones I — UADE FAIN                                                                                                   |
+| **Equipo del proyecto**            | Ezequiel Lupis · Ignacio Melinc · Ignacio Rodriguez · Andrei Veis · Maximo Vendramini                                                      |
+| **Fecha estimada de finalizacion** | 18 de Junio de 2026 (Entrega 2 / Segundo Parcial)                                                                                          |
+| **Repositorio Frontend**           | [github.com/andreiveisuade/ChanguiApp--Frontend](https://github.com/andreiveisuade/ChanguiApp--Frontend)                                   |
+| **Repositorio Backend**            | [github.com/andreiveisuade/ChanguiApp--Backend](https://github.com/andreiveisuade/ChanguiApp--Backend)                                     |
+| **Tablero Jira**                   | [andreiveis360.atlassian.net/jira/software/projects/DEV/boards/1](https://andreiveis360.atlassian.net/jira/software/projects/DEV/boards/1) |
 
 ---
 
@@ -54,20 +54,20 @@ Desarrollar una aplicacion movil funcional que simplifique el proceso de compra 
 
 ## 4. Stack Tecnologico
 
-| Capa | Tecnologia |
-|------|------------|
-| **Frontend (Mobile)** | React Native (Android + iOS) |
-| **Patron de arquitectura** | MVVM + Repository |
-| **Backend** | Node.js + Express (deploy en Render) |
-| **Base de datos** | Supabase (PostgreSQL hosted) |
-| **Autenticacion** | Supabase Auth (Google Sign-In + email/contrasena) |
-| **Pasarela de pagos** | Mercado Pago SDK (modo sandbox/test) |
-| **API de precios (demo)** | Precios Claros / SEPA (Gobierno Argentino) |
-| **Documentacion API** | Swagger |
-| **Control de versiones** | Git + GitHub (GitFlow) |
-| **Testing backend** | Jest + Supertest |
-| **Testing frontend** | React Testing Library + Jest |
-| **Gestion del proyecto** | Jira (Scrum) |
+| Capa                       | Tecnologia                                        |
+| -------------------------- | ------------------------------------------------- |
+| **Frontend (Mobile)**      | React Native (Android + iOS)                      |
+| **Patron de arquitectura** | MVVM + Repository                                 |
+| **Backend**                | Node.js + Express (deploy en Render)              |
+| **Base de datos**          | Supabase (PostgreSQL hosted)                      |
+| **Autenticacion**          | Supabase Auth (Google Sign-In + email/contrasena) |
+| **Pasarela de pagos**      | Mercado Pago SDK (modo sandbox/test)              |
+| **API de precios (demo)**  | Precios Claros / SEPA (Gobierno Argentino)        |
+| **Documentacion API**      | Swagger                                           |
+| **Control de versiones**   | Git + GitHub (GitFlow)                            |
+| **Testing backend**        | Jest + Supertest                                  |
+| **Testing frontend**       | React Testing Library + Jest                      |
+| **Gestion del proyecto**   | Jira (Scrum)                                      |
 
 ---
 
@@ -75,68 +75,68 @@ Desarrollar una aplicacion movil funcional que simplifique el proceso de compra 
 
 ### Autenticacion y Usuarios
 
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Registro de usuario (crear cuenta via Supabase Auth) |
-| POST | `/api/auth/login` | Inicio de sesion |
-| GET | `/api/users/profile` | Obtener perfil del usuario autenticado |
-| PUT | `/api/users/profile` | Actualizar datos del perfil |
-| DELETE | `/api/users/profile` | Eliminar cuenta del usuario |
+| Metodo | Endpoint             | Descripcion                                          |
+| ------ | -------------------- | ---------------------------------------------------- |
+| POST   | `/api/auth/register` | Registro de usuario (crear cuenta via Supabase Auth) |
+| POST   | `/api/auth/login`    | Inicio de sesion                                     |
+| GET    | `/api/users/profile` | Obtener perfil del usuario autenticado               |
+| PUT    | `/api/users/profile` | Actualizar datos del perfil                          |
+| DELETE | `/api/users/profile` | Eliminar cuenta del usuario                          |
 
 ### Productos
 
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| GET | `/api/products/barcode/:code` | Consultar producto por codigo de barras (busqueda local en catalogo sincronizado) |
+| Metodo | Endpoint                      | Descripcion                                                                       |
+| ------ | ----------------------------- | --------------------------------------------------------------------------------- |
+| GET    | `/api/products/barcode/:code` | Consultar producto por codigo de barras (busqueda local en catalogo sincronizado) |
 
 ### Supermercados
 
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| GET | `/api/stores` | Listar supermercados disponibles |
+| Metodo | Endpoint      | Descripcion                      |
+| ------ | ------------- | -------------------------------- |
+| GET    | `/api/stores` | Listar supermercados disponibles |
 
 ### Carrito
 
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| GET | `/api/cart` | Ver contenido del carrito activo (items y subtotales) |
-| POST | `/api/cart/items` | Agregar producto al carrito (si proviene de una lista, se marca automaticamente como comprado) |
-| PUT | `/api/cart/items/:id` | Actualizar cantidad de un producto en el carrito |
-| DELETE | `/api/cart/items/:id` | Quitar un producto del carrito |
-| DELETE | `/api/cart` | Vaciar o cancelar el carrito completo |
+| Metodo | Endpoint              | Descripcion                                                                                    |
+| ------ | --------------------- | ---------------------------------------------------------------------------------------------- |
+| GET    | `/api/cart`           | Ver contenido del carrito activo (items y subtotales)                                          |
+| POST   | `/api/cart/items`     | Agregar producto al carrito (si proviene de una lista, se marca automaticamente como comprado) |
+| PUT    | `/api/cart/items/:id` | Actualizar cantidad de un producto en el carrito                                               |
+| DELETE | `/api/cart/items/:id` | Quitar un producto del carrito                                                                 |
+| DELETE | `/api/cart`           | Vaciar o cancelar el carrito completo                                                          |
 
 ### Listas de Compras
 
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| POST | `/api/lists` | Crear una nueva lista de compras |
-| GET | `/api/lists` | Obtener todas las listas del usuario |
-| GET | `/api/lists/:id` | Ver detalle de una lista con sus items |
-| PUT | `/api/lists/:id` | Actualizar nombre o datos de la lista |
-| DELETE | `/api/lists/:id` | Eliminar una lista de compras |
-| POST | `/api/lists/:id/items` | Agregar un item a la lista |
-| PUT | `/api/lists/:listId/items/:itemId` | Actualizar un item de la lista (nombre, cantidad, estado) |
-| DELETE | `/api/lists/:listId/items/:itemId` | Quitar un item de la lista |
+| Metodo | Endpoint                           | Descripcion                                               |
+| ------ | ---------------------------------- | --------------------------------------------------------- |
+| POST   | `/api/lists`                       | Crear una nueva lista de compras                          |
+| GET    | `/api/lists`                       | Obtener todas las listas del usuario                      |
+| GET    | `/api/lists/:id`                   | Ver detalle de una lista con sus items                    |
+| PUT    | `/api/lists/:id`                   | Actualizar nombre o datos de la lista                     |
+| DELETE | `/api/lists/:id`                   | Eliminar una lista de compras                             |
+| POST   | `/api/lists/:id/items`             | Agregar un item a la lista                                |
+| PUT    | `/api/lists/:listId/items/:itemId` | Actualizar un item de la lista (nombre, cantidad, estado) |
+| DELETE | `/api/lists/:listId/items/:itemId` | Quitar un item de la lista                                |
 
 ### Pagos
 
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| POST | `/api/checkout` | Iniciar pago: genera preferencia de Mercado Pago y devuelve datos para checkout in-app |
-| POST | `/api/checkout/webhook` | Webhook de Mercado Pago para confirmar estado del pago |
+| Metodo | Endpoint                | Descripcion                                                                            |
+| ------ | ----------------------- | -------------------------------------------------------------------------------------- |
+| POST   | `/api/checkout`         | Iniciar pago: genera preferencia de Mercado Pago y devuelve datos para checkout in-app |
+| POST   | `/api/checkout/webhook` | Webhook de Mercado Pago para confirmar estado del pago                                 |
 
 ### Historial de Compras
 
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| GET | `/api/purchases` | Listar historial de compras del usuario |
-| GET | `/api/purchases/:id` | Ver detalle de una compra especifica |
+| Metodo | Endpoint             | Descripcion                             |
+| ------ | -------------------- | --------------------------------------- |
+| GET    | `/api/purchases`     | Listar historial de compras del usuario |
+| GET    | `/api/purchases/:id` | Ver detalle de una compra especifica    |
 
 ### Sistema
 
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| GET | `/health` | Healthcheck del servidor |
+| Metodo | Endpoint  | Descripcion              |
+| ------ | --------- | ------------------------ |
+| GET    | `/health` | Healthcheck del servidor |
 
 ---
 
@@ -146,30 +146,30 @@ La consigna requiere al menos tres CRUDs completos referentes al dominio princip
 
 ### CRUD 1: Items de Carrito
 
-| Operacion | Endpoint | Descripcion |
-|-----------|----------|-------------|
-| **Create** | `POST /api/cart/items` | El usuario agrega un producto escaneado al carrito |
-| **Read** | `GET /api/cart` | El usuario visualiza el carrito activo con la lista de items y subtotales |
-| **Update** | `PUT /api/cart/items/:id` | El usuario modifica la cantidad de un item en el carrito |
-| **Delete** | `DELETE /api/cart/items/:id` | El usuario elimina un item del carrito |
+| Operacion  | Endpoint                     | Descripcion                                                               |
+| ---------- | ---------------------------- | ------------------------------------------------------------------------- |
+| **Create** | `POST /api/cart/items`       | El usuario agrega un producto escaneado al carrito                        |
+| **Read**   | `GET /api/cart`              | El usuario visualiza el carrito activo con la lista de items y subtotales |
+| **Update** | `PUT /api/cart/items/:id`    | El usuario modifica la cantidad de un item en el carrito                  |
+| **Delete** | `DELETE /api/cart/items/:id` | El usuario elimina un item del carrito                                    |
 
 ### CRUD 2: Usuarios / Perfil
 
-| Operacion | Endpoint | Descripcion |
-|-----------|----------|-------------|
-| **Create** | `POST /api/auth/register` | El usuario crea su cuenta mediante registro |
-| **Read** | `GET /api/users/profile` | El usuario consulta los datos de su perfil |
-| **Update** | `PUT /api/users/profile` | El usuario modifica sus datos personales (nombre, email, foto) |
-| **Delete** | `DELETE /api/users/profile` | El usuario elimina su cuenta de forma permanente |
+| Operacion  | Endpoint                    | Descripcion                                                    |
+| ---------- | --------------------------- | -------------------------------------------------------------- |
+| **Create** | `POST /api/auth/register`   | El usuario crea su cuenta mediante registro                    |
+| **Read**   | `GET /api/users/profile`    | El usuario consulta los datos de su perfil                     |
+| **Update** | `PUT /api/users/profile`    | El usuario modifica sus datos personales (nombre, email, foto) |
+| **Delete** | `DELETE /api/users/profile` | El usuario elimina su cuenta de forma permanente               |
 
 ### CRUD 3: Listas de Compras
 
-| Operacion | Endpoint | Descripcion |
-|-----------|----------|-------------|
-| **Create** | `POST /api/lists` | El usuario crea una lista de compras desde su hogar con los productos que necesita |
-| **Read** | `GET /api/lists` y `GET /api/lists/:id` | El usuario consulta sus listas y el detalle de items de cada una |
-| **Update** | `PUT /api/lists/:id` y `PUT /api/lists/:listId/items/:itemId` | El usuario modifica el nombre de la lista o actualiza items. Al escanear un producto en el supermercado, el item correspondiente se marca automaticamente como comprado |
-| **Delete** | `DELETE /api/lists/:id` y `DELETE /api/lists/:listId/items/:itemId` | El usuario elimina una lista completa o quita items individuales |
+| Operacion  | Endpoint                                                            | Descripcion                                                                                                                                                             |
+| ---------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Create** | `POST /api/lists`                                                   | El usuario crea una lista de compras desde su hogar con los productos que necesita                                                                                      |
+| **Read**   | `GET /api/lists` y `GET /api/lists/:id`                             | El usuario consulta sus listas y el detalle de items de cada una                                                                                                        |
+| **Update** | `PUT /api/lists/:id` y `PUT /api/lists/:listId/items/:itemId`       | El usuario modifica el nombre de la lista o actualiza items. Al escanear un producto en el supermercado, el item correspondiente se marca automaticamente como comprado |
+| **Delete** | `DELETE /api/lists/:id` y `DELETE /api/lists/:listId/items/:itemId` | El usuario elimina una lista completa o quita items individuales                                                                                                        |
 
 ---
 
@@ -227,29 +227,27 @@ La consigna requiere al menos tres CRUDs completos referentes al dominio princip
 
 ## 9. Entregables del Proyecto
 
-| Entregable | Descripcion |
-|------------|-------------|
-| Documento de Alcance | Scope Statement v4.0 |
-| Design system basico | Tipografia, paleta de colores, componentes reutilizables (manual de marca) |
-| Investigacion de usuarios | 2-3 entrevistas/encuestas, personas y customer journeys documentados |
-| Prototipo Figma | Wireframes de alta fidelidad, mapa de navegacion, prototipo navegable |
-| Checklist de heuristicas de Nielsen | Documento evidenciando el cumplimiento de las 10 heuristicas |
-| Repositorio GitHub | Repos Frontend + Backend inicializados con GitFlow y CONTRIBUTING.md |
-| Tablero Jira | Proyecto Scrum con backlog, sprints y acceso docente habilitado |
-| DER | Diagrama Entidad-Relacion (Usuario, Carrito, ItemCarrito, Producto, Compra, Lista, ItemLista) |
-| Diagrama de arquitectura | Diagrama de alto nivel con descripcion de tecnologias y capas |
-| Diagrama de secuencia | Diagramas de secuencia para los flujos principales de la aplicacion |
-| Plan de pruebas | Documento con casos de prueba unitarias y de integracion |
-| Backend + Swagger (Entrega 1) | Todos los endpoints REST funcionando y documentados, deploy en Render + Supabase |
-| APK/IPA + App completa (Entrega 2) | Aplicacion React Native funcional para Android e iOS con todas las funcionalidades del MVP |
-| Manual de usuario | Documentacion orientada al usuario final con capturas de pantalla e instrucciones de uso |
-| Metricas de calidad | Cobertura de tests, cold start medido, tiempos de respuesta de API, tamano de builds |
-| Documentacion final | Documentacion tecnica, metricas, pruebas ejecutadas, Release Candidate |
-| Defensa oral | Demo en vivo (20 min) + Q&A (5 min), benchmark frente a aplicacion similar |
-
+| Entregable                          | Descripcion                                                                                   |
+| ----------------------------------- | --------------------------------------------------------------------------------------------- |
+| Documento de Alcance                | Scope Statement v4.0                                                                          |
+| Design system basico                | Tipografia, paleta de colores, componentes reutilizables (manual de marca)                    |
+| Investigacion de usuarios           | 2-3 entrevistas/encuestas, personas y customer journeys documentados                          |
+| Prototipo Figma                     | Wireframes de alta fidelidad, mapa de navegacion, prototipo navegable                         |
+| Checklist de heuristicas de Nielsen | Documento evidenciando el cumplimiento de las 10 heuristicas                                  |
+| Repositorio GitHub                  | Repos Frontend + Backend inicializados con GitFlow y CONTRIBUTING.md                          |
+| Tablero Jira                        | Proyecto Scrum con backlog, sprints y acceso docente habilitado                               |
+| DER                                 | Diagrama Entidad-Relacion (Usuario, Carrito, ItemCarrito, Producto, Compra, Lista, ItemLista) |
+| Diagrama de arquitectura            | Diagrama de alto nivel con descripcion de tecnologias y capas                                 |
+| Diagrama de secuencia               | Diagramas de secuencia para los flujos principales de la aplicacion                           |
+| Plan de pruebas                     | Documento con casos de prueba unitarias y de integracion                                      |
+| Backend + Swagger (Entrega 1)       | Todos los endpoints REST funcionando y documentados, deploy en Render + Supabase              |
+| APK/IPA + App completa (Entrega 2)  | Aplicacion React Native funcional para Android e iOS con todas las funcionalidades del MVP    |
+| Manual de usuario                   | Documentacion orientada al usuario final con capturas de pantalla e instrucciones de uso      |
+| Metricas de calidad                 | Cobertura de tests, cold start medido, tiempos de respuesta de API, tamano de builds          |
+| Documentacion final                 | Documentacion tecnica, metricas, pruebas ejecutadas, Release Candidate                        |
+| Defensa oral                        | Demo en vivo (20 min) + Q&A (5 min), benchmark frente a aplicacion similar                    |
 
 ---
-
 
 ## 11. Supuestos
 
@@ -281,15 +279,15 @@ La consigna requiere al menos tres CRUDs completos referentes al dominio princip
 
 ## 13. Stakeholders
 
-| Rol | Nombre | Responsabilidad |
-|-----|--------|-----------------|
-| Docente / Evaluadora | Monasterio, Maria Julia | Evaluacion del proyecto, acceso al tablero Jira, revision de entregas y defensa oral |
-| Scrum Master | Andrei Veis | Gestion del equipo, mantenimiento del tablero Jira, coordinacion de sprints y entregas |
-| Product Owner | Ignacio Melinc | Priorizacion del backlog, definicion de historias de usuario y criterios de aceptacion |
-| Tech Lead / Backend Lead | (rotativo) | Arquitectura tecnica, backend Node.js + Express, integracion con APIs externas |
-| UX/UI Lead | (rotativo) | Diseno en Figma, aplicacion de Material Design 3, heuristicas de Nielsen, investigacion con usuarios |
-| QA/Docs | (rotativo) | Pruebas, documentacion tecnica y de usuario, metricas de calidad |
-| Usuario final (representado) | Consumidores argentinos | Personas que realizan compras en supermercados y desean controlar su gasto en tiempo real |
+| Rol                          | Nombre                  | Responsabilidad                                                                                      |
+| ---------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| Docente / Evaluadora         | Monasterio, Maria Julia | Evaluacion del proyecto, acceso al tablero Jira, revision de entregas y defensa oral                 |
+| Scrum Master                 | Andrei Veis             | Gestion del equipo, mantenimiento del tablero Jira, coordinacion de sprints y entregas               |
+| Product Owner                | Ignacio Melinc          | Priorizacion del backlog, definicion de historias de usuario y criterios de aceptacion               |
+| Tech Lead / Backend Lead     | (rotativo)              | Arquitectura tecnica, backend Node.js + Express, integracion con APIs externas                       |
+| UX/UI Lead                   | (rotativo)              | Diseno en Figma, aplicacion de Material Design 3, heuristicas de Nielsen, investigacion con usuarios |
+| QA/Docs                      | (rotativo)              | Pruebas, documentacion tecnica y de usuario, metricas de calidad                                     |
+| Usuario final (representado) | Consumidores argentinos | Personas que realizan compras en supermercados y desean controlar su gasto en tiempo real            |
 
 ---
 
@@ -327,5 +325,3 @@ La consigna requiere al menos tres CRUDs completos referentes al dominio princip
 - Las listas de compras se pueden crear y editar sin conexion a internet, y se sincronizan con el backend al recuperar conectividad.
 - El token de sesion, preferencias de idioma y tamano de fuente se persisten localmente en el dispositivo.
 - La defensa oral incluye demo en vivo y benchmark frente a al menos una aplicacion similar del mercado.
-
-

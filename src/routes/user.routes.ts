@@ -48,7 +48,13 @@ router.get('/profile', authMiddleware, userController.getProfile);
  *       '401':
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.put('/profile', authMiddleware, updateProfileValidators, validate, userController.updateProfile);
+router.put(
+  '/profile',
+  authMiddleware,
+  updateProfileValidators,
+  validate,
+  userController.updateProfile,
+);
 
 /**
  * @swagger

@@ -44,14 +44,20 @@ describe('CartService', () => {
             ...validCartItem,
             quantity: 1,
             unit_price: 1500,
-            product: { ...validProduct, tax_category: { id: 'general', name: 'General', rate: 21 } },
+            product: {
+              ...validProduct,
+              tax_category: { id: 'general', name: 'General', rate: 21 },
+            },
           },
           {
             ...validCartItem,
             id: 'cart-item-uuid-2',
             quantity: 1,
             unit_price: 850,
-            product: { ...validProduct, tax_category: { id: 'leche', name: 'Leche fluida', rate: 0 } },
+            product: {
+              ...validProduct,
+              tax_category: { id: 'leche', name: 'Leche fluida', rate: 0 },
+            },
           },
         ],
       };
@@ -76,14 +82,14 @@ describe('CartService', () => {
         validCart.store_id,
         validProduct.id,
         2,
-        validProduct.price
+        validProduct.price,
       );
 
       expect(mockRepo.addOrUpdateItem).toHaveBeenCalledWith(
         validCart.id,
         validProduct.id,
         2,
-        validProduct.price
+        validProduct.price,
       );
       expect(result).toEqual(validCartItem);
     });
@@ -94,14 +100,20 @@ describe('CartService', () => {
       mockRepo.createCart.mockResolvedValue(newCart as any);
       mockRepo.addOrUpdateItem.mockResolvedValue(validCartItem as any);
 
-      await cartService.addItem(validUser.id, validCart.store_id, validProduct.id, 2, validProduct.price);
+      await cartService.addItem(
+        validUser.id,
+        validCart.store_id,
+        validProduct.id,
+        2,
+        validProduct.price,
+      );
 
       expect(mockRepo.createCart).toHaveBeenCalledWith(validUser.id, validCart.store_id);
       expect(mockRepo.addOrUpdateItem).toHaveBeenCalledWith(
         newCart.id,
         validProduct.id,
         2,
-        validProduct.price
+        validProduct.price,
       );
     });
 
@@ -109,7 +121,7 @@ describe('CartService', () => {
       mockRepo.findActiveCartByUserId.mockResolvedValue(null);
 
       await expect(
-        cartService.addItem(validUser.id, undefined, validProduct.id, 2, validProduct.price)
+        cartService.addItem(validUser.id, undefined, validProduct.id, 2, validProduct.price),
       ).rejects.toMatchObject({ status: 400 });
     });
   });
@@ -150,9 +162,9 @@ describe('CartService', () => {
       mockRepo.findItemById.mockResolvedValue({ ...validCartItem, cart_id: 'otro-cart' } as any);
       mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
 
-      await expect(
-        cartService.updateItem(validUser.id, validCartItem.id, 3)
-      ).rejects.toMatchObject({ status: 403 });
+      await expect(cartService.updateItem(validUser.id, validCartItem.id, 3)).rejects.toMatchObject(
+        { status: 403 },
+      );
     });
   });
 
@@ -180,9 +192,9 @@ describe('CartService', () => {
       mockRepo.findItemById.mockResolvedValue({ ...validCartItem, cart_id: 'otro-cart' } as any);
       mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
 
-      await expect(
-        cartService.removeItem(validUser.id, validCartItem.id)
-      ).rejects.toMatchObject({ status: 403 });
+      await expect(cartService.removeItem(validUser.id, validCartItem.id)).rejects.toMatchObject({
+        status: 403,
+      });
     });
   });
 

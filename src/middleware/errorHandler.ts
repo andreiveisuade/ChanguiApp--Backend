@@ -29,9 +29,10 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   // 4. Error con status custom (ej: errores de Supabase con status)
   if (typeof err?.status === 'number' && err.status >= 400 && err.status < 600) {
     console.error(`[ERROR] ${err.status} - ${err.message}`);
-    const safe = process.env.NODE_ENV === 'production' && err.status >= 500
-      ? 'Error interno del servidor'
-      : err.message || 'Error sin descripcion';
+    const safe =
+      process.env.NODE_ENV === 'production' && err.status >= 500
+        ? 'Error interno del servidor'
+        : err.message || 'Error sin descripcion';
     res.status(err.status).json({ error: safe });
     return;
   }
@@ -39,8 +40,9 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   // 5. Cualquier otro error inesperado: log completo + 500 sin filtrar a prod
   console.error('[ERROR] 500 - Error inesperado:', err);
   res.status(500).json({
-    error: process.env.NODE_ENV === 'production'
-      ? 'Error interno del servidor'
-      : err?.message || 'Error interno del servidor',
+    error:
+      process.env.NODE_ENV === 'production'
+        ? 'Error interno del servidor'
+        : err?.message || 'Error interno del servidor',
   });
 };

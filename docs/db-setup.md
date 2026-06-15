@@ -41,12 +41,14 @@ Esto crea las 9 tablas del DER (`users`, `stores`, `products`, `carts`, `cart_it
 3. Presionar **Run**.
 
 Esto inserta:
+
 - Un `store` de prueba (Coto Barrio Norte).
 - 5 `products` con barcodes reales de productos argentinos.
 
 ### 3. Verificar
 
 En el **Table Editor** del dashboard debe verse:
+
 - 10 tablas creadas (9 del DER + `sync_jobs`)
 - Tabla `stores` con 1 fila
 - Tabla `products` con 5 filas

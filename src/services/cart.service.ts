@@ -19,7 +19,7 @@ export async function getCart(userId: string): Promise<{
     items.map((i) => ({
       lineTotal: i.unit_price * i.quantity,
       rate: i.product?.tax_category?.rate ?? DEFAULT_TAX_RATE,
-    }))
+    })),
   );
   return { cart, items, total, summary };
 }
@@ -29,7 +29,7 @@ export async function addItem(
   storeId: string | undefined,
   productId: string,
   quantity: number,
-  unitPrice: number
+  unitPrice: number,
 ): Promise<CartItem> {
   let cart = await cartRepository.findActiveCartByUserId(userId);
   if (!cart && !storeId) {
@@ -56,7 +56,7 @@ async function assertItemBelongsToUser(userId: string, itemId: string): Promise<
 export async function updateItem(
   userId: string,
   itemId: string,
-  quantity: number
+  quantity: number,
 ): Promise<CartItem | null> {
   await assertItemBelongsToUser(userId, itemId);
   if (quantity <= 0) {

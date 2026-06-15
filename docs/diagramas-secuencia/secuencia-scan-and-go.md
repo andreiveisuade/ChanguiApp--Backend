@@ -50,13 +50,13 @@ sequenceDiagram
 
 ## Actores y sistemas
 
-| Participante | Descripción |
-|---|---|
-| Usuario | Persona que usa la app dentro del supermercado |
-| App (React Native) | Cliente móvil (Android / iOS) |
-| Cámara / Scanner | Sensor de cámara del dispositivo para lectura de barcode |
-| Backend (Express) | Servidor Node.js desplegado en Render |
-| Supabase DB | Base de datos PostgreSQL en Supabase (catálogo sincronizado desde Precios Claros) |
+| Participante       | Descripción                                                                       |
+| ------------------ | --------------------------------------------------------------------------------- |
+| Usuario            | Persona que usa la app dentro del supermercado                                    |
+| App (React Native) | Cliente móvil (Android / iOS)                                                     |
+| Cámara / Scanner   | Sensor de cámara del dispositivo para lectura de barcode                          |
+| Backend (Express)  | Servidor Node.js desplegado en Render                                             |
+| Supabase DB        | Base de datos PostgreSQL en Supabase (catálogo sincronizado desde Precios Claros) |
 
 ## Endpoints involucrados
 

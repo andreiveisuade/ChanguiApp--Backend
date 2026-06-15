@@ -1,6 +1,7 @@
 const js = require('@eslint/js');
 const tseslint = require('typescript-eslint');
 const globals = require('globals');
+const eslintConfigPrettier = require('eslint-config-prettier');
 
 module.exports = tseslint.config(
   { ignores: ['dist/**', 'coverage/**', 'node_modules/**'] },
@@ -12,7 +13,10 @@ module.exports = tseslint.config(
     },
     rules: {
       // Permitir args/vars con prefijo _ intencionalmente sin usar (ej: _next del errorHandler).
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
   {
@@ -33,4 +37,6 @@ module.exports = tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  // Debe ir último: apaga las reglas de formato que choquen con Prettier.
+  eslintConfigPrettier,
 );

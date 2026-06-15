@@ -4,7 +4,7 @@ import { supabaseAuth } from '../config/supabase';
 export default async function authMiddleware(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   const authHeader = req.headers.authorization;
 

@@ -55,18 +55,18 @@ describe('PurchaseService', () => {
     it('lanza ApiError 404 si la compra no existe o no pertenece al usuario', async () => {
       repo.findByIdAndUser.mockResolvedValue(null);
 
-      await expect(
-        service.getById(validUser.id, 'inexistente'),
-      ).rejects.toMatchObject({ status: 404 });
+      await expect(service.getById(validUser.id, 'inexistente')).rejects.toMatchObject({
+        status: 404,
+      });
     });
 
     it('lanza ApiError 404 si purchase pertenece a otro user (filtro por user_id en repo)', async () => {
       // El repo filtra por (id, user_id). Si el purchase es de otro user, devuelve null.
       repo.findByIdAndUser.mockResolvedValue(null);
 
-      await expect(
-        service.getById(validUser.id, validPurchase.id),
-      ).rejects.toMatchObject({ status: 404 });
+      await expect(service.getById(validUser.id, validPurchase.id)).rejects.toMatchObject({
+        status: 404,
+      });
 
       expect(repo.findByIdAndUser).toHaveBeenCalledWith(validPurchase.id, validUser.id);
     });
@@ -74,9 +74,9 @@ describe('PurchaseService', () => {
     it('propaga errores de DB del repository', async () => {
       repo.findByIdAndUser.mockRejectedValue(new Error('DB connection lost'));
 
-      await expect(
-        service.getById(validUser.id, validPurchase.id),
-      ).rejects.toThrow('DB connection lost');
+      await expect(service.getById(validUser.id, validPurchase.id)).rejects.toThrow(
+        'DB connection lost',
+      );
     });
 
     it('devuelve summary vacio si la compra no tiene items (undefined)', async () => {

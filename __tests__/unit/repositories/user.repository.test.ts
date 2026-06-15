@@ -36,7 +36,10 @@ describe('UserRepository', () => {
     });
 
     it('propaga otros errores de la base', async () => {
-      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: { code: '500', message: 'DB down' } });
+      mockSupabase.maybeSingle.mockResolvedValue({
+        data: null,
+        error: { code: '500', message: 'DB down' },
+      });
 
       await expect(userRepository.findById(validUser.id)).rejects.toMatchObject({ code: '500' });
     });
@@ -58,7 +61,9 @@ describe('UserRepository', () => {
     it('propaga el error de la base', async () => {
       mockSupabase.single.mockResolvedValue({ data: null, error: new Error('update failed') });
 
-      await expect(userRepository.update(validUser.id, { full_name: 'X' })).rejects.toThrow('update failed');
+      await expect(userRepository.update(validUser.id, { full_name: 'X' })).rejects.toThrow(
+        'update failed',
+      );
     });
   });
 
@@ -90,9 +95,14 @@ describe('UserRepository', () => {
     });
 
     it('propaga el error de Auth', async () => {
-      mockSupabase.auth.admin.deleteUser.mockResolvedValue({ data: null, error: new Error('auth delete failed') });
+      mockSupabase.auth.admin.deleteUser.mockResolvedValue({
+        data: null,
+        error: new Error('auth delete failed'),
+      });
 
-      await expect(userRepository.removeAuthUser(validUser.id)).rejects.toThrow('auth delete failed');
+      await expect(userRepository.removeAuthUser(validUser.id)).rejects.toThrow(
+        'auth delete failed',
+      );
     });
   });
 
@@ -100,7 +110,11 @@ describe('UserRepository', () => {
     it('inserta el perfil y lo devuelve', async () => {
       mockSupabase.single.mockResolvedValue({ data: profile, error: null });
 
-      const result = await userRepository.createUserProfile(validUser.id, validUser.email, validUser.full_name);
+      const result = await userRepository.createUserProfile(
+        validUser.id,
+        validUser.email,
+        validUser.full_name,
+      );
 
       expect(mockSupabase.from).toHaveBeenCalledWith('users');
       expect(mockSupabase.insert).toHaveBeenCalledWith([

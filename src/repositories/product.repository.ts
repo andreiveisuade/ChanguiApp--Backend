@@ -6,7 +6,7 @@ import type { Product } from '../types/domain';
 // Normaliza `tax_category` a objeto (o null) sobre la fila recibida.
 function unwrapTaxCategory(row: Record<string, unknown>): void {
   const raw = row.tax_category;
-  row.tax_category = Array.isArray(raw) ? raw[0] ?? null : raw ?? null;
+  row.tax_category = Array.isArray(raw) ? (raw[0] ?? null) : (raw ?? null);
 }
 
 export async function findByBarcode(barcode: string): Promise<Product | null> {
