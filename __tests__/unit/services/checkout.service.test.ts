@@ -150,6 +150,32 @@ describe('CheckoutService', () => {
 
       expect(result.init_point).toBe('https://www.mercadopago.com/prod');
     });
+
+    it('lanza 500 si MP devuelve preferencia sin id', async () => {
+      cartRepository.findActiveCartByUserId.mockResolvedValue(cartWithProduct());
+      mercadopagoConfig.preference.create.mockResolvedValue({
+        id: undefined,
+        init_point: 'x',
+      });
+
+      await expect(checkoutService.createPreference(validUser.id)).rejects.toMatchObject({
+        status: 500,
+      });
+      expect(checkoutRepository.savePreferenceId).not.toHaveBeenCalled();
+    });
+
+    it('lanza 500 si MP devuelve preferencia sin init_point', async () => {
+      cartRepository.findActiveCartByUserId.mockResolvedValue(cartWithProduct());
+      mercadopagoConfig.preference.create.mockResolvedValue({
+        id: 'x',
+        init_point: undefined,
+      });
+
+      await expect(checkoutService.createPreference(validUser.id)).rejects.toMatchObject({
+        status: 500,
+      });
+      expect(checkoutRepository.savePreferenceId).not.toHaveBeenCalled();
+    });
   });
 
   describe('handleWebhook', () => {
@@ -175,8 +201,13 @@ describe('CheckoutService', () => {
         }),
       );
       expect(checkoutRepository.insertPurchaseItems).toHaveBeenCalledWith(
-        validPurchase.id,
-        cartWithItems.items,
+        expect.arrayContaining([
+          expect.objectContaining({
+            purchase_id: validPurchase.id,
+            product_name: validProduct.name,
+            quantity: validCartItem.quantity,
+          }),
+        ]),
       );
       expect(checkoutRepository.closeCart).toHaveBeenCalledWith(validCart.id);
     });

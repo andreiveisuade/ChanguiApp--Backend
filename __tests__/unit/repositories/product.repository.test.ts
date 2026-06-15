@@ -45,7 +45,7 @@ describe('ProductRepository.findByBarcode', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('normaliza el embed array de tax_category a objeto', async () => {
-    mockSupabase.single.mockResolvedValue({
+    mockSupabase.maybeSingle.mockResolvedValue({
       data: {
         id: 'p1',
         barcode: '111',
@@ -62,13 +62,13 @@ describe('ProductRepository.findByBarcode', () => {
   });
 
   it('devuelve null si no hay data', async () => {
-    mockSupabase.single.mockResolvedValue({ data: null, error: null });
+    mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
     expect(await productRepository.findByBarcode('000')).toBeNull();
   });
 
-  it('devuelve null ante PGRST116 (no encontrado)', async () => {
-    mockSupabase.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
-    expect(await productRepository.findByBarcode('000')).toBeNull();
+  it('lanza el error de supabase', async () => {
+    mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: new Error('boom') });
+    await expect(productRepository.findByBarcode('000')).rejects.toThrow('boom');
   });
 });
 
@@ -105,7 +105,16 @@ describe('ProductRepository.findUpdatedSince', () => {
 
   it('filtra por updated_at > since, ordena, pagina y normaliza el embed tax', async () => {
     const rows = [
-      { id: 'p1', barcode: '111', name: 'A', brand: 'X', price: 100, image_url: null, updated_at: '2026-06-08T10:00:00Z', tax_category: [{ name: 'General', rate: 21 }] },
+      {
+        id: 'p1',
+        barcode: '111',
+        name: 'A',
+        brand: 'X',
+        price: 100,
+        image_url: null,
+        updated_at: '2026-06-08T10:00:00Z',
+        tax_category: [{ name: 'General', rate: 21 }],
+      },
     ];
     mockSupabase.range.mockResolvedValueOnce({ data: rows, error: null });
 
@@ -122,7 +131,16 @@ describe('ProductRepository.findUpdatedSince', () => {
 
   it('normaliza tax_category ausente a null', async () => {
     const rows = [
-      { id: 'p1', barcode: '111', name: 'A', brand: null, price: 100, image_url: null, updated_at: '2026-06-08T10:00:00Z', tax_category: null },
+      {
+        id: 'p1',
+        barcode: '111',
+        name: 'A',
+        brand: null,
+        price: 100,
+        image_url: null,
+        updated_at: '2026-06-08T10:00:00Z',
+        tax_category: null,
+      },
     ];
     mockSupabase.range.mockResolvedValueOnce({ data: rows, error: null });
 

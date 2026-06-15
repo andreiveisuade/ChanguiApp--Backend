@@ -27,6 +27,14 @@ describe('CartRepository', () => {
 
       expect(result).toBeNull();
     });
+
+    it('lanza error si supabase falla', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: new Error('boom') });
+
+      await expect(cartRepository.findActiveCartByUserId(validCart.user_id)).rejects.toThrow(
+        'boom',
+      );
+    });
   });
 
   describe('createCart', () => {
@@ -43,6 +51,14 @@ describe('CartRepository', () => {
       });
       expect(result).toEqual(validCart);
     });
+
+    it('lanza error si supabase falla', async () => {
+      mockSupabase.single.mockResolvedValue({ data: null, error: new Error('boom') });
+
+      await expect(
+        cartRepository.createCart(validCart.user_id, validCart.store_id),
+      ).rejects.toThrow('boom');
+    });
   });
 
   describe('addOrUpdateItem', () => {
@@ -53,7 +69,7 @@ describe('CartRepository', () => {
         validCart.id,
         validProduct.id,
         validCartItem.quantity,
-        validCartItem.unit_price
+        validCartItem.unit_price,
       );
 
       expect(mockSupabase.from).toHaveBeenCalledWith('cart_items');
@@ -64,9 +80,22 @@ describe('CartRepository', () => {
           quantity: validCartItem.quantity,
           unit_price: validCartItem.unit_price,
         },
-        { onConflict: 'cart_id,product_id', ignoreDuplicates: false }
+        { onConflict: 'cart_id,product_id', ignoreDuplicates: false },
       );
       expect(result).toEqual(validCartItem);
+    });
+
+    it('lanza error si supabase falla', async () => {
+      mockSupabase.single.mockResolvedValue({ data: null, error: new Error('boom') });
+
+      await expect(
+        cartRepository.addOrUpdateItem(
+          validCart.id,
+          validProduct.id,
+          validCartItem.quantity,
+          validCartItem.unit_price,
+        ),
+      ).rejects.toThrow('boom');
     });
   });
 
@@ -88,6 +117,12 @@ describe('CartRepository', () => {
 
       expect(result).toBeNull();
     });
+
+    it('lanza error si supabase falla', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: new Error('boom') });
+
+      await expect(cartRepository.findItemById(validCartItem.id)).rejects.toThrow('boom');
+    });
   });
 
   describe('updateItemQuantity', () => {
@@ -102,6 +137,12 @@ describe('CartRepository', () => {
       expect(mockSupabase.eq).toHaveBeenCalledWith('id', validCartItem.id);
       expect(result).toEqual(updated);
     });
+
+    it('lanza error si supabase falla', async () => {
+      mockSupabase.single.mockResolvedValue({ data: null, error: new Error('boom') });
+
+      await expect(cartRepository.updateItemQuantity(validCartItem.id, 5)).rejects.toThrow('boom');
+    });
   });
 
   describe('removeItem', () => {
@@ -114,6 +155,12 @@ describe('CartRepository', () => {
       expect(mockSupabase.delete).toHaveBeenCalled();
       expect(mockSupabase.eq).toHaveBeenCalledWith('id', validCartItem.id);
       expect(result).toEqual(validCartItem);
+    });
+
+    it('lanza error si supabase falla', async () => {
+      mockSupabase.single.mockResolvedValue({ data: null, error: new Error('boom') });
+
+      await expect(cartRepository.removeItem(validCartItem.id)).rejects.toThrow('boom');
     });
   });
 
@@ -128,6 +175,12 @@ describe('CartRepository', () => {
       expect(mockSupabase.update).toHaveBeenCalledWith({ status: 'cancelled' });
       expect(mockSupabase.eq).toHaveBeenCalledWith('id', validCart.id);
       expect(result).toEqual(cancelled);
+    });
+
+    it('lanza error si supabase falla', async () => {
+      mockSupabase.single.mockResolvedValue({ data: null, error: new Error('boom') });
+
+      await expect(cartRepository.cancelCart(validCart.id)).rejects.toThrow('boom');
     });
   });
 });

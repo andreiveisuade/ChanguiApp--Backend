@@ -1,12 +1,18 @@
 export {};
 
 const request = require('supertest');
+const crypto = require('node:crypto');
 const app = require('../../src/index');
 
 jest.mock('../../src/config/supabase', () => require('../helpers/mockSupabase'));
 
 const mockSupabase = require('../helpers/mockSupabase');
-const { validUser, validCart, validCartItem, validProduct, validCheckoutPreference } = require('../helpers/testData');
+const {
+  validCart,
+  validCartItem,
+  validProduct,
+  validCheckoutPreference,
+} = require('../helpers/testData');
 
 const authHeader = { Authorization: 'Bearer test-token' };
 
@@ -48,9 +54,7 @@ describe('Checkout Endpoints', () => {
         init_point: validCheckoutPreference.init_point,
       });
 
-      const res = await request(app)
-        .post('/api/checkout')
-        .set(authHeader);
+      const res = await request(app).post('/api/checkout').set(authHeader);
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty('preference_id');
@@ -60,19 +64,18 @@ describe('Checkout Endpoints', () => {
     it('sin carrito activo devuelve 400', async () => {
       mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
 
-      const res = await request(app)
-        .post('/api/checkout')
-        .set(authHeader);
+      const res = await request(app).post('/api/checkout').set(authHeader);
 
       expect(res.statusCode).toBe(400);
     });
 
     it('con carrito vacío devuelve 400', async () => {
-      mockSupabase.maybeSingle.mockResolvedValue({ data: { ...validCart, items: [] }, error: null });
+      mockSupabase.maybeSingle.mockResolvedValue({
+        data: { ...validCart, items: [] },
+        error: null,
+      });
 
-      const res = await request(app)
-        .post('/api/checkout')
-        .set(authHeader);
+      const res = await request(app).post('/api/checkout').set(authHeader);
 
       expect(res.statusCode).toBe(400);
     });
@@ -86,7 +89,10 @@ describe('Checkout Endpoints', () => {
     it('con credenciales que no son de prueba devuelve 503 (seguro anti-cobro real)', async () => {
       mercadopagoConfig.getAccountTags.mockResolvedValue([]); // cuenta real
       mockSupabase.maybeSingle.mockResolvedValue({
-        data: { ...validCart, items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }] },
+        data: {
+          ...validCart,
+          items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+        },
         error: null,
       });
 
@@ -107,7 +113,10 @@ describe('Checkout Endpoints', () => {
       });
       mockSupabase.single
         .mockResolvedValueOnce({
-          data: { ...validCart, items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }] },
+          data: {
+            ...validCart,
+            items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+          },
           error: null,
         })
         .mockResolvedValueOnce({ data: { id: 'purchase-uuid-1' }, error: null })
@@ -121,10 +130,79 @@ describe('Checkout Endpoints', () => {
     });
   });
 
+  describe('POST /api/checkout/webhook — verificación de firma MP', () => {
+    const SECRET = 'test-webhook-secret';
+    const DATA_ID = 'mp-123456';
+    const REQUEST_ID = 'req-abc';
+    const TS = '1704908010';
+
+    const signFor = (dataId: string, requestId: string, ts: string, secret = SECRET) => {
+      const manifest = `id:${dataId.toLowerCase()};request-id:${requestId};ts:${ts};`;
+      const v1 = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+      return `ts=${ts},v1=${v1}`;
+    };
+
+    beforeEach(() => {
+      process.env.MP_WEBHOOK_SECRET = SECRET;
+    });
+    afterEach(() => {
+      delete process.env.MP_WEBHOOK_SECRET;
+    });
+
+    it('con firma válida procesa y devuelve 200', async () => {
+      mercadopagoConfig.payment.get.mockResolvedValue(null); // corta temprano en handleWebhook
+      const res = await request(app)
+        .post('/api/checkout/webhook')
+        .query({ 'data.id': DATA_ID })
+        .set('x-signature', signFor(DATA_ID, REQUEST_ID, TS))
+        .set('x-request-id', REQUEST_ID)
+        .send({ type: 'payment', data: { id: DATA_ID } });
+
+      expect(res.statusCode).toBe(200);
+      expect(mercadopagoConfig.payment.get).toHaveBeenCalled();
+    });
+
+    it('con firma inválida devuelve 401 y no procesa', async () => {
+      const res = await request(app)
+        .post('/api/checkout/webhook')
+        .query({ 'data.id': DATA_ID })
+        .set('x-signature', `ts=${TS},v1=deadbeef`)
+        .set('x-request-id', REQUEST_ID)
+        .send({ type: 'payment', data: { id: DATA_ID } });
+
+      expect(res.statusCode).toBe(401);
+      expect(mercadopagoConfig.payment.get).not.toHaveBeenCalled();
+    });
+
+    it('sin header x-signature devuelve 401 y no procesa', async () => {
+      const res = await request(app)
+        .post('/api/checkout/webhook')
+        .query({ 'data.id': DATA_ID })
+        .send({ type: 'payment', data: { id: DATA_ID } });
+
+      expect(res.statusCode).toBe(401);
+      expect(mercadopagoConfig.payment.get).not.toHaveBeenCalled();
+    });
+
+    it('sin MP_WEBHOOK_SECRET (dev) bypassa la firma y devuelve 200', async () => {
+      delete process.env.MP_WEBHOOK_SECRET;
+      mercadopagoConfig.payment.get.mockResolvedValue(null);
+      const res = await request(app)
+        .post('/api/checkout/webhook')
+        .send({ type: 'payment', data: { id: DATA_ID } });
+
+      expect(res.statusCode).toBe(200);
+    });
+  });
+
   describe('GET /api/checkout/status', () => {
     it('devuelve el status de la compra asociada a la preferencia', async () => {
       mockSupabase.maybeSingle.mockResolvedValue({
-        data: { id: 'purchase-uuid-1', payment_status: 'completed', mp_preference_id: 'pref-uuid-1' },
+        data: {
+          id: 'purchase-uuid-1',
+          payment_status: 'completed',
+          mp_preference_id: 'pref-uuid-1',
+        },
         error: null,
       });
 

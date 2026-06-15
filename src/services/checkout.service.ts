@@ -1,11 +1,9 @@
 import { preference, payment, getAccountTags } from '../config/mercadopago';
 import * as checkoutRepository from '../repositories/checkout.repository';
 import * as cartRepository from '../repositories/cart.repository';
-import {
-  ApiError,
-  type CheckoutResponse,
-  type CheckoutStatusResponse,
-} from '../types/domain';
+import { DEFAULT_TAX_RATE, itemsTotal } from './pricing.service';
+import { ApiError } from '../utils/ApiError';
+import type { CheckoutResponse, CheckoutStatusResponse } from '../types/domain';
 
 const STATUS_MAP: Record<string, 'completed' | 'failed' | 'pending'> = {
   approved: 'completed',
@@ -25,7 +23,7 @@ async function assertTestCredentials(): Promise<void> {
     throw new ApiError(
       'Pagos deshabilitados: se requieren credenciales de prueba de Mercado Pago (usuario de prueba). ' +
         'Configurá un MP_ACCESS_TOKEN de test user o seteá MP_REQUIRE_TEST_USER=false para habilitar cobros reales.',
-      503
+      503,
     );
   }
 }
@@ -88,7 +86,7 @@ export async function createPreference(userId: string): Promise<CheckoutResponse
 
 export async function getCheckoutStatus(
   userId: string,
-  preferenceId: string
+  preferenceId: string,
 ): Promise<CheckoutStatusResponse> {
   const purchase = await checkoutRepository.findPurchaseByPreferenceId(userId, preferenceId);
   if (!purchase) {
@@ -118,10 +116,7 @@ export async function handleWebhook(body: WebhookBody): Promise<void> {
   if (info.status !== 'approved') return;
 
   const items = cart.items || [];
-  const total = items.reduce(
-    (sum, i) => sum + Number(i.unit_price) * i.quantity,
-    0
-  );
+  const total = itemsTotal(items);
 
   const purchase = await checkoutRepository.createPurchase({
     user_id: cart.user_id,
@@ -132,6 +127,15 @@ export async function handleWebhook(body: WebhookBody): Promise<void> {
     mp_preference_id: cart.mp_preference_id ?? null,
   });
 
-  await checkoutRepository.insertPurchaseItems(purchase.id, items);
+  const rows = items.map((i) => ({
+    purchase_id: purchase.id,
+    product_name: i.product?.name || 'Producto',
+    barcode: i.product?.barcode || '',
+    quantity: i.quantity,
+    unit_price: i.unit_price,
+    tax_rate: i.product?.tax_category?.rate ?? DEFAULT_TAX_RATE,
+  }));
+
+  await checkoutRepository.insertPurchaseItems(rows);
   await checkoutRepository.closeCart(cart.id);
 }

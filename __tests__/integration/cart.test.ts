@@ -88,8 +88,8 @@ describe('Cart Endpoints', () => {
     it('con nueva quantity devuelve 200 con item actualizado', async () => {
       const updated = { ...validCartItem, quantity: 5 };
       mockSupabase.maybeSingle
-        .mockResolvedValueOnce({ data: validCartItem, error: null })  // findItemById
-        .mockResolvedValueOnce({ data: validCart, error: null });      // findActiveCartByUserId
+        .mockResolvedValueOnce({ data: validCartItem, error: null }) // findItemById
+        .mockResolvedValueOnce({ data: validCart, error: null }); // findActiveCartByUserId
       mockSupabase.single.mockResolvedValue({ data: updated, error: null });
 
       const res = await request(app)
@@ -125,13 +125,11 @@ describe('Cart Endpoints', () => {
   describe('DELETE /api/cart/items/:id', () => {
     it('elimina item y devuelve 200 con el item eliminado', async () => {
       mockSupabase.maybeSingle
-        .mockResolvedValueOnce({ data: validCartItem, error: null })  // findItemById
-        .mockResolvedValueOnce({ data: validCart, error: null });      // findActiveCartByUserId
+        .mockResolvedValueOnce({ data: validCartItem, error: null }) // findItemById
+        .mockResolvedValueOnce({ data: validCart, error: null }); // findActiveCartByUserId
       mockSupabase.single.mockResolvedValue({ data: validCartItem, error: null });
 
-      const res = await request(app)
-        .delete(`/api/cart/items/${validCartItem.id}`)
-        .set(authHeader);
+      const res = await request(app).delete(`/api/cart/items/${validCartItem.id}`).set(authHeader);
 
       expect(res.statusCode).toBe(200);
     });
@@ -140,7 +138,10 @@ describe('Cart Endpoints', () => {
   describe('DELETE /api/cart', () => {
     it('cancela el carrito activo y devuelve 200 con status cancelled', async () => {
       mockSupabase.maybeSingle.mockResolvedValue({ data: validCart, error: null });
-      mockSupabase.single.mockResolvedValue({ data: { ...validCart, status: 'cancelled' }, error: null });
+      mockSupabase.single.mockResolvedValue({
+        data: { ...validCart, status: 'cancelled' },
+        error: null,
+      });
 
       const res = await request(app).delete('/api/cart').set(authHeader);
 

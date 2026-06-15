@@ -1,5 +1,6 @@
 import * as userRepository from '../repositories/user.repository';
-import { ApiError, type User, type UserUpdate } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
+import type { User, UserUpdate } from '../types/domain';
 
 const ALLOWED_FIELDS: (keyof UserUpdate)[] = ['full_name', 'avatar_url'];
 
@@ -35,7 +36,7 @@ export async function getProfile(userId: string, authUser?: AuthUserLike): Promi
   // Supabase haya linkeado las identidades). No podemos crear un segundo perfil
   // (email es único) ni adoptar el ajeno: devolvemos un error explícito en vez
   // de un 404 que oculta la causa real.
-  const existingByEmail = await userRepository.getUserByEmail(email);
+  const existingByEmail = await userRepository.findByEmail(email);
   if (existingByEmail && existingByEmail.id !== userId) {
     throw new ApiError(
       'Ya existe una cuenta con este email registrada con otro método de acceso.',
@@ -63,10 +64,7 @@ export async function getProfile(userId: string, authUser?: AuthUserLike): Promi
   }
 }
 
-export async function updateProfile(
-  userId: string,
-  body: Record<string, unknown>
-): Promise<User> {
+export async function updateProfile(userId: string, body: Record<string, unknown>): Promise<User> {
   const fields: UserUpdate = {};
   for (const key of ALLOWED_FIELDS) {
     if (body[key] !== undefined) {

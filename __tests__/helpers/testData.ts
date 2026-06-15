@@ -32,16 +32,6 @@ export const validCart = {
   status: 'active',
 };
 
-export const validStore = {
-  id: 'store-uuid-1',
-  name: 'Carrefour Express',
-  chain: 'Carrefour',
-  address: 'Av. Corrientes 1234, CABA',
-  lat: -34.6037,
-  lng: -58.3816,
-  precios_claros_id: '10-1-5',
-};
-
 export const validPurchase = {
   id: 'purchase-uuid-1',
   user_id: 'user-uuid-1',
@@ -95,6 +85,5 @@ export const validTaxCategories = [
 
 export const validCheckoutPreference = {
   preference_id: 'pref-uuid-1',
-  init_point:
-    'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=pref-uuid-1',
+  init_point: 'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=pref-uuid-1',
 };

@@ -13,10 +13,8 @@ jest.mock('../../src/services/classification.service');
 const app = require('../../src/index');
 const syncService = require('../../src/services/sync.service');
 const syncJobsRepository = require('../../src/repositories/sync_jobs.repository');
-const productRepository = require('../../src/repositories/product.repository');
-const taxCategoriesRepository = require('../../src/repositories/tax_categories.repository');
 const classificationService = require('../../src/services/classification.service');
-const { ApiError } = require('../../src/types/domain');
+const { ApiError } = require('../../src/utils/ApiError');
 
 describe('admin sync endpoints', () => {
   afterEach(() => jest.clearAllMocks());
@@ -119,9 +117,7 @@ describe('admin sync endpoints', () => {
 
   describe('POST /api/admin/products/bulk', () => {
     it('sin header x-admin-token devuelve 401', async () => {
-      const res = await request(app)
-        .post('/api/admin/products/bulk')
-        .send({ productos: [] });
+      const res = await request(app).post('/api/admin/products/bulk').send({ productos: [] });
       expect(res.statusCode).toBe(401);
     });
 

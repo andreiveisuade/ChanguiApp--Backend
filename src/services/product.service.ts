@@ -1,7 +1,8 @@
 import * as productRepository from '../repositories/product.repository';
 import type { CatalogProduct } from '../repositories/product.repository';
 import { calculatePricing, DEFAULT_TAX_RATE, DEFAULT_TAX_CATEGORY_NAME } from './pricing.service';
-import { ApiError, type ProductWithTax } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
+import type { ProductWithTax } from '../types/domain';
 
 export const CATALOG_DEFAULT_LIMIT = 500;
 export const CATALOG_MAX_LIMIT = 1000;

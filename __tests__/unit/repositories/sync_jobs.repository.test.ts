@@ -46,16 +46,14 @@ describe('SyncJobsRepository', () => {
         error: new Error('insert failed'),
       });
 
-      await expect(syncJobsRepository.create('precios_claros')).rejects.toThrow(
-        'insert failed',
-      );
+      await expect(syncJobsRepository.create('precios_claros')).rejects.toThrow('insert failed');
     });
   });
 
   describe('findById', () => {
     it('devuelve el job cuando existe', async () => {
       const row = buildRow();
-      mockSupabase.single.mockResolvedValue({ data: row, error: null });
+      mockSupabase.maybeSingle.mockResolvedValue({ data: row, error: null });
 
       const result = await syncJobsRepository.findById(JOB_ID);
 
@@ -64,11 +62,8 @@ describe('SyncJobsRepository', () => {
       expect(result).toEqual(row);
     });
 
-    it('devuelve null si supabase responde con PGRST116 (no rows)', async () => {
-      mockSupabase.single.mockResolvedValue({
-        data: null,
-        error: { code: 'PGRST116' },
-      });
+    it('devuelve null cuando no existe (no rows)', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
 
       const result = await syncJobsRepository.findById('no-existe');
 
@@ -76,7 +71,7 @@ describe('SyncJobsRepository', () => {
     });
 
     it('lanza otros errores de supabase', async () => {
-      mockSupabase.single.mockResolvedValue({
+      mockSupabase.maybeSingle.mockResolvedValue({
         data: null,
         error: { code: 'OTHER', message: 'kaboom' },
       });
@@ -187,9 +182,7 @@ describe('SyncJobsRepository', () => {
 
     it('lanza el error de supabase', async () => {
       mockSupabase.eq.mockResolvedValue({ data: null, error: new Error('boom') });
-      await expect(
-        syncJobsRepository.updateProgress(JOB_ID, 0, 0, 0),
-      ).rejects.toThrow('boom');
+      await expect(syncJobsRepository.updateProgress(JOB_ID, 0, 0, 0)).rejects.toThrow('boom');
     });
   });
 

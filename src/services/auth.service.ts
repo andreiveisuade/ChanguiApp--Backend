@@ -1,10 +1,10 @@
-import { authRepository } from '../repositories/auth.repository';
+import * as authRepository from '../repositories/auth.repository';
 import * as userRepository from '../repositories/user.repository';
-import { ApiError } from '../types/domain';
+import { ApiError } from '../utils/ApiError';
 
 export const authService = {
   async register(email: string, password: string, name: string) {
-    const existingUser = await userRepository.getUserByEmail(email);
+    const existingUser = await userRepository.findByEmail(email);
     if (existingUser) {
       throw new ApiError('El email ya está registrado', 409);
     }
@@ -22,12 +22,10 @@ export const authService = {
     };
   },
 
-   async login(email: string, password: string) {
-    const authData = await authRepository
-      .login(email, password)
-      .catch(() => {
-        throw new ApiError('Credenciales inválidas', 401);
-      });
+  async login(email: string, password: string) {
+    const authData = await authRepository.login(email, password).catch(() => {
+      throw new ApiError('Credenciales inválidas', 401);
+    });
 
     if (!authData.user) {
       throw new ApiError('Credenciales inválidas', 401);
