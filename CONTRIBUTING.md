@@ -227,6 +227,7 @@ Closes DEV-<número>
 
 ## Checklist
 - [ ] El código compila sin errores (`npm run build` — TypeScript)
+- [ ] Código formateado y sin errores de lint (`npm run format` && `npm run lint`)
 - [ ] Probado en emulador / dispositivo físico
 - [ ] No hay console.log / prints de debug innecesarios
 - [ ] Documentación actualizada si corresponde
@@ -382,4 +383,4 @@ En **Settings → Branches** del repositorio:
 
 ---
 
-_Documento mantenido por el Scrum Master. Última actualización: 20 Abril 2026 — anuncio de migración a TypeScript (DEV-160)._
+_Documento mantenido por el Scrum Master. Última actualización: 15 Junio 2026 — tooling de formato y linting (ESLint + Prettier)._

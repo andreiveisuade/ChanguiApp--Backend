@@ -132,6 +132,10 @@ npm start                # node dist/index.js — produccion (post-build)
 npm test                 # Jest con ts-jest
 npm run test:watch       # watch mode
 npm run test:coverage    # reporte de cobertura
+npm run lint             # ESLint — reporta problemas
+npm run lint:fix         # ESLint con autofix
+npm run format           # Prettier — formatea el código
+npm run format:check     # Prettier — verifica formato sin escribir
 ```
 
 > Los scripts con `tsc`/`tsx` son la convencion post-DEV-160. Mientras el refactor este abierto, los equivalentes en JS (`nodemon`, `node`) siguen funcionando.
