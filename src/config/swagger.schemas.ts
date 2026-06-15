@@ -96,7 +96,6 @@ export const schemas = {
     properties: {
       id: { type: 'string', format: 'uuid' },
       user_id: { type: 'string', format: 'uuid' },
-      store_id: { type: 'string', format: 'uuid', nullable: true },
       status: {
         type: 'string',
         enum: ['active', 'closed', 'cancelled'],
@@ -128,8 +127,6 @@ export const schemas = {
         enum: ['pending', 'completed', 'failed'],
       },
       created_at: { type: 'string', format: 'date-time' },
-      store_id: { type: 'string', format: 'uuid', nullable: true },
-      store_name: { type: 'string', nullable: true },
       mp_preference_id: { type: 'string', nullable: true },
     },
   },
