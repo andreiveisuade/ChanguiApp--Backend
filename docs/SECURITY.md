@@ -29,6 +29,7 @@ npm audit --audit-level=high
 ```
 
 Si falla, evaluar:
+
 1. Hay una versión corregida? `npm audit fix`.
 2. Upgrade major requerido? Planificar con el equipo.
 3. Falso positivo? Documentar excepción aquí.
@@ -96,4 +97,4 @@ Todas viven en `.env` (local) y en Render Environment Variables (producción). *
 
 ---
 
-*Documento actualizado 2026-04-20 con la migración a TypeScript (DEV-160) y el setup de seguridad CI/CD (DEV-132).*
+_Documento actualizado 2026-04-20 con la migración a TypeScript (DEV-160) y el setup de seguridad CI/CD (DEV-132)._

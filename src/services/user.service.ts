@@ -64,10 +64,7 @@ export async function getProfile(userId: string, authUser?: AuthUserLike): Promi
   }
 }
 
-export async function updateProfile(
-  userId: string,
-  body: Record<string, unknown>
-): Promise<User> {
+export async function updateProfile(userId: string, body: Record<string, unknown>): Promise<User> {
   const fields: UserUpdate = {};
   for (const key of ALLOWED_FIELDS) {
     if (body[key] !== undefined) {

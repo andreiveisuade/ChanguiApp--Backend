@@ -18,8 +18,8 @@ app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(cors(corsOptions));
-app.use(globalLimiter);                      // aplica a toda la API
-app.use('/api/auth', authLimiter);           // aplica SOLO a login y registro
+app.use(globalLimiter); // aplica a toda la API
+app.use('/api/auth', authLimiter); // aplica SOLO a login y registro
 app.use(express.json());
 // Logging de requests (se omite /health para no inundar los logs de Render)
 app.use(morgan('tiny', { skip: (req) => req.path === '/health' }));

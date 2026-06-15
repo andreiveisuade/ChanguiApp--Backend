@@ -51,7 +51,11 @@ export const schemas = {
         properties: {
           category: { type: 'string', example: 'Leche fluida' },
           rate: { type: 'number', example: 0 },
-          net_price: { type: 'number', example: 850, description: 'Precio sin IVA (base imponible)' },
+          net_price: {
+            type: 'number',
+            example: 850,
+            description: 'Precio sin IVA (base imponible)',
+          },
           tax_amount: { type: 'number', example: 0 },
         },
       },

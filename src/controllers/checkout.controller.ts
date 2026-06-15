@@ -8,8 +8,7 @@ import type { AuthedRequest } from '../types/http';
 // Deep link de la app al que MP reenvia tras el pago. Constante (config), nunca
 // derivado del request: la app ya tiene el preference_id, el deep link solo
 // señala "cerrá el browser". Evita reflejar datos del usuario (XSS/open-redirect).
-const APP_RETURN_DEEP_LINK =
-  process.env.APP_RETURN_DEEP_LINK || 'changuiapp://checkout/return';
+const APP_RETURN_DEEP_LINK = process.env.APP_RETURN_DEEP_LINK || 'changuiapp://checkout/return';
 
 export const create = asyncHandler<AuthedRequest>(async (req, res) => {
   const result = await checkoutService.createPreference(req.user.id);
@@ -27,8 +26,7 @@ export function returnPage(_req: Request, res: Response): void {
 }
 
 export const status = asyncHandler<AuthedRequest>(async (req, res) => {
-  const preferenceId =
-    typeof req.query.preference_id === 'string' ? req.query.preference_id : '';
+  const preferenceId = typeof req.query.preference_id === 'string' ? req.query.preference_id : '';
   if (!preferenceId) {
     throw new ApiError('preference_id requerido', 400);
   }

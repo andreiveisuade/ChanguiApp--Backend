@@ -45,14 +45,14 @@ sequenceDiagram
 
 ## Reglas clave
 
-| Regla | Detalle |
-|---|---|
-| Fuente fiscal | Ley 23.349 art. 28 (10,5%) y art. 7 (exenciones). Codificada en `tax_categories` |
-| Clasificación | Heurística por keywords sobre `products.name`, en el sync (no en cada request) |
-| Fallback | Sin coincidencia → categoría `general` (21%), criterio conservador |
-| Override | `POST /api/admin/products/:barcode/tax-category` fija categoría y bloquea (`tax_locked`) |
-| Desglose vivo | Producto y carrito: se calcula en runtime con la categoría vigente |
-| Desglose congelado | Compra: usa `purchase_items.tax_rate` snapshot (comprobante inmutable) |
+| Regla              | Detalle                                                                                  |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| Fuente fiscal      | Ley 23.349 art. 28 (10,5%) y art. 7 (exenciones). Codificada en `tax_categories`         |
+| Clasificación      | Heurística por keywords sobre `products.name`, en el sync (no en cada request)           |
+| Fallback           | Sin coincidencia → categoría `general` (21%), criterio conservador                       |
+| Override           | `POST /api/admin/products/:barcode/tax-category` fija categoría y bloquea (`tax_locked`) |
+| Desglose vivo      | Producto y carrito: se calcula en runtime con la categoría vigente                       |
+| Desglose congelado | Compra: usa `purchase_items.tax_rate` snapshot (comprobante inmutable)                   |
 
 ## Limitaciones conocidas y roadmap
 

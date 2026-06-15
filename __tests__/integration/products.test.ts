@@ -38,16 +38,13 @@ describe('Products Endpoints', () => {
     it('con barcode inexistente devuelve 404', async () => {
       mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
 
-      const res = await request(app)
-        .get('/api/products/barcode/0000000000000')
-        .set(authHeader);
+      const res = await request(app).get('/api/products/barcode/0000000000000').set(authHeader);
 
       expect(res.statusCode).toBe(404);
     });
 
     it('sin token devuelve 401', async () => {
-      const res = await request(app)
-        .get(`/api/products/barcode/${validProduct.barcode}`);
+      const res = await request(app).get(`/api/products/barcode/${validProduct.barcode}`);
 
       expect(res.statusCode).toBe(401);
     });
@@ -55,8 +52,13 @@ describe('Products Endpoints', () => {
 
   describe('GET /api/products (catálogo incremental)', () => {
     const row = {
-      id: 'p1', barcode: '111', name: 'A', brand: 'X',
-      price: 121, image_url: null, updated_at: '2026-06-08T10:00:00.000Z',
+      id: 'p1',
+      barcode: '111',
+      name: 'A',
+      brand: 'X',
+      price: 121,
+      image_url: null,
+      updated_at: '2026-06-08T10:00:00.000Z',
       tax_category: [{ name: 'General', rate: 21 }],
     };
 
@@ -73,14 +75,15 @@ describe('Products Endpoints', () => {
       expect(res.body.next_cursor).toBe('2026-06-08T10:00:00.000Z');
       expect(res.body.products[0].barcode).toBe('111');
       expect(res.body.products[0].tax).toEqual({
-        category: 'General', rate: 21, net_price: 100, tax_amount: 21,
+        category: 'General',
+        rate: 21,
+        net_price: 100,
+        tax_amount: 21,
       });
     });
 
     it('updated_since inválido devuelve 400', async () => {
-      const res = await request(app)
-        .get('/api/products?updated_since=no-es-fecha')
-        .set(authHeader);
+      const res = await request(app).get('/api/products?updated_since=no-es-fecha').set(authHeader);
 
       expect(res.statusCode).toBe(400);
     });

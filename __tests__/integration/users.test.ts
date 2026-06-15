@@ -70,9 +70,7 @@ describe('PUT /api/users/profile', () => {
   });
 
   it('sin token devuelve 401', async () => {
-    const res = await request(app)
-      .put('/api/users/profile')
-      .send({ full_name: 'Nuevo Nombre' });
+    const res = await request(app).put('/api/users/profile').send({ full_name: 'Nuevo Nombre' });
 
     expect(res.statusCode).toBe(401);
   });

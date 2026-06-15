@@ -157,9 +157,9 @@ describe('UserService', () => {
     it('propaga error de DB del repository', async () => {
       userRepository.update.mockRejectedValue(new Error('DB write failed'));
 
-      await expect(
-        userService.updateProfile(validUser.id, { full_name: 'X' }),
-      ).rejects.toThrow('DB write failed');
+      await expect(userService.updateProfile(validUser.id, { full_name: 'X' })).rejects.toThrow(
+        'DB write failed',
+      );
     });
   });
 

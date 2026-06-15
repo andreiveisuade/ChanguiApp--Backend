@@ -26,9 +26,7 @@ describe('Purchases Endpoints', () => {
     it('autenticado devuelve 200 con lista de compras', async () => {
       mockSupabase.order.mockResolvedValue({ data: [validPurchase], error: null });
 
-      const res = await request(app)
-        .get('/api/purchases')
-        .set(authHeader);
+      const res = await request(app).get('/api/purchases').set(authHeader);
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveLength(1);
@@ -38,9 +36,7 @@ describe('Purchases Endpoints', () => {
     it('sin compras devuelve 200 con array vacío', async () => {
       mockSupabase.order.mockResolvedValue({ data: [], error: null });
 
-      const res = await request(app)
-        .get('/api/purchases')
-        .set(authHeader);
+      const res = await request(app).get('/api/purchases').set(authHeader);
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toEqual([]);
@@ -58,9 +54,7 @@ describe('Purchases Endpoints', () => {
       const purchaseWithItems = { ...validPurchase, items: [validPurchaseItem] };
       mockSupabase.maybeSingle.mockResolvedValue({ data: purchaseWithItems, error: null });
 
-      const res = await request(app)
-        .get(`/api/purchases/${validPurchase.id}`)
-        .set(authHeader);
+      const res = await request(app).get(`/api/purchases/${validPurchase.id}`).set(authHeader);
 
       expect(res.statusCode).toBe(200);
       expect(res.body.items).toHaveLength(1);
@@ -70,16 +64,13 @@ describe('Purchases Endpoints', () => {
     it('con id inexistente devuelve 404', async () => {
       mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
 
-      const res = await request(app)
-        .get('/api/purchases/inexistente')
-        .set(authHeader);
+      const res = await request(app).get('/api/purchases/inexistente').set(authHeader);
 
       expect(res.statusCode).toBe(404);
     });
 
     it('sin token devuelve 401', async () => {
-      const res = await request(app)
-        .get(`/api/purchases/${validPurchase.id}`);
+      const res = await request(app).get(`/api/purchases/${validPurchase.id}`);
 
       expect(res.statusCode).toBe(401);
     });

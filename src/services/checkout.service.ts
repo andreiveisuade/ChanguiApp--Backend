@@ -23,7 +23,7 @@ async function assertTestCredentials(): Promise<void> {
     throw new ApiError(
       'Pagos deshabilitados: se requieren credenciales de prueba de Mercado Pago (usuario de prueba). ' +
         'Configurá un MP_ACCESS_TOKEN de test user o seteá MP_REQUIRE_TEST_USER=false para habilitar cobros reales.',
-      503
+      503,
     );
   }
 }
@@ -86,7 +86,7 @@ export async function createPreference(userId: string): Promise<CheckoutResponse
 
 export async function getCheckoutStatus(
   userId: string,
-  preferenceId: string
+  preferenceId: string,
 ): Promise<CheckoutStatusResponse> {
   const purchase = await checkoutRepository.findPurchaseByPreferenceId(userId, preferenceId);
   if (!purchase) {

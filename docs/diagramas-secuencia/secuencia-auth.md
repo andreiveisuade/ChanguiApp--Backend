@@ -39,13 +39,13 @@ sequenceDiagram
 
 ## Actores y sistemas
 
-| Participante | Descripción |
-|---|---|
-| Usuario | Persona que usa la app |
-| App (React Native) | Cliente móvil (Android / iOS) |
-| Backend (Express) | Servidor Node.js desplegado en Render |
-| Supabase Auth | Servicio de autenticación de Supabase |
-| Supabase DB | Base de datos PostgreSQL en Supabase |
+| Participante       | Descripción                           |
+| ------------------ | ------------------------------------- |
+| Usuario            | Persona que usa la app                |
+| App (React Native) | Cliente móvil (Android / iOS)         |
+| Backend (Express)  | Servidor Node.js desplegado en Render |
+| Supabase Auth      | Servicio de autenticación de Supabase |
+| Supabase DB        | Base de datos PostgreSQL en Supabase  |
 
 ## Endpoints involucrados
 

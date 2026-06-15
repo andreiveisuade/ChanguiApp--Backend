@@ -12,10 +12,7 @@ export interface PurchaseItemRow {
   tax_rate: number;
 }
 
-export async function savePreferenceId(
-  cartId: string,
-  preferenceId: string
-): Promise<void> {
+export async function savePreferenceId(cartId: string, preferenceId: string): Promise<void> {
   const { error } = await supabase
     .from('carts')
     .update({ mp_preference_id: preferenceId })
@@ -26,7 +23,7 @@ export async function savePreferenceId(
 
 export async function findPurchaseByPreferenceId(
   userId: string,
-  preferenceId: string
+  preferenceId: string,
 ): Promise<Purchase | null> {
   const { data, error } = await supabase
     .from('purchases')
@@ -42,7 +39,9 @@ export async function findPurchaseByPreferenceId(
 export async function findCartById(cartId: string): Promise<CartWithItems | null> {
   const { data, error } = await supabase
     .from('carts')
-    .select('*, items:cart_items(*, product:products(*, tax_category:tax_categories(id, name, rate)))')
+    .select(
+      '*, items:cart_items(*, product:products(*, tax_category:tax_categories(id, name, rate)))',
+    )
     .eq('id', cartId)
     .maybeSingle();
 
@@ -51,13 +50,9 @@ export async function findCartById(cartId: string): Promise<CartWithItems | null
 }
 
 export async function createPurchase(
-  purchase: Omit<Purchase, 'id' | 'created_at'>
+  purchase: Omit<Purchase, 'id' | 'created_at'>,
 ): Promise<Purchase> {
-  const { data, error } = await supabase
-    .from('purchases')
-    .insert(purchase)
-    .select()
-    .single();
+  const { data, error } = await supabase.from('purchases').insert(purchase).select().single();
 
   if (error) throw error;
   return data as Purchase;
@@ -69,10 +64,7 @@ export async function insertPurchaseItems(rows: PurchaseItemRow[]): Promise<void
 }
 
 export async function closeCart(cartId: string): Promise<void> {
-  const { error } = await supabase
-    .from('carts')
-    .update({ status: 'closed' })
-    .eq('id', cartId);
+  const { error } = await supabase.from('carts').update({ status: 'closed' }).eq('id', cartId);
 
   if (error) throw error;
 }

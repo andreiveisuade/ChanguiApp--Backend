@@ -23,11 +23,9 @@ export const authService = {
   },
 
   async login(email: string, password: string) {
-    const authData = await authRepository
-      .login(email, password)
-      .catch(() => {
-        throw new ApiError('Credenciales inválidas', 401);
-      });
+    const authData = await authRepository.login(email, password).catch(() => {
+      throw new ApiError('Credenciales inválidas', 401);
+    });
 
     if (!authData.user) {
       throw new ApiError('Credenciales inválidas', 401);

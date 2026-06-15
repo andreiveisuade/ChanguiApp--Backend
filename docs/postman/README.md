@@ -13,11 +13,11 @@ Coleccion completa de los endpoints del MVP para Entrega 1.
 1. **Environments** (sidebar) > **Create Environment** > nombre: `ChanguiApp-Prod`.
 2. Agregar 3 variables:
 
-| Variable | Valor inicial |
-|---|---|
-| `base_url` | `https://changuiapp-backend.onrender.com` |
+| Variable       | Valor inicial                                    |
+| -------------- | ------------------------------------------------ |
+| `base_url`     | `https://changuiapp-backend.onrender.com`        |
 | `access_token` | (vacio, se setea automaticamente al hacer login) |
-| `admin_token` | (el ADMIN_TOKEN configurado en Render) |
+| `admin_token`  | (el ADMIN_TOKEN configurado en Render)           |
 
 3. Seleccionar el Environment desde el dropdown arriba a la derecha.
 

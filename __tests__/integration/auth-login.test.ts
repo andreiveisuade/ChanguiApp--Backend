@@ -50,16 +50,12 @@ describe('POST /api/auth/login + rutas protegidas', () => {
     });
 
     it('sin email devuelve 400', async () => {
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({ password: validUser.password });
+      const res = await request(app).post('/api/auth/login').send({ password: validUser.password });
       expect(res.statusCode).toBe(400);
     });
 
     it('sin password devuelve 400', async () => {
-      const res = await request(app)
-        .post('/api/auth/login')
-        .send({ email: validUser.email });
+      const res = await request(app).post('/api/auth/login').send({ email: validUser.email });
       expect(res.statusCode).toBe(400);
     });
 
@@ -78,9 +74,7 @@ describe('POST /api/auth/login + rutas protegidas', () => {
     });
 
     it('GET /api/users/profile con header malformado (sin Bearer) devuelve 401', async () => {
-      const res = await request(app)
-        .get('/api/users/profile')
-        .set('Authorization', 'Basic abc123');
+      const res = await request(app).get('/api/users/profile').set('Authorization', 'Basic abc123');
       expect(res.statusCode).toBe(401);
     });
 
