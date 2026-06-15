@@ -53,7 +53,7 @@ describe('CartRepository', () => {
         validCart.id,
         validProduct.id,
         validCartItem.quantity,
-        validCartItem.unit_price
+        validCartItem.unit_price,
       );
 
       expect(mockSupabase.from).toHaveBeenCalledWith('cart_items');
@@ -64,7 +64,7 @@ describe('CartRepository', () => {
           quantity: validCartItem.quantity,
           unit_price: validCartItem.unit_price,
         },
-        { onConflict: 'cart_id,product_id', ignoreDuplicates: false }
+        { onConflict: 'cart_id,product_id', ignoreDuplicates: false },
       );
       expect(result).toEqual(validCartItem);
     });

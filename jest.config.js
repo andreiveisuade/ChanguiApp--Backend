@@ -5,12 +5,7 @@ module.exports = {
   setupFiles: ['<rootDir>/__tests__/setup.ts'],
   testMatch: ['<rootDir>/__tests__/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
-  collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/index.ts',
-    '!src/types/**',
-    '!src/config/**',
-  ],
+  collectCoverageFrom: ['src/**/*.ts', '!src/index.ts', '!src/types/**', '!src/config/**'],
   coverageDirectory: 'coverage',
   coverageThreshold: {
     global: {

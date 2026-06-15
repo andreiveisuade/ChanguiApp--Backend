@@ -95,6 +95,5 @@ export const validTaxCategories = [
 
 export const validCheckoutPreference = {
   preference_id: 'pref-uuid-1',
-  init_point:
-    'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=pref-uuid-1',
+  init_point: 'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=pref-uuid-1',
 };

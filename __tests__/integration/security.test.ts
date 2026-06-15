@@ -32,9 +32,7 @@ describe('Security', () => {
 
       expect(res.statusCode).toBe(400);
       expect(res.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ msg: 'Email invalido' }),
-        ]),
+        expect.arrayContaining([expect.objectContaining({ msg: 'Email invalido' })]),
       );
     });
 
@@ -92,9 +90,7 @@ describe('Security', () => {
   describe('Rate limiting', () => {
     it('mas de 10 requests a /api/auth devuelve 429', async () => {
       const requests = Array.from({ length: 11 }, () =>
-        request(app)
-          .post('/api/auth/login')
-          .send({ email: 'test@test.com', password: 'wrong' })
+        request(app).post('/api/auth/login').send({ email: 'test@test.com', password: 'wrong' }),
       );
 
       const responses = await Promise.all(requests);

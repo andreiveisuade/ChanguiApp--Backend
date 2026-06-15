@@ -15,9 +15,7 @@ const mockSupabase: any = {
   single: jest.fn().mockResolvedValue({ data: null, error: null }),
   maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
   auth: {
-    signUp: jest
-      .fn()
-      .mockResolvedValue({ data: { user: null, session: null }, error: null }),
+    signUp: jest.fn().mockResolvedValue({ data: { user: null, session: null }, error: null }),
     signInWithPassword: jest
       .fn()
       .mockResolvedValue({ data: { user: null, session: null }, error: null }),

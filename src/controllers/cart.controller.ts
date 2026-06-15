@@ -12,13 +12,24 @@ export async function getCart(req: Request, res: Response, next: NextFunction): 
 
 export async function addItem(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { product_id, unit_price, store_id, quantity = 1 } = req.body as {
+    const {
+      product_id,
+      unit_price,
+      store_id,
+      quantity = 1,
+    } = req.body as {
       product_id?: string;
       unit_price?: number;
       store_id?: string;
       quantity?: number;
     };
-    const item = await cartService.addItem(req.user!.id, store_id, product_id!, quantity, unit_price!);
+    const item = await cartService.addItem(
+      req.user!.id,
+      store_id,
+      product_id!,
+      quantity,
+      unit_price!,
+    );
     res.status(201).json(item);
   } catch (err) {
     next(err);
@@ -28,7 +39,11 @@ export async function addItem(req: Request, res: Response, next: NextFunction): 
 export async function updateItem(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { quantity } = req.body as { quantity?: number };
-    const result = await cartService.updateItem(req.user!.id, String(req.params.id), Number(quantity));
+    const result = await cartService.updateItem(
+      req.user!.id,
+      String(req.params.id),
+      Number(quantity),
+    );
     if (result === null) {
       res.status(200).json({ message: 'Item eliminado del carrito' });
       return;

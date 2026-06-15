@@ -19,7 +19,7 @@ export const authRepository = {
     });
     if (error) throw error;
     return data;
-  }
+  },
 };
 
 export default authRepository;

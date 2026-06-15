@@ -1,10 +1,7 @@
 import supabase from '../config/supabase';
 import type { Purchase, PurchaseDetail } from '../types/domain';
 
-export async function findByUserId(
-  userId: string,
-  status?: string
-): Promise<Purchase[]> {
+export async function findByUserId(userId: string, status?: string): Promise<Purchase[]> {
   let query = supabase
     .from('purchases')
     .select('id, total, payment_id, payment_status, created_at, store_id')
@@ -19,7 +16,7 @@ export async function findByUserId(
 
 export async function findByIdAndUser(
   purchaseId: string,
-  userId: string
+  userId: string,
 ): Promise<PurchaseDetail | null> {
   const { data, error } = await supabase
     .from('purchases')

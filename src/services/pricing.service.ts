@@ -14,7 +14,10 @@ function formatRate(rate: number): string {
 
 // El precio de Precios Claros es final con IVA incluido (Ley 27.221).
 // Despejamos hacia atrás la base imponible y el IVA según la alícuota.
-export function calculatePricing(priceFinal: number, ratePct: number): Omit<TaxBreakdown, 'category'> {
+export function calculatePricing(
+  priceFinal: number,
+  ratePct: number,
+): Omit<TaxBreakdown, 'category'> {
   const net = priceFinal / (1 + ratePct / 100);
   return {
     rate: ratePct,

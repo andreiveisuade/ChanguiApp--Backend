@@ -17,7 +17,7 @@
 - Durante el procesamiento del pago, se muestra una pantalla de carga con estado "Procesando pago…" para que el usuario sepa que la operación está en curso.
 - Los ítems de una lista de compras muestran un tilde/tachado inmediato al ser escaneados y agregados al carrito.
 
-**Pantalla de evidencia en Figma:**  
+**Pantalla de evidencia en Figma:**
 
 <div align="center">
   <img src="screenshots-nielsen/1-nielsen.png" alt="Heurística 1 - Visibilidad del estado del sistema" width="300">
@@ -36,7 +36,7 @@
 - El flujo de la app replica el proceso físico de ir al supermercado: elegir dónde comprás → escanear productos → revisar carrito → pagar.
 - Los precios se muestran en formato argentino (`$1.250,00`) con el símbolo de peso.
 
-**Pantalla de evidencia en Figma:**  
+**Pantalla de evidencia en Figma:**
 
 <div align="center">
   <img src="screenshots-nielsen/2-7-nielsen.png" alt="Heurística 2 - Correspondencia entre el sistema y el mundo real" width="300">
@@ -55,7 +55,7 @@
 - Al agregar un ítem a una lista de compras, el usuario puede deshacer la acción antes de que el toast desaparezca.
 - En el flujo de pago, el usuario puede volver al carrito antes de confirmar el checkout.
 
-**Pantalla de evidencia en Figma:**  
+**Pantalla de evidencia en Figma:**
 
 <div align="center">
   <img src="screenshots-nielsen/3-6-nielsen.png" alt="Heurística 3 - Control y libertad del usuario" width="300">
@@ -75,7 +75,7 @@
 - Los mensajes de error siguen siempre el mismo formato: ícono de alerta + texto descriptivo + acción sugerida.
 - La tipografía es consistente: **Poppins** para títulos y displays, **Inter** para body, labels y datos.
 
-**Pantalla de evidencia en Figma:**  
+**Pantalla de evidencia en Figma:**
 
 <div align="center">
   <img src="screenshots-nielsen/4-nielsen.png" alt="Heurística 4 - Consistencia y estándares" width="300">
@@ -94,7 +94,7 @@
 - Al **modificar la cantidad** de un ítem en el carrito, el campo numérico no permite valores menores a 1 ni valores no numéricos.
 - Si el usuario intenta escanear sin conexión a internet, se muestra un aviso preventivo antes de activar la cámara.
 
-**Pantalla de evidencia en Figma:**  
+**Pantalla de evidencia en Figma:**
 
 <div align="center">
   <img src="screenshots-nielsen/5-nielsen.png" alt="Heurística 5 - Prevención de errores" width="300">
@@ -113,7 +113,7 @@
 - Las **listas de compras** muestran el porcentaje de ítems ya comprados para que el usuario vea de un vistazo cuánto le falta.
 - El historial de compras muestra el nombre del supermercado, la fecha y el total de cada compra pasada.
 
-**Pantalla de evidencia en Figma:**   
+**Pantalla de evidencia en Figma:**
 
 <div align="center">
   <img src="screenshots-nielsen/3-6-nielsen.png" alt="Heurística 6 - Reconocimiento en lugar de recuerdo" width="300">
@@ -132,7 +132,7 @@
 - El usuario puede **ajustar la cantidad** de un ítem directamente desde el carrito sin tener que eliminarlo y volver a escanear.
 - Los tamaños de fuente son configurables desde la app para adaptarse a las preferencias del usuario.
 
-**Pantalla de evidencia en Figma:**  
+**Pantalla de evidencia en Figma:**
 
 <div align="center">
   <img src="screenshots-nielsen/2-7-nielsen.png" alt="Heurística 7 - Flexibilidad y eficiencia de uso" width="300">
@@ -152,7 +152,7 @@
 - No se usan animaciones decorativas que puedan ralentizar la percepción de la app en el contexto de uso.
 - El uso del rojo `#D04946` se reserva para elementos de marca y acciones primarias, sin saturar la interfaz.
 
-**Pantalla de evidencia en Figma:**  
+**Pantalla de evidencia en Figma:**
 
 <div align="center">
   <img src="screenshots-nielsen/8-nielsen.png" alt="Heurística 8 - Diseño estético y minimalista" width="300">
@@ -167,20 +167,19 @@
 **Cómo se aplica en ChanguiApp:**
 
 - Los mensajes de error usan el color `#C1121F` (status/error) con ícono de alerta, diferenciado claramente del rojo de marca `#D04946`.
-- Si el código de barras escaneado **no se encuentra en el catálogo**, el mensaje dice: *"No encontramos este producto. Intentá escanear de nuevo o verificá el código."*
-- Si el **pago es rechazado**, la pantalla indica el motivo en lenguaje simple (*"Tu tarjeta fue rechazada. Revisá los datos o probá con otro medio de pago."*) y ofrece la opción de reintentar.
+- Si el código de barras escaneado **no se encuentra en el catálogo**, el mensaje dice: _"No encontramos este producto. Intentá escanear de nuevo o verificá el código."_
+- Si el **pago es rechazado**, la pantalla indica el motivo en lenguaje simple (_"Tu tarjeta fue rechazada. Revisá los datos o probá con otro medio de pago."_) y ofrece la opción de reintentar.
 - Los errores de **conectividad** muestran un mensaje claro con un botón de "Reintentar" en lugar de un estado de carga infinito.
 - Los errores de **validación en formularios** (registro, perfil) se muestran en línea, junto al campo específico que tiene el problema.
 
-**Pantalla de evidencia en Figma:**  
+**Pantalla de evidencia en Figma:**
 
 <div align="center">
   <img src="screenshots-nielsen/9-nielsen.png" alt="Heurística 9 - Ayuda a reconocer, diagnosticar y recuperarse de errores" width="300">
-</div>  
-
+</div>
 
 > Pantalla "¿Olvidaste tu contraseña?"  
->Esta pantalla evidencia la heurística a través de tres elementos: el texto explicativo debajo del título le indica al usuario exactamente qué va a ocurrir antes de que confirme la acción; el placeholder `tu@correo.com` guía el formato esperado del campo; y el enlace "← Volver al inicio de sesión" ofrece una salida clara en caso de que el usuario haya llegado acá por error.
+> Esta pantalla evidencia la heurística a través de tres elementos: el texto explicativo debajo del título le indica al usuario exactamente qué va a ocurrir antes de que confirme la acción; el placeholder `tu@correo.com` guía el formato esperado del campo; y el enlace "← Volver al inicio de sesión" ofrece una salida clara en caso de que el usuario haya llegado acá por error.
 
 ---
 
@@ -195,11 +194,11 @@
 - Los íconos de la navegación incluyen **etiquetas de texto** para que el usuario novato entienda qué hace cada sección.
 - En la pantalla de pago se muestra un **resumen del carrito** antes de confirmar, funcionando como guía de último paso.
 
-**Pantalla de evidencia en Figma:**  
+**Pantalla de evidencia en Figma:**
 
 <div align="center">
   <img src="screenshots-nielsen/10-nielsen.png" alt="Heurística 10 - Ayuda y documentación" width="300">
-</div>  
+</div>
 
 ---
 
@@ -207,18 +206,16 @@
 
 ### Contraste de colores (WCAG AA — ratio mínimo 4.5:1 para texto normal, 3:1 para texto grande ≥18pt)
 
-
 | Combinación               | Uso en la app                              | Ratio estimado | ¿Cumple AA?                  |
 | ------------------------- | ------------------------------------------ | -------------- | ---------------------------- |
-| `#000000` sobre `#FFFFFF` | Texto primario sobre fondo blanco          | 21:1           | ✅                            |
-| `#000000` sobre `#FFEFEF` | Texto primario sobre superficie default    | ~20:1          | ✅                            |
-| `#666666` sobre `#FFFFFF` | Texto secundario sobre fondo blanco        | ~5.7:1         | ✅                            |
-| `#666666` sobre `#FFEFEF` | Texto secundario sobre superficie default  | ~5.4:1         | ✅                            |
+| `#000000` sobre `#FFFFFF` | Texto primario sobre fondo blanco          | 21:1           | ✅                           |
+| `#000000` sobre `#FFEFEF` | Texto primario sobre superficie default    | ~20:1          | ✅                           |
+| `#666666` sobre `#FFFFFF` | Texto secundario sobre fondo blanco        | ~5.7:1         | ✅                           |
+| `#666666` sobre `#FFEFEF` | Texto secundario sobre superficie default  | ~5.4:1         | ✅                           |
 | `#FFFFFF` sobre `#D04946` | Texto sobre botones primarios (rojo brand) | ~3.8:1         | ⚠️ Solo texto grande (≥18pt) |
-| `#FFFFFF` sobre `#C1121F` | Texto sobre botones destructivos / error   | ~5.1:1         | ✅                            |
-| `#FFFFFF` sobre `#5A8A5B` | Texto sobre estado success                 | ~4.6:1         | ✅                            |
-| `#000000` sobre `#FF9B98` | Texto sobre estado warning                 | ~8.5:1         | ✅                            |
-
+| `#FFFFFF` sobre `#C1121F` | Texto sobre botones destructivos / error   | ~5.1:1         | ✅                           |
+| `#FFFFFF` sobre `#5A8A5B` | Texto sobre estado success                 | ~4.6:1         | ✅                           |
+| `#000000` sobre `#FF9B98` | Texto sobre estado warning                 | ~8.5:1         | ✅                           |
 
 ### Tamaños de fuente
 
@@ -253,7 +250,6 @@
 
 ## Referencia del sistema de diseño
 
-
 | Token             | Valor     | Uso                                                       |
 | ----------------- | --------- | --------------------------------------------------------- |
 | `brand/primary`   | `#D04946` | Acciones primarias, elementos de marca                    |
@@ -272,7 +268,6 @@
 | `font/display`    | Poppins   | Títulos, logotipo, display                                |
 | `font/body`       | Inter     | Body, labels, UI, datos                                   |
 
-
 ---
 
-*Documento generado para DEV-96 — Sprint 2. Última actualización: Abril 2026.*
+_Documento generado para DEV-96 — Sprint 2. Última actualización: Abril 2026._

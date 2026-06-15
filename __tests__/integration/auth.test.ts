@@ -25,13 +25,11 @@ describe('POST /api/auth/register', () => {
       error: null,
     });
 
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send({
-        email: validUser.email,
-        password: validUser.password,
-        name: validUser.full_name,
-      });
+    const res = await request(app).post('/api/auth/register').send({
+      email: validUser.email,
+      password: validUser.password,
+      name: validUser.full_name,
+    });
 
     expect(res.statusCode).toBe(201);
     expect(res.body).toHaveProperty('session.access_token', 'test-token');
@@ -44,13 +42,11 @@ describe('POST /api/auth/register', () => {
       error: null,
     });
 
-    const res = await request(app)
-      .post('/api/auth/register')
-      .send({
-        email: validUser.email,
-        password: validUser.password,
-        name: validUser.full_name,
-      });
+    const res = await request(app).post('/api/auth/register').send({
+      email: validUser.email,
+      password: validUser.password,
+      name: validUser.full_name,
+    });
 
     expect(res.statusCode).toBe(409);
   });

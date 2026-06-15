@@ -51,11 +51,7 @@ export async function createUserProfile(userId: string, email: string, name: str
 }
 
 export async function getUserByEmail(email: string) {
-  const { data, error } = await supabaseAdmin
-    .from('users')
-    .select('*')
-    .eq('email', email)
-    .single();
+  const { data, error } = await supabaseAdmin.from('users').select('*').eq('email', email).single();
 
   if (error && error.code !== 'PGRST116') throw error;
   return data || null;

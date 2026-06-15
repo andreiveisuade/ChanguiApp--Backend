@@ -1,11 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/user.service';
 
-export async function getProfile(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export async function getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const profile = await userService.getProfile(req.user!.id, req.user);
     res.json(profile);
@@ -17,7 +13,7 @@ export async function getProfile(
 export async function updateProfile(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const profile = await userService.updateProfile(req.user!.id, req.body);
@@ -30,7 +26,7 @@ export async function updateProfile(
 export async function deleteProfile(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     await userService.deleteProfile(req.user!.id);

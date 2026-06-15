@@ -46,9 +46,7 @@ describe('SyncJobsRepository', () => {
         error: new Error('insert failed'),
       });
 
-      await expect(syncJobsRepository.create('precios_claros')).rejects.toThrow(
-        'insert failed',
-      );
+      await expect(syncJobsRepository.create('precios_claros')).rejects.toThrow('insert failed');
     });
   });
 
@@ -187,9 +185,7 @@ describe('SyncJobsRepository', () => {
 
     it('lanza el error de supabase', async () => {
       mockSupabase.eq.mockResolvedValue({ data: null, error: new Error('boom') });
-      await expect(
-        syncJobsRepository.updateProgress(JOB_ID, 0, 0, 0),
-      ).rejects.toThrow('boom');
+      await expect(syncJobsRepository.updateProgress(JOB_ID, 0, 0, 0)).rejects.toThrow('boom');
     });
   });
 

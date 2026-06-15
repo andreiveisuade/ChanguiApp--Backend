@@ -6,7 +6,7 @@ const app = require('../../src/index');
 jest.mock('../../src/config/supabase', () => require('../helpers/mockSupabase'));
 
 const mockSupabase = require('../helpers/mockSupabase');
-const { validStore, validUser } = require('../helpers/testData');
+const { validStore } = require('../helpers/testData');
 
 const authHeader = { Authorization: 'Bearer test-token' };
 
@@ -26,9 +26,7 @@ describe('Stores Endpoints', () => {
     it('autenticado devuelve 200 con lista de stores', async () => {
       mockSupabase.select.mockResolvedValue({ data: [validStore], error: null });
 
-      const res = await request(app)
-        .get('/api/stores')
-        .set(authHeader);
+      const res = await request(app).get('/api/stores').set(authHeader);
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveLength(1);

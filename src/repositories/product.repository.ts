@@ -21,7 +21,7 @@ export async function findByBarcode(barcode: string): Promise<Product | null> {
   // Supabase tipa el embed to-one como array; en runtime es un objeto único.
   const row = data as Record<string, unknown>;
   const rawCategory = row.tax_category;
-  row.tax_category = Array.isArray(rawCategory) ? rawCategory[0] ?? null : rawCategory ?? null;
+  row.tax_category = Array.isArray(rawCategory) ? (rawCategory[0] ?? null) : (rawCategory ?? null);
 
   return row as unknown as Product;
 }
@@ -61,7 +61,7 @@ export async function findUpdatedSince(
   return (data ?? []).map((row) => {
     const r = row as Record<string, unknown>;
     const raw = r.tax_category;
-    r.tax_category = Array.isArray(raw) ? raw[0] ?? null : raw ?? null;
+    r.tax_category = Array.isArray(raw) ? (raw[0] ?? null) : (raw ?? null);
     return r as unknown as CatalogProduct;
   });
 }

@@ -1,11 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as purchaseService from '../services/purchase.service';
 
-export async function list(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const status = typeof req.query.status === 'string' ? req.query.status : undefined;
     const purchases = await purchaseService.list(req.user!.id, status);
@@ -18,7 +14,7 @@ export async function list(
 export async function getById(
   req: Request<{ id: string }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const purchase = await purchaseService.getById(req.user!.id, req.params.id);

@@ -1,8 +1,4 @@
-import express, {
-  type ErrorRequestHandler,
-  type Request,
-  type Response,
-} from 'express';
+import express, { type ErrorRequestHandler, type Request, type Response } from 'express';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
@@ -31,26 +27,28 @@ app.use(helmet());
 const allowedOrigins: string[] = process.env.ALLOWED_ORIGINS?.split(',') ?? [
   'http://localhost:8081',
 ];
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }),
+);
 // Rate limiting global - para todos los endpoints
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // ventana de 15 minutos
-  max: 100,                  // máximo 100 requests por IP en esa ventana
+  max: 100, // máximo 100 requests por IP en esa ventana
   message: 'Demasiadas solicitudes, intenta mas tarde.',
 });
 
 // Rate limiting estricto - solo para login y registro
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // ventana de 15 minutos
-  max: 10,                   // máximo 10 intentos por IP
+  max: 10, // máximo 10 intentos por IP
   message: 'Demasiados intentos de autenticacion, espera 15 minutos.',
 });
 
-app.use(globalLimiter);                      // aplica a toda la API
-app.use('/api/auth', authLimiter);           // aplica SOLO a login y registro
+app.use(globalLimiter); // aplica a toda la API
+app.use('/api/auth', authLimiter); // aplica SOLO a login y registro
 app.use(express.json());
 // Logging de requests (se omite /health para no inundar los logs de Render)
 app.use(morgan('tiny', { skip: (req) => req.path === '/health' }));
@@ -135,9 +133,10 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   // 4. Error con status custom (ej: errores de Supabase con status)
   if (typeof err?.status === 'number' && err.status >= 400 && err.status < 600) {
     console.error(`[ERROR] ${err.status} - ${err.message}`);
-    const safe = process.env.NODE_ENV === 'production' && err.status >= 500
-      ? 'Error interno del servidor'
-      : err.message || 'Error sin descripcion';
+    const safe =
+      process.env.NODE_ENV === 'production' && err.status >= 500
+        ? 'Error interno del servidor'
+        : err.message || 'Error sin descripcion';
     res.status(err.status).json({ error: safe });
     return;
   }
@@ -145,9 +144,10 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   // 5. Cualquier otro error inesperado: log completo + 500 sin filtrar a prod
   console.error('[ERROR] 500 - Error inesperado:', err);
   res.status(500).json({
-    error: process.env.NODE_ENV === 'production'
-      ? 'Error interno del servidor'
-      : err?.message || 'Error interno del servidor',
+    error:
+      process.env.NODE_ENV === 'production'
+        ? 'Error interno del servidor'
+        : err?.message || 'Error interno del servidor',
   });
 };
 app.use(errorHandler);

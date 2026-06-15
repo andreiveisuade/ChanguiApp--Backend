@@ -114,7 +114,13 @@ router.post('/items', authMiddleware, cartItemValidators, validate, cartControll
  *       '404':
  *         $ref: '#/components/responses/NotFound'
  */
-router.put('/items/:id', authMiddleware, cartItemUpdateValidators, validate, cartController.updateItem);
+router.put(
+  '/items/:id',
+  authMiddleware,
+  cartItemUpdateValidators,
+  validate,
+  cartController.updateItem,
+);
 
 /**
  * @swagger

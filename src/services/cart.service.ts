@@ -1,6 +1,12 @@
 import * as cartRepository from '../repositories/cart.repository';
 import { summarizeByRate, DEFAULT_TAX_RATE } from './pricing.service';
-import { ApiError, type Cart, type CartItem, type CartWithItems, type TaxSummary } from '../types/domain';
+import {
+  ApiError,
+  type Cart,
+  type CartItem,
+  type CartWithItems,
+  type TaxSummary,
+} from '../types/domain';
 
 export async function getCart(userId: string): Promise<{
   cart: CartWithItems | null;
@@ -18,7 +24,7 @@ export async function getCart(userId: string): Promise<{
     items.map((i) => ({
       lineTotal: i.unit_price * i.quantity,
       rate: i.product?.tax_category?.rate ?? DEFAULT_TAX_RATE,
-    }))
+    })),
   );
   return { cart, items, total, summary };
 }
@@ -28,7 +34,7 @@ export async function addItem(
   storeId: string | undefined,
   productId: string,
   quantity: number,
-  unitPrice: number
+  unitPrice: number,
 ): Promise<CartItem> {
   let cart = await cartRepository.findActiveCartByUserId(userId);
   if (!cart && !storeId) {
@@ -43,7 +49,7 @@ export async function addItem(
 export async function updateItem(
   userId: string,
   itemId: string,
-  quantity: number
+  quantity: number,
 ): Promise<CartItem | null> {
   const item = await cartRepository.findItemById(itemId);
   if (!item) throw new ApiError('Item no encontrado', 404);

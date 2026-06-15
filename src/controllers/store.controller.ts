@@ -2,11 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import * as storeService from '../services/store.service';
 import { ApiError } from '../types/domain';
 
-export async function list(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { lat, lng } = req.query;
     const hasLat = lat !== undefined;

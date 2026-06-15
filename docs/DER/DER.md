@@ -10,22 +10,23 @@
 
 ## Entidades
 
-| Entidad | Descripción |
-|---|---|
-| `users` | Extiende el perfil de Supabase Auth con datos adicionales del usuario |
-| `stores` | Supermercados disponibles, sincronizados desde la API de Precios Claros |
-| `products` | Catálogo de productos con precio, sincronizado masivamente desde Precios Claros. Tiene `tax_category_id` (categoría fiscal asignada) y `tax_locked` (override manual) |
-| `tax_categories` | Catálogo de categorías fiscales con su alícuota de IVA (Ley 23.349), keywords de clasificación y referencia legal |
-| `carts` | Carrito activo del usuario en un supermercado |
-| `cart_items` | Productos dentro de un carrito con cantidad y precio al momento del escaneo |
-| `lists` | Listas de compras creadas por el usuario |
-| `list_items` | Items de una lista; se marcan como `purchased = true` al escanearlos |
-| `purchases` | Historial de compras completadas y confirmadas por Mercado Pago |
-| `purchase_items` | Snapshot de los productos comprados al momento del pago |
+| Entidad          | Descripción                                                                                                                                                           |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `users`          | Extiende el perfil de Supabase Auth con datos adicionales del usuario                                                                                                 |
+| `stores`         | Supermercados disponibles, sincronizados desde la API de Precios Claros                                                                                               |
+| `products`       | Catálogo de productos con precio, sincronizado masivamente desde Precios Claros. Tiene `tax_category_id` (categoría fiscal asignada) y `tax_locked` (override manual) |
+| `tax_categories` | Catálogo de categorías fiscales con su alícuota de IVA (Ley 23.349), keywords de clasificación y referencia legal                                                     |
+| `carts`          | Carrito activo del usuario en un supermercado                                                                                                                         |
+| `cart_items`     | Productos dentro de un carrito con cantidad y precio al momento del escaneo                                                                                           |
+| `lists`          | Listas de compras creadas por el usuario                                                                                                                              |
+| `list_items`     | Items de una lista; se marcan como `purchased = true` al escanearlos                                                                                                  |
+| `purchases`      | Historial de compras completadas y confirmadas por Mercado Pago                                                                                                       |
+| `purchase_items` | Snapshot de los productos comprados al momento del pago                                                                                                               |
 
 ---
 
 ## Relaciones
+
 ```
 users        1 ──── N   carts
 users        1 ──── N   lists
@@ -47,6 +48,7 @@ tax_categories 1 ──── N products
 > El diagrama, sin embargo, está diseñado con visión de futuro: la entidad `stores` existe desde el inicio para que la arquitectura soporte, sin cambios de esquema, la incorporación de múltiples cadenas en versiones posteriores.
 
 En el MVP:
+
 - Hay un único `store` activo en la base de datos.
 - El usuario no selecciona supermercado; el carrito y las compras se asocian automáticamente a ese store.
 - La FK `store_id` en `carts` y `purchases` ya está presente para que la expansión multi-supermercado sea transparente a futuro.

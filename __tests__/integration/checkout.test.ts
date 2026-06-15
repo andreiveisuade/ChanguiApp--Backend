@@ -6,7 +6,12 @@ const app = require('../../src/index');
 jest.mock('../../src/config/supabase', () => require('../helpers/mockSupabase'));
 
 const mockSupabase = require('../helpers/mockSupabase');
-const { validUser, validCart, validCartItem, validProduct, validCheckoutPreference } = require('../helpers/testData');
+const {
+  validCart,
+  validCartItem,
+  validProduct,
+  validCheckoutPreference,
+} = require('../helpers/testData');
 
 const authHeader = { Authorization: 'Bearer test-token' };
 
@@ -48,9 +53,7 @@ describe('Checkout Endpoints', () => {
         init_point: validCheckoutPreference.init_point,
       });
 
-      const res = await request(app)
-        .post('/api/checkout')
-        .set(authHeader);
+      const res = await request(app).post('/api/checkout').set(authHeader);
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty('preference_id');
@@ -60,19 +63,18 @@ describe('Checkout Endpoints', () => {
     it('sin carrito activo devuelve 400', async () => {
       mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
 
-      const res = await request(app)
-        .post('/api/checkout')
-        .set(authHeader);
+      const res = await request(app).post('/api/checkout').set(authHeader);
 
       expect(res.statusCode).toBe(400);
     });
 
     it('con carrito vacío devuelve 400', async () => {
-      mockSupabase.maybeSingle.mockResolvedValue({ data: { ...validCart, items: [] }, error: null });
+      mockSupabase.maybeSingle.mockResolvedValue({
+        data: { ...validCart, items: [] },
+        error: null,
+      });
 
-      const res = await request(app)
-        .post('/api/checkout')
-        .set(authHeader);
+      const res = await request(app).post('/api/checkout').set(authHeader);
 
       expect(res.statusCode).toBe(400);
     });
@@ -86,7 +88,10 @@ describe('Checkout Endpoints', () => {
     it('con credenciales que no son de prueba devuelve 503 (seguro anti-cobro real)', async () => {
       mercadopagoConfig.getAccountTags.mockResolvedValue([]); // cuenta real
       mockSupabase.maybeSingle.mockResolvedValue({
-        data: { ...validCart, items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }] },
+        data: {
+          ...validCart,
+          items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+        },
         error: null,
       });
 
@@ -107,7 +112,10 @@ describe('Checkout Endpoints', () => {
       });
       mockSupabase.single
         .mockResolvedValueOnce({
-          data: { ...validCart, items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }] },
+          data: {
+            ...validCart,
+            items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
+          },
           error: null,
         })
         .mockResolvedValueOnce({ data: { id: 'purchase-uuid-1' }, error: null })
@@ -124,7 +132,11 @@ describe('Checkout Endpoints', () => {
   describe('GET /api/checkout/status', () => {
     it('devuelve el status de la compra asociada a la preferencia', async () => {
       mockSupabase.maybeSingle.mockResolvedValue({
-        data: { id: 'purchase-uuid-1', payment_status: 'completed', mp_preference_id: 'pref-uuid-1' },
+        data: {
+          id: 'purchase-uuid-1',
+          payment_status: 'completed',
+          mp_preference_id: 'pref-uuid-1',
+        },
         error: null,
       });
 
