@@ -4,7 +4,7 @@ jest.mock('../../../src/repositories/auth.repository');
 jest.mock('../../../src/repositories/user.repository');
 
 const { authService } = require('../../../src/services/auth.service');
-const { authRepository } = require('../../../src/repositories/auth.repository');
+const authRepository = require('../../../src/repositories/auth.repository');
 const userRepository = require('../../../src/repositories/user.repository');
 
 const { validUser } = require('../../helpers/testData');
@@ -18,7 +18,7 @@ describe('AuthService', () => {
         user: { id: validUser.id, email: validUser.email },
         session: { access_token: 'test-token' },
       };
-      userRepository.getUserByEmail.mockResolvedValue(null);
+      userRepository.findByEmail.mockResolvedValue(null);
       authRepository.register.mockResolvedValue(authData);
       userRepository.createUserProfile.mockResolvedValue({
         id: validUser.id,
@@ -28,7 +28,7 @@ describe('AuthService', () => {
 
       const result = await authService.register(validUser.email, validUser.password, 'Test User');
 
-      expect(userRepository.getUserByEmail).toHaveBeenCalledWith(validUser.email);
+      expect(userRepository.findByEmail).toHaveBeenCalledWith(validUser.email);
       expect(authRepository.register).toHaveBeenCalledWith(validUser.email, validUser.password);
       expect(userRepository.createUserProfile).toHaveBeenCalledWith(
         authData.user.id,
@@ -40,7 +40,7 @@ describe('AuthService', () => {
     });
 
     it('devuelve error 409 si el email ya existe en la tabla users', async () => {
-      userRepository.getUserByEmail.mockResolvedValue({ id: validUser.id, email: validUser.email });
+      userRepository.findByEmail.mockResolvedValue({ id: validUser.id, email: validUser.email });
 
       await expect(
         authService.register(validUser.email, validUser.password, 'Test User'),
@@ -50,7 +50,7 @@ describe('AuthService', () => {
     });
 
     it('devuelve error 500 si Supabase Auth falla en crear el usuario', async () => {
-      userRepository.getUserByEmail.mockResolvedValue(null);
+      userRepository.findByEmail.mockResolvedValue(null);
       authRepository.register.mockResolvedValue({ user: null, session: null });
 
       await expect(

@@ -1,24 +1,13 @@
-import express, {
-  type ErrorRequestHandler,
-  type Request,
-  type Response,
-} from 'express';
+import express from 'express';
 import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import helmet from 'helmet';
-import swaggerUi from 'swagger-ui-express';
 import 'dotenv/config';
-import { swaggerSpec } from './config/swagger';
-import cartRoutes from './routes/cart.routes';
-import productRoutes from './routes/product.routes';
-import userRoutes from './routes/user.routes';
-import purchaseRoutes from './routes/purchase.routes';
-import checkoutRoutes from './routes/checkout.routes';
-import storeRoutes from './routes/store.routes';
-import adminRoutes from './routes/admin.routes';
-import authRoutes from './routes/auth.routes';
-import { ApiError } from './types/domain';
+import { corsOptions } from './config/cors';
+import { globalLimiter, authLimiter } from './middleware/rateLimit';
+import { registerRoutes } from './routes';
+import { notFoundHandler } from './middleware/notFound';
+import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 
@@ -28,132 +17,16 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(helmet());
-const allowedOrigins: string[] = process.env.ALLOWED_ORIGINS?.split(',') ?? [
-  'http://localhost:8081',
-];
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-}));
-// Rate limiting global - para todos los endpoints
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // ventana de 15 minutos
-  max: 100,                  // máximo 100 requests por IP en esa ventana
-  message: 'Demasiadas solicitudes, intenta mas tarde.',
-  // /health lo pingean el health check de Render y el keep-warm de forma
-  // frecuente; no debe contar para el rate limit ni devolver 429, o Render
-  // marca la instancia como failed y tira el backend.
-  skip: (req) => req.path === '/health',
-});
-
-// Rate limiting estricto - solo para login y registro
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // ventana de 15 minutos
-  max: 10,                   // máximo 10 intentos por IP
-  message: 'Demasiados intentos de autenticacion, espera 15 minutos.',
-});
-
+app.use(cors(corsOptions));
 app.use(globalLimiter);                      // aplica a toda la API
 app.use('/api/auth', authLimiter);           // aplica SOLO a login y registro
 app.use(express.json());
 // Logging de requests (se omite /health para no inundar los logs de Render)
 app.use(morgan('tiny', { skip: (req) => req.path === '/health' }));
 
-/**
- * @swagger
- * /health:
- *   get:
- *     tags: [health]
- *     summary: Healthcheck
- *     responses:
- *       '200':
- *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status: { type: string, example: ok }
- */
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok' });
-});
+registerRoutes(app);
 
-// OpenAPI / Swagger UI — el spec se genera escaneando los comentarios @swagger
-// de cada route file (ver src/config/swagger.ts).
-// persistAuthorization: true guarda el Bearer token en localStorage del browser,
-// asi se mantiene entre recargas y al cambiar de pestana de Swagger.
-app.use(
-  '/api/docs',
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, {
-    swaggerOptions: { persistAuthorization: true },
-  }),
-);
-
-// Rutas del MVP
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/purchases', purchaseRoutes);
-app.use('/api/checkout', checkoutRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/stores', storeRoutes);
-app.use('/api/admin', adminRoutes);
-
-// 404 handler para rutas no encontradas. Si llegamos aca es porque
-// ningun router previo matcheo el path.
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    error: 'Endpoint no encontrado',
-    method: req.method,
-    path: req.path,
-  });
-});
-
-// Error handler global. Mapea errores comunes a respuestas amigables.
-const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  // 1. Body JSON malformado (express.json setea err.type)
-  if (err?.type === 'entity.parse.failed') {
-    console.error(`[ERROR] 400 - JSON malformado: ${err.message}`);
-    res.status(400).json({
-      error: 'JSON malformado en el body. Verificá comillas, comas y llaves.',
-    });
-    return;
-  }
-
-  // 2. Body demasiado grande
-  if (err?.type === 'entity.too.large') {
-    console.error(`[ERROR] 413 - Body too large`);
-    res.status(413).json({ error: 'Body demasiado grande' });
-    return;
-  }
-
-  // 3. ApiError lanzado por el dominio (404, 401, 403, 400, etc.)
-  if (err instanceof ApiError) {
-    console.error(`[ERROR] ${err.status} - ${err.message}`);
-    res.status(err.status).json({ error: err.message });
-    return;
-  }
-
-  // 4. Error con status custom (ej: errores de Supabase con status)
-  if (typeof err?.status === 'number' && err.status >= 400 && err.status < 600) {
-    console.error(`[ERROR] ${err.status} - ${err.message}`);
-    const safe = process.env.NODE_ENV === 'production' && err.status >= 500
-      ? 'Error interno del servidor'
-      : err.message || 'Error sin descripcion';
-    res.status(err.status).json({ error: safe });
-    return;
-  }
-
-  // 5. Cualquier otro error inesperado: log completo + 500 sin filtrar a prod
-  console.error('[ERROR] 500 - Error inesperado:', err);
-  res.status(500).json({
-    error: process.env.NODE_ENV === 'production'
-      ? 'Error interno del servidor'
-      : err?.message || 'Error interno del servidor',
-  });
-};
+app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Solo levanta el servidor si se ejecuta directamente (no en tests)

@@ -6,7 +6,7 @@ const app = require('../../src/index');
 jest.mock('../../src/config/supabase', () => require('../helpers/mockSupabase'));
 
 const mockSupabase = require('../helpers/mockSupabase');
-const { validProduct, validUser } = require('../helpers/testData');
+const { validProduct } = require('../helpers/testData');
 
 const authHeader = { Authorization: 'Bearer test-token' };
 
@@ -24,7 +24,7 @@ describe('Products Endpoints', () => {
 
   describe('GET /api/products/barcode/:code', () => {
     it('con barcode válido devuelve 200 con datos del producto', async () => {
-      mockSupabase.single.mockResolvedValue({ data: validProduct, error: null });
+      mockSupabase.maybeSingle.mockResolvedValue({ data: validProduct, error: null });
 
       const res = await request(app)
         .get(`/api/products/barcode/${validProduct.barcode}`)
@@ -36,7 +36,7 @@ describe('Products Endpoints', () => {
     });
 
     it('con barcode inexistente devuelve 404', async () => {
-      mockSupabase.single.mockResolvedValue({ data: null, error: null });
+      mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
 
       const res = await request(app)
         .get('/api/products/barcode/0000000000000')

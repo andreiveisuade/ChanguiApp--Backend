@@ -6,14 +6,10 @@ export async function findById(userId: string): Promise<User | null> {
     .from('users')
     .select('id, email, full_name, avatar_url, created_at, updated_at')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw error;
-  }
-
-  return data as User;
+  if (error) throw error;
+  return (data as User) ?? null;
 }
 
 export async function update(userId: string, fields: UserUpdate): Promise<User> {
@@ -39,7 +35,11 @@ export async function removeAuthUser(userId: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function createUserProfile(userId: string, email: string, name: string) {
+export async function createUserProfile(
+  userId: string,
+  email: string,
+  name: string,
+): Promise<User> {
   const { data, error } = await supabaseAdmin
     .from('users')
     .insert([{ id: userId, email, full_name: name }])
@@ -47,16 +47,16 @@ export async function createUserProfile(userId: string, email: string, name: str
     .single();
 
   if (error) throw error;
-  return data;
+  return data as User;
 }
 
-export async function getUserByEmail(email: string) {
+export async function findByEmail(email: string): Promise<User | null> {
   const { data, error } = await supabaseAdmin
     .from('users')
     .select('*')
     .eq('email', email)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== 'PGRST116') throw error;
-  return data || null;
+  if (error) throw error;
+  return (data as User) ?? null;
 }

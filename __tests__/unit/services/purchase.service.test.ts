@@ -1,38 +1,40 @@
-export {};
-
-jest.mock('../../../src/repositories/purchase.repository');
-
-const purchaseService = require('../../../src/services/purchase.service');
-const purchaseRepository = require('../../../src/repositories/purchase.repository');
+import { PurchaseService } from '../../../src/services/purchase.service';
 
 const { validUser, validPurchase, validPurchaseItem } = require('../../helpers/testData');
 
+// DIP en acción: inyectamos un repo fake, sin mockear el módulo de Supabase.
 describe('PurchaseService', () => {
-  afterEach(() => jest.clearAllMocks());
+  let repo: { findByUserId: jest.Mock; findByIdAndUser: jest.Mock };
+  let service: PurchaseService;
+
+  beforeEach(() => {
+    repo = { findByUserId: jest.fn(), findByIdAndUser: jest.fn() };
+    service = new PurchaseService(repo);
+  });
 
   describe('list', () => {
     it('devuelve compras del usuario sin filtro de status', async () => {
-      purchaseRepository.findByUserId.mockResolvedValue([validPurchase]);
+      repo.findByUserId.mockResolvedValue([validPurchase]);
 
-      const result = await purchaseService.list(validUser.id);
+      const result = await service.list(validUser.id);
 
-      expect(purchaseRepository.findByUserId).toHaveBeenCalledWith(validUser.id, undefined);
+      expect(repo.findByUserId).toHaveBeenCalledWith(validUser.id, undefined);
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe(validPurchase.id);
     });
 
     it('aplica filtro de status si se pasa', async () => {
-      purchaseRepository.findByUserId.mockResolvedValue([]);
+      repo.findByUserId.mockResolvedValue([]);
 
-      await purchaseService.list(validUser.id, 'completed');
+      await service.list(validUser.id, 'completed');
 
-      expect(purchaseRepository.findByUserId).toHaveBeenCalledWith(validUser.id, 'completed');
+      expect(repo.findByUserId).toHaveBeenCalledWith(validUser.id, 'completed');
     });
 
     it('devuelve array vacio si no hay compras', async () => {
-      purchaseRepository.findByUserId.mockResolvedValue([]);
+      repo.findByUserId.mockResolvedValue([]);
 
-      const result = await purchaseService.list(validUser.id);
+      const result = await service.list(validUser.id);
 
       expect(result).toEqual([]);
     });
@@ -41,46 +43,50 @@ describe('PurchaseService', () => {
   describe('getById', () => {
     it('devuelve detalle de una compra con items del usuario', async () => {
       const purchaseWithItems = { ...validPurchase, items: [validPurchaseItem] };
-      purchaseRepository.findByIdAndUser.mockResolvedValue(purchaseWithItems);
+      repo.findByIdAndUser.mockResolvedValue(purchaseWithItems);
 
-      const result = await purchaseService.getById(validUser.id, validPurchase.id);
+      const result = await service.getById(validUser.id, validPurchase.id);
 
-      expect(purchaseRepository.findByIdAndUser).toHaveBeenCalledWith(
-        validPurchase.id,
-        validUser.id,
-      );
+      expect(repo.findByIdAndUser).toHaveBeenCalledWith(validPurchase.id, validUser.id);
       expect(result.items).toHaveLength(1);
       expect(result.items[0].product_name).toBe('Coca Cola 500ml');
     });
 
     it('lanza ApiError 404 si la compra no existe o no pertenece al usuario', async () => {
-      purchaseRepository.findByIdAndUser.mockResolvedValue(null);
+      repo.findByIdAndUser.mockResolvedValue(null);
 
       await expect(
-        purchaseService.getById(validUser.id, 'inexistente'),
+        service.getById(validUser.id, 'inexistente'),
       ).rejects.toMatchObject({ status: 404 });
     });
 
     it('lanza ApiError 404 si purchase pertenece a otro user (filtro por user_id en repo)', async () => {
       // El repo filtra por (id, user_id). Si el purchase es de otro user, devuelve null.
-      purchaseRepository.findByIdAndUser.mockResolvedValue(null);
+      repo.findByIdAndUser.mockResolvedValue(null);
 
       await expect(
-        purchaseService.getById(validUser.id, validPurchase.id),
+        service.getById(validUser.id, validPurchase.id),
       ).rejects.toMatchObject({ status: 404 });
 
-      expect(purchaseRepository.findByIdAndUser).toHaveBeenCalledWith(
-        validPurchase.id,
-        validUser.id,
-      );
+      expect(repo.findByIdAndUser).toHaveBeenCalledWith(validPurchase.id, validUser.id);
     });
 
     it('propaga errores de DB del repository', async () => {
-      purchaseRepository.findByIdAndUser.mockRejectedValue(new Error('DB connection lost'));
+      repo.findByIdAndUser.mockRejectedValue(new Error('DB connection lost'));
 
       await expect(
-        purchaseService.getById(validUser.id, validPurchase.id),
+        service.getById(validUser.id, validPurchase.id),
       ).rejects.toThrow('DB connection lost');
+    });
+
+    it('devuelve summary vacio si la compra no tiene items (undefined)', async () => {
+      const purchaseSinItems = { ...validPurchase, items: undefined };
+      repo.findByIdAndUser.mockResolvedValue(purchaseSinItems);
+
+      const result = await service.getById(validUser.id, validPurchase.id);
+
+      expect(result.summary!.taxes).toEqual([]);
+      expect(result.summary!.total).toBe(0);
     });
   });
 });

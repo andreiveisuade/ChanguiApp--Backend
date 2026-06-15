@@ -31,6 +31,22 @@ describe('classification.service', () => {
     ])('clasifica "%s" → %s', (name, expected) => {
       expect(classifyProduct(name, validTaxCategories)).toBe(expected);
     });
+
+    it("devuelve 'general' cuando no hay match y ninguna categoría es fallback", () => {
+      const sinFallback = [
+        {
+          id: 'carnes',
+          name: 'Carnes',
+          rate: 10.5,
+          legal_reference: 'Ley 23.349 art. 28 inc. a',
+          keywords: ['carne', 'pollo'],
+          priority: 10,
+          is_fallback: false,
+        },
+      ];
+
+      expect(classifyProduct('Lavandina Ayudín 1L', sinFallback)).toBe('general');
+    });
   });
 
   describe('reclassifyAll', () => {
@@ -60,6 +76,13 @@ describe('classification.service', () => {
       const result = await reclassifyAll();
 
       expect(result.classified).toBe(0);
+      expect(mockProductRepo.bulkSetCategory).not.toHaveBeenCalled();
+    });
+
+    it('propaga el error si el repositorio falla', async () => {
+      mockProductRepo.getAllForClassification.mockRejectedValue(new Error('db'));
+
+      await expect(reclassifyAll()).rejects.toThrow('db');
       expect(mockProductRepo.bulkSetCategory).not.toHaveBeenCalled();
     });
   });

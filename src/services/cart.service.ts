@@ -1,6 +1,7 @@
 import * as cartRepository from '../repositories/cart.repository';
-import { summarizeByRate, DEFAULT_TAX_RATE } from './pricing.service';
-import { ApiError, type Cart, type CartItem, type CartWithItems, type TaxSummary } from '../types/domain';
+import { summarizeByRate, itemsTotal, DEFAULT_TAX_RATE } from './pricing.service';
+import { ApiError } from '../utils/ApiError';
+import type { Cart, CartItem, CartWithItems, TaxSummary } from '../types/domain';
 
 export async function getCart(userId: string): Promise<{
   cart: CartWithItems | null;
@@ -13,7 +14,7 @@ export async function getCart(userId: string): Promise<{
     return { cart: null, items: [], total: 0, summary: { subtotal_net: 0, taxes: [], total: 0 } };
   }
   const items = cart.items ?? [];
-  const total = items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
+  const total = itemsTotal(items);
   const summary = summarizeByRate(
     items.map((i) => ({
       lineTotal: i.unit_price * i.quantity,
@@ -40,17 +41,24 @@ export async function addItem(
   return cartRepository.addOrUpdateItem(cart.id, productId, quantity, unitPrice);
 }
 
-export async function updateItem(
-  userId: string,
-  itemId: string,
-  quantity: number
-): Promise<CartItem | null> {
+// Valida que el item exista (404) y pertenezca al carrito activo del usuario
+// (403). Comparte el control de permisos entre updateItem y removeItem.
+async function assertItemBelongsToUser(userId: string, itemId: string): Promise<CartItem> {
   const item = await cartRepository.findItemById(itemId);
   if (!item) throw new ApiError('Item no encontrado', 404);
   const cart = await cartRepository.findActiveCartByUserId(userId);
   if (!cart || item.cart_id !== cart.id) {
     throw new ApiError('No tenés permiso para modificar este item', 403);
   }
+  return item;
+}
+
+export async function updateItem(
+  userId: string,
+  itemId: string,
+  quantity: number
+): Promise<CartItem | null> {
+  await assertItemBelongsToUser(userId, itemId);
   if (quantity <= 0) {
     await cartRepository.removeItem(itemId);
     return null;
@@ -59,12 +67,7 @@ export async function updateItem(
 }
 
 export async function removeItem(userId: string, itemId: string): Promise<CartItem> {
-  const item = await cartRepository.findItemById(itemId);
-  if (!item) throw new ApiError('Item no encontrado', 404);
-  const cart = await cartRepository.findActiveCartByUserId(userId);
-  if (!cart || item.cart_id !== cart.id) {
-    throw new ApiError('No tenés permiso para eliminar este item', 403);
-  }
+  await assertItemBelongsToUser(userId, itemId);
   return cartRepository.removeItem(itemId);
 }
 

@@ -485,5 +485,35 @@ describe('SyncService', () => {
         expect.objectContaining({ barcode: 'ok' }),
       ]);
     });
+
+    it('mapProduct: sin precioMax usa precio como price', async () => {
+      const productos = [{ id: 'p-1', nombre: 'Prod', marca: 'Marca', precio: '50.5' }];
+
+      await syncService.ingestProductsBatch(productos);
+
+      expect(mockedProducts.upsertBatch).toHaveBeenCalledWith([
+        expect.objectContaining({ barcode: 'p-1', price: 50.5 }),
+      ]);
+    });
+
+    it('mapProduct: sin precioMax ni precio price cae a 0', async () => {
+      const productos = [{ id: 'p-1', nombre: 'Prod', marca: 'Marca' }];
+
+      await syncService.ingestProductsBatch(productos);
+
+      expect(mockedProducts.upsertBatch).toHaveBeenCalledWith([
+        expect.objectContaining({ barcode: 'p-1', price: 0 }),
+      ]);
+    });
+
+    it('mapProduct: sin imagen deja image_url undefined', async () => {
+      const productos = [{ id: 'p-1', nombre: 'Prod', marca: 'Marca', precioMax: '10' }];
+
+      await syncService.ingestProductsBatch(productos);
+
+      expect(mockedProducts.upsertBatch).toHaveBeenCalledWith([
+        expect.objectContaining({ barcode: 'p-1', image_url: undefined }),
+      ]);
+    });
   });
 });

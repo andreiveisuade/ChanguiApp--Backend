@@ -27,6 +27,19 @@ describe('ProductService', () => {
       });
     });
 
+    it('producto sin tax_category cae al 21% (General) por defecto', async () => {
+      productRepository.findByBarcode.mockResolvedValue({ ...validProduct, tax_category: null });
+
+      const result = await productService.getByBarcode(validProduct.barcode);
+
+      expect(result.tax).toEqual({
+        category: 'General',
+        rate: 21,
+        net_price: 1239.67,
+        tax_amount: 260.33,
+      });
+    });
+
     it('lanza error 404 si el barcode no está en el catálogo', async () => {
       productRepository.findByBarcode.mockResolvedValue(null);
 

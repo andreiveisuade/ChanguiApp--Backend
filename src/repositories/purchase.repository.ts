@@ -26,12 +26,8 @@ export async function findByIdAndUser(
     .select('*, items:purchase_items(*)')
     .eq('id', purchaseId)
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw error;
-  }
-
-  return data as PurchaseDetail;
+  if (error) throw error;
+  return (data as PurchaseDetail) ?? null;
 }
