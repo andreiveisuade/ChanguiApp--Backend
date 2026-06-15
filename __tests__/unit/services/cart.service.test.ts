@@ -79,7 +79,6 @@ describe('CartService', () => {
 
       const result = await cartService.addItem(
         validUser.id,
-        validCart.store_id,
         validProduct.id,
         2,
         validProduct.price,
@@ -100,29 +99,15 @@ describe('CartService', () => {
       mockRepo.createCart.mockResolvedValue(newCart as any);
       mockRepo.addOrUpdateItem.mockResolvedValue(validCartItem as any);
 
-      await cartService.addItem(
-        validUser.id,
-        validCart.store_id,
-        validProduct.id,
-        2,
-        validProduct.price,
-      );
+      await cartService.addItem(validUser.id, validProduct.id, 2, validProduct.price);
 
-      expect(mockRepo.createCart).toHaveBeenCalledWith(validUser.id, validCart.store_id);
+      expect(mockRepo.createCart).toHaveBeenCalledWith(validUser.id);
       expect(mockRepo.addOrUpdateItem).toHaveBeenCalledWith(
         newCart.id,
         validProduct.id,
         2,
         validProduct.price,
       );
-    });
-
-    it('lanza ApiError 400 si no hay carrito y falta storeId', async () => {
-      mockRepo.findActiveCartByUserId.mockResolvedValue(null);
-
-      await expect(
-        cartService.addItem(validUser.id, undefined, validProduct.id, 2, validProduct.price),
-      ).rejects.toMatchObject({ status: 400 });
     });
   });
 

@@ -27,7 +27,7 @@ export async function findPurchaseByPreferenceId(
 ): Promise<Purchase | null> {
   const { data, error } = await supabase
     .from('purchases')
-    .select('id, total, payment_id, payment_status, created_at, store_id, mp_preference_id')
+    .select('id, total, payment_id, payment_status, created_at, mp_preference_id')
     .eq('user_id', userId)
     .eq('mp_preference_id', preferenceId)
     .maybeSingle();
