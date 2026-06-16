@@ -20,10 +20,6 @@ export const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, serverSid
 // Cliente con service_role. Bypassa RLS. Es el cliente para todos los
 // repositorios (queries de stores, products, cart, etc.). NUNCA llamar
 // .auth.* en este cliente — usar supabaseAuth para eso.
+// Se importa explícito en cada repositorio (no hay alias genérico `supabase`)
+// para que el call-site deje claro que usa el cliente con bypass de RLS.
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, serverSideAuth);
-
-// Aliases de compatibilidad. `supabase` (default + named) apunta al cliente
-// de queries (admin). El cliente de auth se importa explicitamente como
-// supabaseAuth.
-export const supabase = supabaseAdmin;
-export default supabaseAdmin;
