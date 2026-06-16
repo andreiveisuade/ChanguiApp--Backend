@@ -27,19 +27,22 @@ jest.mock('../../src/middleware/auth', () => {
 
 jest.mock('../../src/config/mercadopago', () => ({
   __esModule: true,
-  preference: { create: jest.fn() },
-  payment: { get: jest.fn() },
-  getAccountTags: jest.fn(),
+  mercadopagoGateway: {
+    getAccountTags: jest.fn(),
+    createPreference: jest.fn(),
+    getPayment: jest.fn(),
+  },
 }));
 
 const mercadopagoConfig = require('../../src/config/mercadopago');
+const gateway = mercadopagoConfig.mercadopagoGateway;
 
 describe('Checkout Endpoints', () => {
   afterEach(() => jest.clearAllMocks());
 
   beforeEach(() => {
     delete process.env.MP_REQUIRE_TEST_USER;
-    mercadopagoConfig.getAccountTags.mockResolvedValue(['test_user']);
+    gateway.getAccountTags.mockResolvedValue(['test_user']);
   });
 
   describe('POST /api/checkout', () => {
@@ -49,7 +52,7 @@ describe('Checkout Endpoints', () => {
         items: [{ ...validCartItem, unit_price: validProduct.price, product: validProduct }],
       };
       mockSupabase.maybeSingle.mockResolvedValue({ data: cartWithItems, error: null });
-      mercadopagoConfig.preference.create.mockResolvedValue({
+      gateway.createPreference.mockResolvedValue({
         id: validCheckoutPreference.preference_id,
         init_point: validCheckoutPreference.init_point,
       });
@@ -87,7 +90,7 @@ describe('Checkout Endpoints', () => {
     });
 
     it('con credenciales que no son de prueba devuelve 503 (seguro anti-cobro real)', async () => {
-      mercadopagoConfig.getAccountTags.mockResolvedValue([]); // cuenta real
+      gateway.getAccountTags.mockResolvedValue([]); // cuenta real
       mockSupabase.maybeSingle.mockResolvedValue({
         data: {
           ...validCart,
@@ -99,13 +102,13 @@ describe('Checkout Endpoints', () => {
       const res = await request(app).post('/api/checkout').set(authHeader);
 
       expect(res.statusCode).toBe(503);
-      expect(mercadopagoConfig.preference.create).not.toHaveBeenCalled();
+      expect(gateway.createPreference).not.toHaveBeenCalled();
     });
   });
 
   describe('POST /api/checkout/webhook', () => {
     it('con notificación válida de pago aprobado devuelve 200', async () => {
-      mercadopagoConfig.payment.get.mockResolvedValue({
+      gateway.getPayment.mockResolvedValue({
         id: 'MP-123456',
         status: 'approved',
         external_reference: validCart.id,
@@ -150,7 +153,7 @@ describe('Checkout Endpoints', () => {
     });
 
     it('con firma válida procesa y devuelve 200', async () => {
-      mercadopagoConfig.payment.get.mockResolvedValue(null); // corta temprano en handleWebhook
+      gateway.getPayment.mockResolvedValue(null); // corta temprano en handleWebhook
       const res = await request(app)
         .post('/api/checkout/webhook')
         .query({ 'data.id': DATA_ID })
@@ -159,7 +162,7 @@ describe('Checkout Endpoints', () => {
         .send({ type: 'payment', data: { id: DATA_ID } });
 
       expect(res.statusCode).toBe(200);
-      expect(mercadopagoConfig.payment.get).toHaveBeenCalled();
+      expect(gateway.getPayment).toHaveBeenCalled();
     });
 
     it('con firma inválida devuelve 401 y no procesa', async () => {
@@ -171,7 +174,7 @@ describe('Checkout Endpoints', () => {
         .send({ type: 'payment', data: { id: DATA_ID } });
 
       expect(res.statusCode).toBe(401);
-      expect(mercadopagoConfig.payment.get).not.toHaveBeenCalled();
+      expect(gateway.getPayment).not.toHaveBeenCalled();
     });
 
     it('sin header x-signature devuelve 401 y no procesa', async () => {
@@ -181,12 +184,12 @@ describe('Checkout Endpoints', () => {
         .send({ type: 'payment', data: { id: DATA_ID } });
 
       expect(res.statusCode).toBe(401);
-      expect(mercadopagoConfig.payment.get).not.toHaveBeenCalled();
+      expect(gateway.getPayment).not.toHaveBeenCalled();
     });
 
     it('sin MP_WEBHOOK_SECRET (dev) bypassa la firma y devuelve 200', async () => {
       delete process.env.MP_WEBHOOK_SECRET;
-      mercadopagoConfig.payment.get.mockResolvedValue(null);
+      gateway.getPayment.mockResolvedValue(null);
       const res = await request(app)
         .post('/api/checkout/webhook')
         .send({ type: 'payment', data: { id: DATA_ID } });

@@ -1,8 +1,8 @@
-import supabase, { supabaseAdmin } from '../config/supabase';
+import { supabaseAdmin } from '../config/supabase';
 import type { User, UserUpdate } from '../types/domain';
 
 export async function findById(userId: string): Promise<User | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('users')
     .select('id, email, full_name, avatar_url, created_at, updated_at')
     .eq('id', userId)
@@ -13,7 +13,7 @@ export async function findById(userId: string): Promise<User | null> {
 }
 
 export async function update(userId: string, fields: UserUpdate): Promise<User> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('users')
     .update(fields)
     .eq('id', userId)
@@ -25,7 +25,7 @@ export async function update(userId: string, fields: UserUpdate): Promise<User> 
 }
 
 export async function remove(userId: string): Promise<void> {
-  const { error } = await supabase.from('users').delete().eq('id', userId);
+  const { error } = await supabaseAdmin.from('users').delete().eq('id', userId);
   if (error) throw error;
 }
 

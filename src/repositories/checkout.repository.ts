@@ -1,4 +1,4 @@
-import supabase from '../config/supabase';
+import { supabaseAdmin } from '../config/supabase';
 import type { CartWithItems, Purchase } from '../types/domain';
 
 // Fila lista para insertar en purchase_items. La arma el service (es lógica de
@@ -13,7 +13,7 @@ export interface PurchaseItemRow {
 }
 
 export async function savePreferenceId(cartId: string, preferenceId: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('carts')
     .update({ mp_preference_id: preferenceId })
     .eq('id', cartId);
@@ -25,7 +25,7 @@ export async function findPurchaseByPreferenceId(
   userId: string,
   preferenceId: string,
 ): Promise<Purchase | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('purchases')
     .select('id, total, payment_id, payment_status, created_at, mp_preference_id')
     .eq('user_id', userId)
@@ -37,7 +37,7 @@ export async function findPurchaseByPreferenceId(
 }
 
 export async function findCartById(cartId: string): Promise<CartWithItems | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('carts')
     .select(
       '*, items:cart_items(*, product:products(*, tax_category:tax_categories(id, name, rate)))',
@@ -52,19 +52,19 @@ export async function findCartById(cartId: string): Promise<CartWithItems | null
 export async function createPurchase(
   purchase: Omit<Purchase, 'id' | 'created_at'>,
 ): Promise<Purchase> {
-  const { data, error } = await supabase.from('purchases').insert(purchase).select().single();
+  const { data, error } = await supabaseAdmin.from('purchases').insert(purchase).select().single();
 
   if (error) throw error;
   return data as Purchase;
 }
 
 export async function insertPurchaseItems(rows: PurchaseItemRow[]): Promise<void> {
-  const { error } = await supabase.from('purchase_items').insert(rows);
+  const { error } = await supabaseAdmin.from('purchase_items').insert(rows);
   if (error) throw error;
 }
 
 export async function closeCart(cartId: string): Promise<void> {
-  const { error } = await supabase.from('carts').update({ status: 'closed' }).eq('id', cartId);
+  const { error } = await supabaseAdmin.from('carts').update({ status: 'closed' }).eq('id', cartId);
 
   if (error) throw error;
 }

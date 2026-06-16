@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import type { Request, Response } from 'express';
-import * as checkoutService from '../services/checkout.service';
+import { checkoutService } from '../services/checkout.service';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
 import type { AuthedRequest } from '../types/http';
