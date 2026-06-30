@@ -45,15 +45,33 @@ export async function addOrUpdateItem(
   return data as CartItem;
 }
 
-export async function findItemById(itemId: string): Promise<CartItem | null> {
+export type CartItemOwnership = {
+  id: string;
+  cart_id: string;
+  user_id: string | null;
+  status: string | null;
+};
+
+// Trae solo lo necesario para validar pertenencia (id del item, su carrito y el
+// dueño/estado del carrito) en una sola query liviana, sin arrastrar el grafo de
+// productos y categorías fiscales como hace findActiveCartByUserId.
+export async function findItemOwnership(itemId: string): Promise<CartItemOwnership | null> {
   const { data, error } = await supabaseAdmin
     .from('cart_items')
-    .select('*')
+    .select('id, cart_id, cart:carts(user_id, status)')
     .eq('id', itemId)
     .maybeSingle();
 
   if (error) throw error;
-  return data as CartItem | null;
+  if (!data) return null;
+
+  const row = data as { id: string; cart_id: string; cart?: { user_id?: string; status?: string } };
+  return {
+    id: row.id,
+    cart_id: row.cart_id,
+    user_id: row.cart?.user_id ?? null,
+    status: row.cart?.status ?? null,
+  };
 }
 
 export async function updateItemQuantity(itemId: string, quantity: number): Promise<CartItem> {

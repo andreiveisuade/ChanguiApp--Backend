@@ -111,11 +111,17 @@ describe('CartService', () => {
     });
   });
 
+  const ownership = {
+    id: validCartItem.id,
+    cart_id: validCart.id,
+    user_id: validUser.id,
+    status: 'active',
+  };
+
   describe('updateItem', () => {
     it('actualiza la cantidad del item', async () => {
       const updated = { ...validCartItem, quantity: 5 };
-      mockRepo.findItemById.mockResolvedValue(validCartItem as any);
-      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+      mockRepo.findItemOwnership.mockResolvedValue(ownership as any);
       mockRepo.updateItemQuantity.mockResolvedValue(updated as any);
 
       const result = await cartService.updateItem(validUser.id, validCartItem.id, 5);
@@ -125,8 +131,7 @@ describe('CartService', () => {
     });
 
     it('elimina el item si quantity <= 0', async () => {
-      mockRepo.findItemById.mockResolvedValue(validCartItem as any);
-      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+      mockRepo.findItemOwnership.mockResolvedValue(ownership as any);
       mockRepo.removeItem.mockResolvedValue(validCartItem as any);
 
       const result = await cartService.updateItem(validUser.id, validCartItem.id, 0);
@@ -136,7 +141,7 @@ describe('CartService', () => {
     });
 
     it('lanza ApiError 404 si el item no existe', async () => {
-      mockRepo.findItemById.mockResolvedValue(null);
+      mockRepo.findItemOwnership.mockResolvedValue(null);
 
       await expect(cartService.updateItem(validUser.id, 'inexistente', 3)).rejects.toMatchObject({
         status: 404,
@@ -144,8 +149,15 @@ describe('CartService', () => {
     });
 
     it('lanza ApiError 403 si el item no pertenece al carrito del usuario', async () => {
-      mockRepo.findItemById.mockResolvedValue({ ...validCartItem, cart_id: 'otro-cart' } as any);
-      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+      mockRepo.findItemOwnership.mockResolvedValue({ ...ownership, user_id: 'otro-user' } as any);
+
+      await expect(cartService.updateItem(validUser.id, validCartItem.id, 3)).rejects.toMatchObject(
+        { status: 403 },
+      );
+    });
+
+    it('lanza ApiError 403 si el carrito del item no está activo', async () => {
+      mockRepo.findItemOwnership.mockResolvedValue({ ...ownership, status: 'cancelled' } as any);
 
       await expect(cartService.updateItem(validUser.id, validCartItem.id, 3)).rejects.toMatchObject(
         { status: 403 },
@@ -155,8 +167,7 @@ describe('CartService', () => {
 
   describe('removeItem', () => {
     it('elimina item del carrito', async () => {
-      mockRepo.findItemById.mockResolvedValue(validCartItem as any);
-      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+      mockRepo.findItemOwnership.mockResolvedValue(ownership as any);
       mockRepo.removeItem.mockResolvedValue(validCartItem as any);
 
       const result = await cartService.removeItem(validUser.id, validCartItem.id);
@@ -166,7 +177,7 @@ describe('CartService', () => {
     });
 
     it('lanza ApiError 404 si el item no existe', async () => {
-      mockRepo.findItemById.mockResolvedValue(null);
+      mockRepo.findItemOwnership.mockResolvedValue(null);
 
       await expect(cartService.removeItem(validUser.id, 'inexistente')).rejects.toMatchObject({
         status: 404,
@@ -174,8 +185,7 @@ describe('CartService', () => {
     });
 
     it('lanza ApiError 403 si el item no pertenece al carrito del usuario', async () => {
-      mockRepo.findItemById.mockResolvedValue({ ...validCartItem, cart_id: 'otro-cart' } as any);
-      mockRepo.findActiveCartByUserId.mockResolvedValue(validCart as any);
+      mockRepo.findItemOwnership.mockResolvedValue({ ...ownership, user_id: 'otro-user' } as any);
 
       await expect(cartService.removeItem(validUser.id, validCartItem.id)).rejects.toMatchObject({
         status: 403,
