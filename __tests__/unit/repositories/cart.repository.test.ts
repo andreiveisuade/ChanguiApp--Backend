@@ -98,21 +98,33 @@ describe('CartRepository', () => {
     });
   });
 
-  describe('findItemById', () => {
-    it('retorna item por id', async () => {
-      mockSupabase.maybeSingle.mockResolvedValue({ data: validCartItem, error: null });
+  describe('findItemOwnership', () => {
+    it('retorna ownership (item + dueño y estado del carrito) por id', async () => {
+      mockSupabase.maybeSingle.mockResolvedValue({
+        data: {
+          id: validCartItem.id,
+          cart_id: validCart.id,
+          cart: { user_id: validCart.user_id, status: 'active' },
+        },
+        error: null,
+      });
 
-      const result = await cartRepository.findItemById(validCartItem.id);
+      const result = await cartRepository.findItemOwnership(validCartItem.id);
 
       expect(mockSupabase.from).toHaveBeenCalledWith('cart_items');
       expect(mockSupabase.eq).toHaveBeenCalledWith('id', validCartItem.id);
-      expect(result).toEqual(validCartItem);
+      expect(result).toEqual({
+        id: validCartItem.id,
+        cart_id: validCart.id,
+        user_id: validCart.user_id,
+        status: 'active',
+      });
     });
 
     it('retorna null si el item no existe', async () => {
       mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
 
-      const result = await cartRepository.findItemById('no-item');
+      const result = await cartRepository.findItemOwnership('no-item');
 
       expect(result).toBeNull();
     });
@@ -120,7 +132,7 @@ describe('CartRepository', () => {
     it('lanza error si supabase falla', async () => {
       mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: new Error('boom') });
 
-      await expect(cartRepository.findItemById(validCartItem.id)).rejects.toThrow('boom');
+      await expect(cartRepository.findItemOwnership(validCartItem.id)).rejects.toThrow('boom');
     });
   });
 
