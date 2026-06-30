@@ -39,14 +39,13 @@ export async function addItem(
 
 // Valida que el item exista (404) y pertenezca al carrito activo del usuario
 // (403). Comparte el control de permisos entre updateItem y removeItem.
-async function assertItemBelongsToUser(userId: string, itemId: string): Promise<CartItem> {
-  const item = await cartRepository.findItemById(itemId);
-  if (!item) throw new ApiError('Item no encontrado', 404);
-  const cart = await cartRepository.findActiveCartByUserId(userId);
-  if (!cart || item.cart_id !== cart.id) {
+// Una sola query liviana: no hace falta traer el carrito completo para comparar.
+async function assertItemBelongsToUser(userId: string, itemId: string): Promise<void> {
+  const ownership = await cartRepository.findItemOwnership(itemId);
+  if (!ownership) throw new ApiError('Item no encontrado', 404);
+  if (ownership.user_id !== userId || ownership.status !== 'active') {
     throw new ApiError('No tenés permiso para modificar este item', 403);
   }
-  return item;
 }
 
 export async function updateItem(
